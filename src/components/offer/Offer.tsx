@@ -145,8 +145,19 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 3. Prévia */}
       <section className="px-4 pt-6">
-        <div key={side} className="anim-pop relative">
-          <DocImage doc={PREVIEW_TABS[side].doc} page={PREVIEW_TABS[side].page} ctx={ctx} scale={0.7} className="overflow-hidden rounded-[18px] drop-shadow-2xl" alt={`${PREVIEW_TABS[side].label} ${doNome}`} />
+        <div key={side} className="anim-pop relative overflow-hidden rounded-[18px] shadow-2xl">
+          <DocImage doc={PREVIEW_TABS[side].doc} page={PREVIEW_TABS[side].page} ctx={ctx} scale={0.7} alt={`${PREVIEW_TABS[side].label} ${doNome}`} />
+          {/* Mostra até a metade e esfuma o resto: está pronto, falta só liberar. */}
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%]"
+            style={{ background: 'linear-gradient(180deg, rgba(255,248,239,0) 0%, rgba(255,248,239,.55) 22%, rgba(255,248,239,.9) 48%, #FFF8EF 72%)' }}
+          />
+          <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-4 text-center">
+            <span className="flex items-center gap-1.5 rounded-full bg-cacau px-3 py-1.5 text-xs font-extrabold text-white shadow-lg">
+              <Lock size={13} strokeWidth={2.6} /> Pronto, falta só liberar
+            </span>
+            <p className="mt-1.5 text-[13px] font-bold leading-snug text-cacau/75">O documento completo, sem marca d&apos;água, chega no seu e-mail.</p>
+          </div>
         </div>
         <div className="mt-4 flex justify-center gap-1.5 rounded-full bg-white p-1 shadow-card">
           {PREVIEW_TABS.map((t, i) => (
@@ -155,9 +166,6 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             </button>
           ))}
         </div>
-        <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-sm font-bold text-cacau/55">
-          <Lock size={14} /> Prévia com marca d&apos;água. O arquivo final sai limpo.
-        </p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {kitItems
             .filter((it) => it.id !== 'rg' && it.id !== 'cnh')

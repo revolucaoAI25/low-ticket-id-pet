@@ -46,7 +46,7 @@ function bone(ctx: Ctx, bg: HTMLImageElement | null) {
   ctx.fill('nonzero');
   // furo da argola
   ctx.beginPath();
-  ctx.arc(H * 0.17, H * 0.5, 20, 0, Math.PI * 2);
+  ctx.arc(H * 0.32, H * 0.5, 20, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
   ctx.fill();
   ctx.lineWidth = 5;
@@ -54,13 +54,15 @@ function bone(ctx: Ctx, bg: HTMLImageElement | null) {
   ctx.stroke();
 }
 
+/** Três tamanhos de ossinho na folha (G, M e P), duas cópias de cada. */
 const copies: [number, number][] = [
-  [55, 31],
-  [55, 31],
-  [55, 31],
+  [60, 34],
+  [60, 34],
+  [52, 29],
+  [52, 29],
   [45, 25],
   [45, 25],
-];
+]
 
 export const tagDoc: DocDef = {
   id: 'tag',
@@ -72,7 +74,7 @@ export const tagDoc: DocDef = {
       label: 'Frente (nome)',
       w: W,
       h: H,
-      mm: [55, 31],
+      mm: [52, 29],
       printCopies: copies,
       shape: 'bone',
       draw(ctx, c, a) {
@@ -88,7 +90,7 @@ export const tagDoc: DocDef = {
       label: 'Verso (QR Code)',
       w: W,
       h: H,
-      mm: [55, 31],
+      mm: [52, 29],
       printCopies: copies,
       shape: 'bone',
       needsQr: true,
@@ -105,8 +107,8 @@ export const tagDoc: DocDef = {
           ctx.drawImage(a.qr, W / 2 + 20 - s / 2, H / 2 - s / 2, s, s);
           ctx.restore();
         }
-        text(ctx, 'ME', 260, H / 2 - 6, { size: 34, weight: 900, color: C.ink, align: 'center', letterSpacing: 2 });
-        text(ctx, 'ESCANEIE', 260, H / 2 + 30, { size: 26, weight: 900, color: C.ink, align: 'center', letterSpacing: 1 });
+        text(ctx, 'ME', 300, H / 2 - 6, { size: 34, weight: 900, color: C.ink, align: 'center', letterSpacing: 2 });
+        text(ctx, 'ESCANEIE', 300, H / 2 + 30, { size: 26, weight: 900, color: C.ink, align: 'center', letterSpacing: 1 });
         paw(ctx, W - 190, H / 2, 70, 'rgba(74,54,38,.6)');
       },
     },

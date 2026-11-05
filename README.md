@@ -27,7 +27,7 @@ Funil de quiz que vende o Kit Identidade Pet (R$ 19,90): o anúncio cai direto n
    - `RESEND_API_KEY` e `EMAIL_FROM` (**necessário**: é por e-mail que o kit é entregue)
 3. **Domínio** → Vercel → *Settings → Domains*. Depois de trocar o domínio, atualize `NEXT_PUBLIC_SITE_URL` e faça *Redeploy* (o QR Code usa esse endereço).
 4. Entre em `/admin` e preencha os checkouts, o pixel e o suporte.
-5. Siga **[docs/INTEGRACOES.md](docs/INTEGRACOES.md)** para Kiwify, Utmify e Pixel da Meta.
+5. Siga **[docs/PASSO-A-PASSO.md](docs/PASSO-A-PASSO.md)** (todas as chaves e o que preencher no painel) e **[docs/INTEGRACOES.md](docs/INTEGRACOES.md)** (como as integrações conversam).
 
 ## O que trocar sem mexer no código (painel `/admin`)
 

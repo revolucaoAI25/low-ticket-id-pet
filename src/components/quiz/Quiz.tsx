@@ -4,11 +4,9 @@ import { ArrowLeft, ArrowRight, Baby, Check, Clock, Eye, House, Mail, MapPin, Pl
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SiteSettings } from '@/config/site';
-import { DocImage } from '@/components/DocImage';
 import { IconBubble, PERSONALITY_ICON, SPECIES_ICON } from '@/components/icons';
 import { KitFan } from '@/components/KitFan';
 import { Logo, Stars, formatInt } from '@/components/ui';
-import { buildDocContext } from '@/lib/doc-context';
 import { PERSONALITIES, doPet, g, hasName, oPet, petName, type Origin, type Personality, type Sex, type TeamChoice, type Tutor } from '@/lib/pet';
 import { useHydrated, useQuiz, quizStore } from '@/lib/quiz-store';
 import { SPECIES, getSpecies, type Species } from '@/lib/species';
@@ -313,7 +311,7 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
           </Screen>
         )}
 
-        {id === 'foto' && <PhotoStep settings={settings} onNext={next} />}
+        {id === 'foto' && <PhotoStep onNext={next} />}
 
         {id === 'contato' && <ContactStep onSubmit={() => (saveLead(), go(LAST_QUESTION + 1))} title={`Pra onde enviamos o kit ${doPet(pet)}?`} />}
 
@@ -486,24 +484,12 @@ function TutorsStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function PhotoStep({ settings, onNext }: { settings: SiteSettings; onNext: () => void }) {
-  const s = useQuiz();
-  const pet = s.pet;
-  const ctx = useMemo(
-    () => buildDocContext({ pet, settings, seed: s.lead?.petId || pet.name || 'pet', slug: s.lead?.slug, phone: s.contact.phone, preview: true }),
-    [pet, settings, s.lead, s.contact.phone],
-  );
+function PhotoStep({ onNext }: { onNext: () => void }) {
+  const { pet } = useQuiz();
   return (
     <Screen title={`Agora a parte mais fofa: uma foto ${doPet(pet)}`} subtitle="De frente, com boa luz. Ela vai no RG, na CNH, na certidão e nos bônus.">
-      {pet.photo ? (
-        <div className="anim-pop">
-          <DocImage doc="rg" ctx={ctx} scale={0.6} className="overflow-hidden rounded-2xl drop-shadow-xl" />
-          <p className="mt-3 text-center text-sm font-bold text-verde">Ficou demais! Assim vai sair no RG.</p>
-        </div>
-      ) : null}
-      <div className={pet.photo ? 'mt-5' : ''}>
-        <PhotoPicker value={pet.photo} species={pet.species} compact={!!pet.photo} onChange={(photo) => quizStore.setPet({ photo })} />
-      </div>
+      <PhotoPicker value={pet.photo} species={pet.species} onChange={(photo) => quizStore.setPet({ photo })} />
+      {pet.photo && <p className="anim-fade-up mt-4 text-center text-sm font-bold text-verde">Ficou ótima!</p>}
       <Continue onClick={onNext} label={pet.photo ? 'Continuar' : 'Continuar sem foto'} />
     </Screen>
   );
