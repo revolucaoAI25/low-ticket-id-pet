@@ -3,7 +3,7 @@
 import { Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { SiteSettings } from '@/config/site';
-import { Stars, formatInt } from '@/components/ui';
+import { Avatar, Stars, formatInt } from '@/components/ui';
 import { doPet, type PetData } from '@/lib/pet';
 
 const DURATION = 4800;
@@ -98,11 +98,15 @@ export function Loading({ pet, settings, onDone }: { pet: PetData; settings: Sit
       <div className="mt-6 min-h-[110px] w-full">
         {reviews.length > 0 ? (
           <div key={ri} className="anim-fade-up rounded-2xl bg-white p-4 text-left shadow-card">
-            <Stars value={reviews[ri].stars} size={16} />
-            <p className="mt-1 text-[15px] font-semibold leading-snug">“{reviews[ri].text}”</p>
-            <p className="mt-1 text-sm font-bold text-cacau/60">
-              {reviews[ri].name} · {reviews[ri].city}
-            </p>
+            <div className="flex items-center gap-3">
+              <Avatar name={reviews[ri].name} photo={reviews[ri].photo} size={38} />
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold leading-tight">{reviews[ri].name}</p>
+                <p className="text-xs font-bold text-cacau/55">{reviews[ri].city}</p>
+              </div>
+              <Stars value={reviews[ri].stars} size={14} className="ml-auto" />
+            </div>
+            <p className="mt-2 text-[15px] font-semibold leading-snug">“{reviews[ri].text}”</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-1">

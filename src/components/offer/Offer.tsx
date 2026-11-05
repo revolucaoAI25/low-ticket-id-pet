@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bonusItems, fullTotal, kitItems } from '@/config/offer';
 import { proofSlots, type SiteSettings } from '@/config/site';
 import { DocImage } from '@/components/DocImage';
-import { Logo, Slot, Stars, formatBRL, formatInt } from '@/components/ui';
+import { Avatar, Logo, Slot, Stars, formatBRL, formatInt } from '@/components/ui';
 import { buildDocContext } from '@/lib/doc-context';
 import { PERSONALITIES, doPet, fill, hasName, personalityLabel, petName } from '@/lib/pet';
 import { PERSONALITY_ICON, SPECIES_ICON } from '@/components/icons';
@@ -174,16 +174,15 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       <section className="px-4 pt-6">
         <div className="flex items-center justify-center gap-3">
           <div className="flex -space-x-3">
-            {(settings.proof.avatars.length ? settings.proof.avatars.slice(0, 5) : Array.from({ length: 5 }, () => '')).map((a, i) =>
-              a ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={a} alt="" className="h-10 w-10 rounded-full border-2 border-white object-cover" />
-              ) : (
-                <span key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-areia text-roxo/60" title="Foto de cliente">
-                  <PawPrint size={16} />
-                </span>
-              ),
-            )}
+            {settings.proof.avatars.length
+              ? settings.proof.avatars.slice(0, 5).map((a, i) => <Avatar key={i} name="Cliente" photo={a} size={40} className="border-2 border-white" />)
+              : settings.proof.reviews.length
+                ? settings.proof.reviews.slice(0, 5).map((r, i) => <Avatar key={i} name={r.name} photo={r.photo} size={40} className="border-2 border-white" />)
+                : Array.from({ length: 5 }, (_, i) => (
+                    <span key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-areia text-roxo/60" title="Foto de cliente">
+                      <PawPrint size={16} />
+                    </span>
+                  ))}
           </div>
           <div className="text-left">
             <div className="flex items-center gap-1.5">
@@ -298,23 +297,22 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       </Section>
 
       {/* 11. Avaliações */}
-      <Section title="Avaliações" subtitle={`Nota ${settings.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} de 5`}>
+      <Section
+        title="Avaliações"
+        subtitle={`Nota ${settings.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} de 5${settings.tutorsCount > 0 ? ` · ${formatInt(settings.tutorsCount)} tutores` : ''}`}
+      >
         <div className="space-y-3">
           {settings.proof.reviews.length
             ? settings.proof.reviews.map((r, i) => (
                 <div key={i} className="card p-4">
                   <div className="flex items-center gap-3">
-                    {r.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.photo} alt={r.petName ?? ''} className="h-12 w-12 rounded-full object-cover" />
-                    ) : (
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-areia text-roxo/60">
-                        <PawPrint size={20} />
-                      </span>
-                    )}
-                    <div>
+                    <Avatar name={r.name} photo={r.photo} size={46} />
+                    <div className="min-w-0">
                       <p className="font-extrabold leading-tight">{r.name}</p>
-                      <p className="text-xs font-bold text-cacau/60">{r.city}</p>
+                      <p className="text-xs font-bold text-cacau/60">
+                        {r.city}
+                        {r.petName ? ` · tutor(a) de ${r.petName}` : ''}
+                      </p>
                     </div>
                     <Stars value={r.stars} size={14} className="ml-auto" />
                   </div>

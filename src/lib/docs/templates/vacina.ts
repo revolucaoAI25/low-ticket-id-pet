@@ -14,7 +14,7 @@
 import { addressLine, cityOf, formatDateBR, isFemale, petName, sexLabel, tutorNames, ageLabel } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { formatPhone, photoBox, photoCircle } from '../common';
-import { drawContain, heart, line, paw, rr, text, wrap } from '../draw';
+import { line, paw, rr, text, wrap } from '../draw';
 import type { Ctx } from '../draw';
 import type { DocContext, DocDef } from '../types';
 
@@ -52,13 +52,7 @@ function foldMarks(ctx: Ctx, xs: number[], t: Theme) {
   }
 }
 
-function brandLine(ctx: Ctx, x: number, y: number, t: Theme) {
-  paw(ctx, x + 12, y - 8, 26, t.main);
-  text(ctx, 'Clube do Focinho', x + 34, y, { size: 20, weight: 600, family: 'display', color: t.dark });
-}
-
 function panelTitle(ctx: Ctx, x: number, w: number, title: string, subtitle: string, t: Theme) {
-  brandLine(ctx, x + PAD, 78, t);
   text(ctx, title, x + PAD, 150, { size: 46, weight: 700, family: 'display', color: t.dark, maxWidth: w - PAD * 2 });
   wrap(ctx, subtitle, x + PAD, 186, w - PAD * 2, 24, { size: 18, weight: 600, color: 'rgba(0,0,0,.45)', maxLines: 2 });
 }
@@ -138,7 +132,6 @@ export const vacinaDoc: DocDef = {
       w: W,
       h: H,
       mm: [297, 210],
-      needsQr: true,
       draw(ctx, c, a) {
         const t = theme(c);
         const p = c.pet;
@@ -176,33 +169,41 @@ export const vacinaDoc: DocDef = {
           row(ctx, 'Telefone', formatPhone(ct?.phone), ix + 22, y + 146, iw - 44, t);
         }
 
-        /* Painel 6: contracapa */
+        /* Painel 6: contracapa (consultas e lembretes) */
         {
           const x = x6;
           const w = P100;
-          const cx = x + w / 2;
-          if (a.logo) drawContain(ctx, a.logo, cx - 120, 70, 240, 220);
-          card(ctx, x + PAD, 330, w - PAD * 2, 560, t);
-          text(ctx, 'Se me encontrar,', cx, 400, { size: 34, weight: 700, family: 'display', color: t.dark, align: 'center' });
-          text(ctx, 'fale com meu tutor', cx, 442, { size: 34, weight: 700, family: 'display', color: t.dark, align: 'center' });
-          if (a.qr) {
-            ctx.save();
-            if (c.preview) ctx.globalAlpha = 0.35;
-            ctx.drawImage(a.qr, cx - 130, 480, 260, 260);
-            ctx.restore();
-          }
-          text(ctx, 'Escaneie para ver minha identidade', cx, 778, { size: 18, weight: 700, color: 'rgba(0,0,0,.5)', align: 'center' });
-          const phone = formatPhone(p.tutors?.find((tt) => tt.phone)?.phone || c.phone);
-          text(ctx, phone || '(__) _____-____', cx, 846, { size: 40, weight: 900, color: t.main, align: 'center', maxWidth: w - PAD * 3 });
-          wrap(ctx, 'Para organização pessoal. Não substitui a carteira assinada pelo médico-veterinário.', cx, 990, w - PAD * 3, 26, {
-            size: 18,
-            weight: 700,
-            color: 'rgba(0,0,0,.45)',
-            align: 'center',
-            maxLines: 3,
+          panelTitle(ctx, x, w, 'Consultas e exames', 'Check-ups, exames e retornos ao veterinário.', t);
+          const ix = x + PAD;
+          const iw = w - PAD * 2;
+          let y = table(
+            ctx,
+            ix,
+            222,
+            iw,
+            [
+              { label: 'Data', w: 1.1 },
+              { label: 'Motivo / exame', w: 2.1 },
+              { label: 'Retorno', w: 1.1 },
+            ],
+            9,
+            56,
+            t,
+          );
+          y += 52;
+          sectionTitle(ctx, ix, y, 'Próximos lembretes', t, iw);
+          card(ctx, ix, y + 18, iw, 1150 - y - 18, t);
+          const items = ['Vacina anual', 'Vermífugo', 'Antipulgas', 'Banho e tosa', 'Check-up'];
+          items.forEach((it, i) => {
+            const yy = y + 70 + i * 50;
+            if (yy > 1120) return;
+            rr(ctx, ix + 22, yy - 20, 24, 24, 6);
+            ctx.strokeStyle = t.main;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            text(ctx, it, ix + 60, yy, { size: 19, weight: 700, color: t.ink });
+            line(ctx, ix + iw * 0.55, yy + 4, ix + iw - 22, yy + 4, t.line, 2);
           });
-          heart(ctx, cx, 1110, 30, t.main);
-          text(ctx, 'Kit Identidade Pet · Clube do Focinho', cx, 1170, { size: 17, weight: 700, color: t.dark, align: 'center' });
         }
 
         /* Painel 1: CAPA */
@@ -247,7 +248,7 @@ export const vacinaDoc: DocDef = {
           ctx.fillStyle = t.soft;
           ctx.fill();
           text(ctx, 'Meu cartão de saúde', cx, 1070, { size: 24, weight: 700, family: 'display', color: t.dark, align: 'center' });
-          brandLine(ctx, cx - 100, 1180, t);
+          text(ctx, 'Clube do Focinho', cx, 1185, { size: 16, weight: 700, color: 'rgba(0,0,0,.3)', align: 'center' });
         }
         foldMarks(ctx, [x6, x1], t);
       },

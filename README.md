@@ -64,7 +64,7 @@ Enquanto uma página não tem template + campos mapeados, ela usa o desenho prov
 | RG do Pet | `rg-frente`, `rg-verso` |
 | CNH Pet | `cnh-frente`, `cnh-verso` |
 | Certidão | `certidao` |
-| Passaporte | `passaporte-capa`, `passaporte-dados`, `passaporte-carimbos` |
+| Passaporte (88 × 125 mm, livreto de 8 páginas; capa = imagem em `public/templates/passaporte-capa.webp`) | `passaporte-capa`, `passaporte-miolo-1`, `passaporte-miolo-2` |
 | Tag ossinho | `tag-nome`, `tag-qr` |
 | Identidade (QR) | `ficha` |
 | Vacinação (dobrável, rosa ou azul, montada em código) | `vacina-fora`, `vacina-dentro` |
@@ -81,4 +81,4 @@ cp .env.example .env.local   # preencha
 npm run dev                  # http://localhost:3000
 ```
 
-Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Se já rodou uma versão anterior do `schema.sql`, rode de novo: ele só acrescenta o que falta.
+Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Com `DEMO_PROOF=1` (ou o "Modo demonstração" do painel), o site mostra avaliações de exemplo — só para mockup; desligue antes de anunciar. Se já rodou uma versão anterior do `schema.sql`, rode de novo: ele só acrescenta o que falta.

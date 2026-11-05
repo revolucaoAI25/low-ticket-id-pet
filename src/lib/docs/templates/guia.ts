@@ -20,7 +20,7 @@ export const INSTRUCTIONS: { title: string; body: string }[] = [
   { title: 'Papel ideal', body: 'Para RG, CNH e carteirinha de torcedor, use papel fotográfico ou couchê 180 g (ou mais). Certidão, carteira de vacinação e bônus podem ir em papel comum ou offset 120 g.' },
   { title: 'RG, CNH e Torcedor', body: 'Recorte frente e verso, cole um no outro (cola bastão ou fita dupla face) e plastifique. Na papelaria, peça plastificação no tamanho de documento.' },
   { title: 'Tag Ossinho com QR Code', body: 'Recorte os dois lados do ossinho, cole um no outro e plastifique. Fure no círculo e prenda na coleira com uma argola ou porta-tag. Teste o QR Code com a câmera antes de usar.' },
-  { title: 'Passaporte de Aventuras', body: 'Recorte as páginas, dobre ao meio e grampeie como um livrinho. Use para colar fotos e "carimbar" passeios e primeiras vezes.' },
+  { title: 'Passaporte de Aventuras', body: 'Tamanho de passaporte de verdade. A folha da capa traz o passo a passo: capa só de um lado, miolo em frente e verso, dobre, encaixe e grampeie.' },
   { title: 'Carteira de Vacinação (dobrável)', body: 'Imprima as duas páginas dela em frente e verso, virando pela borda longa (ou cole uma atrás da outra). Dobre o painel da direita para dentro e depois o da esquerda por cima: a capa fica na frente.' },
   { title: 'Certidão', body: 'Fica linda numa moldura A4. Use papel mais grosso (180 g) para durar mais.' },
   { title: 'Bônus', body: 'O Kit Aniversário traz convite, topo de bolo, plaquinhas e certificado: recorte e cole em palitos. O Kit Quem Cuida é para deixar com quem fica com seu pet.' },

@@ -81,6 +81,8 @@ export interface SiteSettings {
     guiaViagem: string;
   };
   proof: {
+    /** Modo demonstração: mostra avaliações de exemplo enquanto não há reais. DESLIGAR antes de anunciar. */
+    demo: boolean;
     avatars: string[];
     realLife: ProofImage[];
     whatsapp: ProofImage[];
@@ -125,7 +127,7 @@ export const defaultSettings: SiteSettings = {
     templates: {},
   },
   files: { calendarioCao: '', calendarioGato: '', calendarioOutros: '', guiaViagem: '' },
-  proof: { avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
+  proof: { demo: false, avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [

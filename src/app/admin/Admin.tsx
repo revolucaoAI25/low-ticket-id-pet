@@ -78,6 +78,11 @@ export function Admin() {
         </button>
       </div>
       <h1 className="h-display mt-2 text-3xl">Painel</h1>
+      {s.proof.demo && (
+        <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
+          Modo demonstração ligado: o site mostra avaliações de exemplo. Desligue em Prova social antes de anunciar.
+        </p>
+      )}
       {!dbOk && <p className="mt-3 rounded-xl bg-red-50 p-3 font-bold text-red-700">Supabase não configurado: as mudanças não serão salvas. Veja o README.</p>}
 
       <nav className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2">
@@ -368,6 +373,12 @@ function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
   const setReviews = (r: Review[]) => set({ proof: { ...s.proof, reviews: r } });
   return (
     <>
+      <Card title="Modo demonstração" hint="Mostra 12 avaliações de exemplo (inventadas), avatares com iniciais e '1.287 tutores' enquanto você não tem prova social real. Só preenche o que estiver vazio.">
+        <label className={`flex items-center gap-3 rounded-xl p-3 font-bold ${s.proof.demo ? 'bg-red-50 text-red-700' : 'bg-areia/60'}`}>
+          <input type="checkbox" className="h-5 w-5" checked={s.proof.demo} onChange={(e) => set({ proof: { ...s.proof, demo: e.target.checked } })} />
+          {s.proof.demo ? 'LIGADO: desligue antes de anunciar (avaliação inventada para cliente real é propaganda enganosa).' : 'Mostrar avaliações de demonstração'}
+        </label>
+      </Card>
       <Card title="Avatares de clientes (ao lado da nota)" hint="Até 5 fotos pequenas.">
         {Array.from({ length: 5 }, (_, i) => (
           <Upload
