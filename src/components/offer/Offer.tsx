@@ -16,18 +16,12 @@ import { allTeams, findTeam } from '@/lib/teams';
 import { buildCheckoutUrl, track } from '@/lib/tracking';
 import { useCountdown } from './useCountdown';
 
-const PREVIEW_TABS = [
-  { label: 'RG · frente', doc: 'rg', page: 0 },
-  { label: 'RG · verso', doc: 'rg', page: 1 },
-  { label: 'CNH Pet', doc: 'cnh', page: 0 },
-];
 
 export function Offer({ settings }: { settings: SiteSettings }) {
   const hydrated = useHydrated();
   const s = useQuiz();
   const pet = s.pet;
   const { label: timer, left } = useCountdown(settings.timerMinutes);
-  const [side, setSide] = useState(0);
   const [showBar, setShowBar] = useState(false);
   const [notice, setNotice] = useState('');
   const priceRef = useRef<HTMLDivElement>(null);
@@ -145,8 +139,8 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 3. Prévia */}
       <section className="px-4 pt-6">
-        <div key={side} className="anim-pop relative overflow-hidden rounded-[18px] shadow-2xl">
-          <DocImage doc={PREVIEW_TABS[side].doc} page={PREVIEW_TABS[side].page} ctx={ctx} scale={0.7} alt={`${PREVIEW_TABS[side].label} ${doNome}`} />
+        <div className="anim-pop relative overflow-hidden rounded-[18px] shadow-2xl">
+          <DocImage doc="rg" page={0} ctx={ctx} scale={0.7} alt={`RG ${doNome}`} />
           {/* Mostra até a metade e esfuma o resto: está pronto, falta só liberar. */}
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 h-[68%]"
@@ -159,16 +153,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             <p className="mt-1.5 text-[13px] font-bold leading-snug text-cacau/75">O documento completo, sem marca d&apos;água, chega no seu e-mail.</p>
           </div>
         </div>
-        <div className="mt-4 flex justify-center gap-1.5 rounded-full bg-white p-1 shadow-card">
-          {PREVIEW_TABS.map((t, i) => (
-            <button key={t.label} type="button" onClick={() => setSide(i)} className={`flex-1 rounded-full px-3 py-2 text-sm font-bold transition-colors ${side === i ? 'bg-cacau text-white' : 'text-cacau/70'}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {kitItems
-            .filter((it) => it.id !== 'rg' && it.id !== 'cnh')
+            .filter((it) => it.id !== 'rg' && it.id !== 'torcedor')
             .map((it) => (
               <LockedThumb key={it.id} title={it.short} doc={it.doc!} ctx={ctx} />
             ))}

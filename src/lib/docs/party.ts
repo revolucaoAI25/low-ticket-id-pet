@@ -412,3 +412,125 @@ export function gift(ctx: Ctx, x: number, y: number, s: number, color: string, r
     ctx.fill();
   }
 }
+
+/* ---------- efeitos de acabamento ---------- */
+
+/**
+ * Efeito adesivo: contorno branco + sombra em volta de qualquer desenho.
+ * draw recebe o contexto já posicionado; box é a área (no espaço lógico) que o desenho ocupa.
+ */
+export function sticker(ctx: Ctx, box: { x: number; y: number; w: number; h: number }, draw: (c: Ctx) => void, outline = 14, shadow = true) {
+  const scale = ctx.getTransform().a || 1;
+  const pad = outline + 30;
+  const cw = Math.ceil((box.w + pad * 2) * scale);
+  const ch = Math.ceil((box.h + pad * 2) * scale);
+  const art = document.createElement('canvas');
+  art.width = cw;
+  art.height = ch;
+  const a = art.getContext('2d')!;
+  a.scale(scale, scale);
+  a.translate(pad - box.x, pad - box.y);
+  draw(a);
+  // silhueta branca dilatada
+  const sil = document.createElement('canvas');
+  sil.width = cw;
+  sil.height = ch;
+  const s = sil.getContext('2d')!;
+  const steps = 24;
+  for (let i = 0; i < steps; i++) {
+    const ang = (i / steps) * Math.PI * 2;
+    s.drawImage(art, Math.cos(ang) * outline * scale, Math.sin(ang) * outline * scale);
+  }
+  s.drawImage(art, 0, 0);
+  s.globalCompositeOperation = 'source-in';
+  s.fillStyle = '#fff';
+  s.fillRect(0, 0, cw, ch);
+  ctx.save();
+  if (shadow) {
+    ctx.shadowColor = 'rgba(60,40,30,.22)';
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 8;
+  }
+  ctx.drawImage(sil, box.x - pad, box.y - pad, box.w + pad * 2, box.h + pad * 2);
+  ctx.restore();
+  ctx.drawImage(art, box.x - pad, box.y - pad, box.w + pad * 2, box.h + pad * 2);
+}
+
+/** Bolinhas (poá) — chame dentro de um clip. */
+export function polkaDots(ctx: Ctx, x: number, y: number, w: number, h: number, color: string, gap = 40, r = 6) {
+  ctx.fillStyle = color;
+  let row = 0;
+  for (let yy = y; yy < y + h + gap; yy += gap * 0.87) {
+    for (let xx = x + (row % 2 ? gap / 2 : 0); xx < x + w + gap; xx += gap) {
+      ctx.beginPath();
+      ctx.arc(xx, yy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    row++;
+  }
+}
+
+/** Texto com contorno (fica legível sobre qualquer fundo). */
+export function outlinedText(ctx: Ctx, str: string, x: number, y: number, o: { size: number; family: string; fill: string | CanvasGradient; stroke: string; strokeW: number; align?: CanvasTextAlign; maxWidth?: number; weight?: number }) {
+  ctx.save();
+  let size = o.size;
+  const setFont = () => (ctx.font = `${o.weight ?? 700} ${size}px ${o.family}`);
+  setFont();
+  if (o.maxWidth) while (ctx.measureText(str).width > o.maxWidth && size > o.size * 0.5) (size -= 2), setFont();
+  ctx.textAlign = o.align ?? 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  ctx.lineWidth = o.strokeW * (size / o.size);
+  ctx.strokeStyle = o.stroke;
+  ctx.strokeText(str, x, y);
+  ctx.fillStyle = o.fill;
+  ctx.fillText(str, x, y);
+  ctx.restore();
+}
+
+/** Número dourado metalizado (estilo balão de número). */
+export function foilNumber(ctx: Ctx, n: string, x: number, y: number, size: number, family: string) {
+  ctx.save();
+  ctx.font = `700 ${size}px ${family}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const g = ctx.createLinearGradient(x, y - size * 0.8, x, y);
+  g.addColorStop(0, '#FFE9A8');
+  g.addColorStop(0.35, '#F2B33D');
+  g.addColorStop(0.55, '#FFF4D0');
+  g.addColorStop(0.75, '#E39B1F');
+  g.addColorStop(1, '#C47A12');
+  ctx.shadowColor = 'rgba(120,70,10,.35)';
+  ctx.shadowBlur = size * 0.08;
+  ctx.shadowOffsetY = size * 0.04;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = size * 0.12;
+  ctx.strokeStyle = '#fff';
+  ctx.strokeText(n, x, y);
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = g;
+  ctx.fillText(n, x, y);
+  // reflexo
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = size * 0.015;
+  ctx.strokeStyle = '#FFF8E0';
+  ctx.strokeText(n, x - size * 0.015, y - size * 0.02);
+  ctx.restore();
+}
+
+/** Faixa de baixo com o topo em ondas (como cobertura de bolo). */
+export function frostingEdge(ctx: Ctx, x: number, y: number, w: number, h: number, color: string, waves = 9) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x, y);
+  const step = w / waves;
+  for (let i = 0; i < waves; i++) {
+    const x0 = x + i * step;
+    ctx.quadraticCurveTo(x0 + step / 2, y - h * 0.32 * (i % 2 ? 1.2 : 0.85), x0 + step, y);
+  }
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
