@@ -67,7 +67,7 @@ Enquanto uma página não tem template + campos mapeados, ela usa o desenho prov
 | Passaporte | `passaporte-capa`, `passaporte-dados`, `passaporte-carimbos` |
 | Tag ossinho | `tag-nome`, `tag-qr` |
 | Identidade (QR) | `ficha` |
-| Vacinação | `vacina-capa`, `vacina-vacinas`, `vacina-tratamentos` |
+| Vacinação (dobrável, rosa ou azul, montada em código) | `vacina-fora`, `vacina-dentro` |
 | Torcedor (montada em código com o time, sem template) | `torcedor-frente`, `torcedor-verso` |
 | Capa e instruções (início do PDF) | `guia-capa`, `guia-instrucoes` |
 | Bônus Aniversário | `aniv-convite`, `aniv-topo`, `aniv-plaquinhas`, `aniv-certificado` |

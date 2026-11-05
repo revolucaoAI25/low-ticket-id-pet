@@ -21,7 +21,8 @@ export const INSTRUCTIONS: { title: string; body: string }[] = [
   { title: 'RG, CNH e Torcedor', body: 'Recorte frente e verso, cole um no outro (cola bastão ou fita dupla face) e plastifique. Na papelaria, peça plastificação no tamanho de documento.' },
   { title: 'Tag Ossinho com QR Code', body: 'Recorte os dois lados do ossinho, cole um no outro e plastifique. Fure no círculo e prenda na coleira com uma argola ou porta-tag. Teste o QR Code com a câmera antes de usar.' },
   { title: 'Passaporte de Aventuras', body: 'Recorte as páginas, dobre ao meio e grampeie como um livrinho. Use para colar fotos e "carimbar" passeios e primeiras vezes.' },
-  { title: 'Certidão e Carteira de Vacinação', body: 'A certidão fica linda numa moldura A4. A carteira de vacinação pode ser dobrada ou guardada numa pasta junto com os papéis do veterinário.' },
+  { title: 'Carteira de Vacinação (dobrável)', body: 'Imprima as duas páginas dela em frente e verso, virando pela borda longa (ou cole uma atrás da outra). Dobre o painel da direita para dentro e depois o da esquerda por cima: a capa fica na frente.' },
+  { title: 'Certidão', body: 'Fica linda numa moldura A4. Use papel mais grosso (180 g) para durar mais.' },
   { title: 'Bônus', body: 'O Kit Aniversário traz convite, topo de bolo, plaquinhas e certificado: recorte e cole em palitos. O Kit Quem Cuida é para deixar com quem fica com seu pet.' },
 ];
 
@@ -71,19 +72,19 @@ export const guiaDoc: DocDef = {
         else bg(ctx);
         text(ctx, 'Como montar o seu kit', W / 2, 190, { size: 78, weight: 700, family: 'display', color: ROXO, align: 'center' });
         text(ctx, 'Leva uns 20 minutinhos. Vale chamar a família!', W / 2, 260, { size: 32, weight: 700, color: 'rgba(73,56,47,.7)', align: 'center' });
-        let y = 310;
+        let y = 296;
         INSTRUCTIONS.forEach((it, i) => {
-          rr(ctx, 100, y, W - 200, 170, 28);
+          rr(ctx, 100, y, W - 200, 156, 28);
           ctx.fillStyle = '#fff';
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(170, y + 85, 38, 0, Math.PI * 2);
+          ctx.arc(170, y + 78, 36, 0, Math.PI * 2);
           ctx.fillStyle = ROXO;
           ctx.fill();
-          text(ctx, String(i + 1), 170, y + 100, { size: 40, weight: 900, color: '#fff', align: 'center' });
-          text(ctx, it.title, 240, y + 56, { size: 34, weight: 700, family: 'display', color: '#3a2a22', maxWidth: W - 380 });
-          wrap(ctx, it.body, 240, y + 96, W - 380, 29, { size: 22, weight: 600, color: 'rgba(73,56,47,.85)', maxLines: 3 });
-          y += 182;
+          text(ctx, String(i + 1), 170, y + 92, { size: 40, weight: 900, color: '#fff', align: 'center' });
+          text(ctx, it.title, 240, y + 50, { size: 34, weight: 700, family: 'display', color: '#3a2a22', maxWidth: W - 380 });
+          wrap(ctx, it.body, 240, y + 88, W - 380, 28, { size: 21, weight: 600, color: 'rgba(73,56,47,.85)', maxLines: 3 });
+          y += 166;
         });
         line(ctx, 100, H - 120, W - 100, H - 120, 'rgba(73,56,47,.15)', 2);
         text(ctx, 'Produto personalizado de uso pessoal. Não tem validade oficial e não substitui documentos de médico-veterinário ou órgãos públicos.', W / 2, H - 70, {

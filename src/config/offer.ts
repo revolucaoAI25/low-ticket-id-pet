@@ -58,7 +58,7 @@ export const kitItems: OfferItem[] = [
     doc: 'vacina',
     short: 'Vacinação',
     title: 'Carteira de Vacinação',
-    lines: ['Vacinas, vermífugo e antipulgas organizados, com foto.', 'Lista de vacinas certa pra cada espécie.'],
+    lines: ['Dobrável em 3 partes, com foto: vacinas, vermífugo, antipulgas e peso.', 'Versão rosa ou azul, com as vacinas certas pra cada espécie.'],
     value: 8,
   },
   {
