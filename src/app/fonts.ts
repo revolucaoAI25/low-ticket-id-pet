@@ -1,16 +1,21 @@
-import { Fredoka, Nunito } from 'next/font/google';
+import localFont from 'next/font/local';
 
-// Fontes da marca (guia de identidade: títulos Fredoka, textos Nunito).
-export const fontDisplay = Fredoka({
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
+// Fontes da marca (títulos Fredoka, textos Nunito), guardadas no projeto:
+// o build não depende de baixar nada do Google na hora do deploy.
+export const fontDisplay = localFont({
+  src: [
+    { path: './fonts/fredoka-latin-wght-normal.woff2', weight: '300 700', style: 'normal' },
+  ],
   variable: '--font-display',
   display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
 });
 
-export const fontBody = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '600', '700', '800', '900'],
+export const fontBody = localFont({
+  src: [
+    { path: './fonts/nunito-latin-wght-normal.woff2', weight: '200 1000', style: 'normal' },
+  ],
   variable: '--font-body',
   display: 'swap',
+  fallback: ['system-ui', 'sans-serif'],
 });
