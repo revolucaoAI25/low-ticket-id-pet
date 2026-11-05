@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   if (sb && email) {
     const { data } = await sb
       .from('customers')
-      .select('email, access_token, pets(data, files, submitted_at)')
+      .select('email, access_token, bumps, pets(data, files, submitted_at)')
       .eq('email', email)
       .not('paid_at', 'is', null)
       .is('refunded_at', null)

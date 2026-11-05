@@ -8,7 +8,7 @@ import { allPages } from '@/lib/docs/render';
 import { TEAMS } from '@/lib/teams';
 import { Modelos } from './Modelos';
 
-type Tab = 'funil' | 'pedidos' | 'modelos' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
+type Tab = 'funil' | 'pedidos' | 'modelos' | 'bumps' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
 const TABS: [Tab, string][] = [
   ['funil', 'Funil'],
   ['pedidos', 'Pedidos'],
@@ -19,6 +19,7 @@ const TABS: [Tab, string][] = [
   ['imagens', 'Imagens e templates'],
   ['modelos', 'Conferir documentos'],
   ['bonus', 'PDFs dos bônus'],
+  ['bumps', 'Order bumps'],
   ['times', 'Times'],
   ['contato', 'Suporte'],
 ];
@@ -192,6 +193,33 @@ export function Admin() {
         )}
 
         {tab === 'times' && <TeamsTab s={s} set={set} />}
+
+        {tab === 'bumps' && (
+          <Card
+            title="Order bumps de conteúdo"
+            hint="Quando o webhook da Kiwify trouxer um destes (no pedido do kit ou num pedido separado), o PDF vai por e-mail na hora e também entra no fim do PDF do kit. As palavras-chave precisam aparecer no nome do bump na Kiwify (sem acento, separadas por vírgula). O '+1 pet' é configurado na aba Checkouts."
+          >
+            {s.bumps.map((b, i) => (
+              <div key={i} className="space-y-2 rounded-2xl bg-areia/50 p-3">
+                <Grid>
+                  <Text label="Nome (aparece no e-mail)" value={b.name} onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, name: v } : x)) })} />
+                  <Text label="Palavras-chave" value={b.keywords} onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, keywords: v } : x)) })} />
+                </Grid>
+                <Upload pdf label="PDF do bump" value={b.file} folder="bumps" onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, file: v } : x)) })} />
+                <button type="button" className="text-sm font-bold text-red-600" onClick={() => set({ bumps: s.bumps.filter((_, j) => j !== i) })}>
+                  Remover
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-ghost w-full !min-h-[44px] !text-base"
+              onClick={() => set({ bumps: [...s.bumps, { id: `bump-${Date.now().toString(36)}`, name: '', keywords: '', file: '' }] })}
+            >
+              + Adicionar bump
+            </button>
+          </Card>
+        )}
 
         {tab === 'contato' && (
           <Card title="Suporte e empresa">
@@ -601,14 +629,20 @@ function Upload({ label, value, onChange, folder, pdf }: { label: string; value:
               if (!f) return;
               setBusy(true);
               setErr('');
-              const fd = new FormData();
-              fd.append('file', f);
-              fd.append('folder', folder);
-              const r = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+              const r = await fetch('/api/admin/upload', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ name: f.name, type: f.type, folder }),
+              });
               const d = await r.json().catch(() => ({}));
+              if (!r.ok) {
+                setBusy(false);
+                return setErr(d.error || 'Erro no envio');
+              }
+              const up = await fetch(d.signedUrl, { method: 'PUT', headers: { 'content-type': f.type }, body: f });
               setBusy(false);
-              if (r.ok) onChange(d.url);
-              else setErr(d.error || 'Erro no envio');
+              if (up.ok) onChange(d.url);
+              else setErr('Erro ao enviar o arquivo');
             }}
           />
         </label>

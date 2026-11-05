@@ -9,6 +9,7 @@ import { aniversarioDoc } from './templates/aniversario';
 import { certidaoDoc } from './templates/certidao';
 import { cnhDoc } from './templates/cnh';
 import { fichaDoc } from './templates/ficha';
+import { guiaDoc } from './templates/guia';
 import { passaporteDoc } from './templates/passaporte';
 import { quemCuidaDoc } from './templates/quemcuida';
 import { rgDoc } from './templates/rg';
@@ -29,6 +30,7 @@ export const DOCS: Record<string, DocDef> = {
   torcedor: torcedorDoc,
   ficha: fichaDoc,
   aniversario: aniversarioDoc,
+  guia: guiaDoc,
   quemcuida: quemCuidaDoc,
 };
 
@@ -180,75 +182,81 @@ export function pdfData(canvas: HTMLCanvasElement, page: DocPage): string {
  * Páginas do tamanho A4 ocupam a folha inteira; peças menores (RG, CNH, tag, passaporte…)
  * são encaixadas em tamanho real, com linha de corte, gastando o mínimo de papel.
  */
-export async function composePdf(items: PdfItem[]): Promise<Blob> {
+export async function composePdf(input: PdfItem[] | PdfItem[][]): Promise<Blob> {
+  // Grupos (ex.: capa, documentos, bônus) ficam em sequência: cada grupo com suas folhas A4 e depois as peças encaixadas.
+  const groups: PdfItem[][] = Array.isArray(input[0]) ? (input as PdfItem[][]) : [input as PdfItem[]];
   const { jsPDF } = await import('jspdf');
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   let first = true;
+  let aliasBase = 0;
   const addImg = (it: PdfItem, idx: number, x: number, y: number, w: number, h: number) => {
     // Alias: cada imagem entra uma vez no arquivo, mesmo com várias cópias (tags).
-    pdf.addImage(it.data, it.page.shape ? 'PNG' : 'JPEG', x, y, w, h, `img${idx}`, 'FAST');
+    pdf.addImage(it.data, it.page.shape ? 'PNG' : 'JPEG', x, y, w, h, `img${aliasBase + idx}`, 'FAST');
   };
 
-  items.forEach((it, idx) => {
-    if (!isA4(it.page)) return;
-    const landscape = it.page.mm[0] > it.page.mm[1];
-    if (!first) pdf.addPage('a4', landscape ? 'landscape' : 'portrait');
-    else if (landscape) {
-      pdf.deletePage(1);
-      pdf.addPage('a4', 'landscape');
-    }
-    first = false;
-    const [pw, ph] = landscape ? [A4[1], A4[0]] : A4;
-    addImg(it, idx, 0, 0, pw, ph);
-  });
-
-  type Piece = { idx: number; w: number; h: number };
-  const pieces: Piece[] = [];
-  items.forEach((it, idx) => {
-    if (isA4(it.page)) return;
-    for (const [w, h] of it.page.printCopies ?? [it.page.mm]) pieces.push({ idx, w, h });
-  });
-
-  if (pieces.length) {
-    const usableW = A4[0] - MARGIN * 2;
-    const usableH = A4[1] - MARGIN * 2;
-    type Shelf = { sheet: number; y: number; h: number; x: number };
-    const shelves: Shelf[] = [];
-    const sheetBottom: number[] = [];
-    const placed: { pc: Piece; sheet: number; x: number; y: number }[] = [];
-    const order = pieces.map((pc, i) => ({ pc, i })).sort((a, b) => b.pc.h - a.pc.h || a.i - b.i);
-    for (const { pc } of order) {
-      let shelf = shelves.find((sh) => sh.x + pc.w <= usableW + 0.01 && pc.h <= sh.h + 0.01);
-      if (!shelf) {
-        let sheet = sheetBottom.findIndex((bottom) => bottom + pc.h <= usableH + 0.01);
-        if (sheet === -1) {
-          sheetBottom.push(0);
-          sheet = sheetBottom.length - 1;
-        }
-        shelf = { sheet, y: sheetBottom[sheet], h: pc.h, x: 0 };
-        sheetBottom[sheet] += pc.h + GAP;
-        shelves.push(shelf);
+  for (const items of groups) {
+    items.forEach((it, idx) => {
+      if (!isA4(it.page)) return;
+      const landscape = it.page.mm[0] > it.page.mm[1];
+      if (!first) pdf.addPage('a4', landscape ? 'landscape' : 'portrait');
+      else if (landscape) {
+        pdf.deletePage(1);
+        pdf.addPage('a4', 'landscape');
       }
-      placed.push({ pc, sheet: shelf.sheet, x: MARGIN + shelf.x, y: MARGIN + shelf.y });
-      shelf.x += pc.w + GAP;
-    }
-    for (let sheet = 0; sheet < sheetBottom.length; sheet++) {
-      if (!first) pdf.addPage('a4', 'portrait');
       first = false;
-      pdf.setFontSize(7);
-      pdf.setTextColor(140, 120, 110);
-      pdf.text('Recorte na linha pontilhada · Clube do Focinho · Kit Identidade Pet', A4[0] / 2, A4[1] - 3, { align: 'center' });
-      for (const { pc, x, y } of placed.filter((pl) => pl.sheet === sheet)) {
-        const it = items[pc.idx];
-        addImg(it, pc.idx, x, y, pc.w, pc.h);
-        pdf.setLineDashPattern([1.2, 1.2], 0);
-        pdf.setDrawColor(170, 150, 140);
-        pdf.setLineWidth(0.2);
-        if (it.page.shape === 'round') pdf.circle(x + pc.w / 2, y + pc.h / 2, pc.w / 2 + 0.6, 'S');
-        else if (!it.page.shape) pdf.roundedRect(x - 0.6, y - 0.6, pc.w + 1.2, pc.h + 1.2, 2, 2, 'S');
-        pdf.setLineDashPattern([], 0);
+      const [pw, ph] = landscape ? [A4[1], A4[0]] : A4;
+      addImg(it, idx, 0, 0, pw, ph);
+    });
+
+    type Piece = { idx: number; w: number; h: number };
+    const pieces: Piece[] = [];
+    items.forEach((it, idx) => {
+      if (isA4(it.page)) return;
+      for (const [w, h] of it.page.printCopies ?? [it.page.mm]) pieces.push({ idx, w, h });
+    });
+
+    if (pieces.length) {
+      const usableW = A4[0] - MARGIN * 2;
+      const usableH = A4[1] - MARGIN * 2;
+      type Shelf = { sheet: number; y: number; h: number; x: number };
+      const shelves: Shelf[] = [];
+      const sheetBottom: number[] = [];
+      const placed: { pc: Piece; sheet: number; x: number; y: number }[] = [];
+      const order = pieces.map((pc, i) => ({ pc, i })).sort((a, b) => b.pc.h - a.pc.h || a.i - b.i);
+      for (const { pc } of order) {
+        let shelf = shelves.find((sh) => sh.x + pc.w <= usableW + 0.01 && pc.h <= sh.h + 0.01);
+        if (!shelf) {
+          let sheet = sheetBottom.findIndex((bottom) => bottom + pc.h <= usableH + 0.01);
+          if (sheet === -1) {
+            sheetBottom.push(0);
+            sheet = sheetBottom.length - 1;
+          }
+          shelf = { sheet, y: sheetBottom[sheet], h: pc.h, x: 0 };
+          sheetBottom[sheet] += pc.h + GAP;
+          shelves.push(shelf);
+        }
+        placed.push({ pc, sheet: shelf.sheet, x: MARGIN + shelf.x, y: MARGIN + shelf.y });
+        shelf.x += pc.w + GAP;
+      }
+      for (let sheet = 0; sheet < sheetBottom.length; sheet++) {
+        if (!first) pdf.addPage('a4', 'portrait');
+        first = false;
+        pdf.setFontSize(7);
+        pdf.setTextColor(140, 120, 110);
+        pdf.text('Recorte na linha pontilhada · Clube do Focinho · Kit Identidade Pet', A4[0] / 2, A4[1] - 3, { align: 'center' });
+        for (const { pc, x, y } of placed.filter((pl) => pl.sheet === sheet)) {
+          const it = items[pc.idx];
+          addImg(it, pc.idx, x, y, pc.w, pc.h);
+          pdf.setLineDashPattern([1.2, 1.2], 0);
+          pdf.setDrawColor(170, 150, 140);
+          pdf.setLineWidth(0.2);
+          if (it.page.shape === 'round') pdf.circle(x + pc.w / 2, y + pc.h / 2, pc.w / 2 + 0.6, 'S');
+          else if (!it.page.shape) pdf.roundedRect(x - 0.6, y - 0.6, pc.w + 1.2, pc.h + 1.2, 2, 2, 'S');
+          pdf.setLineDashPattern([], 0);
+        }
       }
     }
+    aliasBase += items.length;
   }
   return pdf.output('blob');
 }

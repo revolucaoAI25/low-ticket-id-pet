@@ -26,6 +26,16 @@ export interface ExtraTeam {
   secondary: string;
 }
 
+/** Order bump de conteúdo (PDF pronto), entregue por e-mail e no fim do PDF do kit. */
+export interface Bump {
+  id: string;
+  name: string;
+  /** Palavras (sem acento, separadas por vírgula) que identificam o bump no webhook da Kiwify. */
+  keywords: string;
+  /** PDF enviado pelo painel. */
+  file: string;
+}
+
 export interface SiteSettings {
   price: number;
   anchorPrice: number;
@@ -76,11 +86,12 @@ export interface SiteSettings {
     reviews: Review[];
   };
   extraTeams: ExtraTeam[];
+  bumps: Bump[];
 }
 
 export const defaultSettings: SiteSettings = {
   price: 19.9,
-  anchorPrice: 180,
+  anchorPrice: 67,
   timerMinutes: 10,
   rating: 4.9,
   tutorsCount: 0,
@@ -106,6 +117,16 @@ export const defaultSettings: SiteSettings = {
   files: { calendarioCao: '', calendarioGato: '', calendarioOutros: '', guiaViagem: '' },
   proof: { avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
   extraTeams: [],
+  bumps: [
+    { id: 'petiscos-cao', name: 'Petiscos Fit em 3 Ingredientes', keywords: 'petiscos fit em 3, petiscos fit 3 ingredientes', file: '' },
+    { id: 'xixi', name: 'Xixi no Lugar Certo em 7 Dias', keywords: 'xixi no lugar certo', file: '' },
+    { id: 'latidos', name: 'Fim dos Latidos Sem Gritar', keywords: 'fim dos latidos', file: '' },
+    { id: 'petiscos-gato', name: 'Petiscos Fit para Gatos', keywords: 'petiscos fit para gatos', file: '' },
+    { id: 'areia', name: 'Caixa de Areia Sem Cheiro', keywords: 'caixa de areia', file: '' },
+    { id: 'arranhar', name: 'Gato Sem Arranhar o Sofá', keywords: 'arranhar o sofa', file: '' },
+    { id: 'album', name: 'Álbum do Primeiro Ano do Pet', keywords: 'album do primeiro ano', file: '' },
+    { id: 'cuidados', name: 'Guia de Cuidados Básicos por Espécie', keywords: 'cuidados basicos', file: '' },
+  ],
 };
 
 /**
@@ -145,6 +166,7 @@ export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): 
     files: { ...defaultSettings.files, ...(s.files ?? {}) },
     proof: { ...defaultSettings.proof, ...(s.proof ?? {}) },
     extraTeams: s.extraTeams ?? [],
+    bumps: s.bumps?.length ? s.bumps : defaultSettings.bumps,
     extraPetKeywords: s.extraPetKeywords?.length ? s.extraPetKeywords : defaultSettings.extraPetKeywords,
   };
 }

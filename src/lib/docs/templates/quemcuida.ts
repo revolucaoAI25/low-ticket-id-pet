@@ -96,12 +96,15 @@ export const quemCuidaDoc: DocDef = {
         ctx.stroke();
         text(ctx, 'Em caso de emergência', 112, 1390, { size: 36, weight: 700, family: 'display', color: '#C2410C' });
         const contacts: [string, string][] = [];
-        if (p.tutors || c.phone) contacts.push([`Tutores: ${p.tutors ?? ''}`, formatPhone(c.phone)]);
+        // Um contato por tutor (com o telefone de cada um, quando informado).
+        const tutors = (p.tutors ?? []).filter((t) => t.name || t.phone);
+        tutors.forEach((t, i) => contacts.push([`Tutor: ${t.name}`, formatPhone(t.phone || (i === 0 ? c.phone : ''))]));
+        if (!tutors.length && c.phone) contacts.push(['Tutor', formatPhone(c.phone)]);
         for (const ct of ex.contacts ?? []) contacts.push([`${ct.name}${ct.relation ? ` (${ct.relation})` : ''}`, formatPhone(ct.phone)]);
         if (ex.vetName || ex.vetClinic || ex.vetPhone) contacts.push([`Veterinário: ${[ex.vetName, ex.vetClinic].filter(Boolean).join(' · ')}`, formatPhone(ex.vetPhone)]);
-        while (contacts.length < 4) contacts.push(['', '']);
-        contacts.slice(0, 4).forEach(([n, ph], i) => {
-          const y = 1460 + i * 54;
+        while (contacts.length < 5) contacts.push(['', '']);
+        contacts.slice(0, 5).forEach(([n, ph], i) => {
+          const y = 1450 + i * 46;
           if (n) text(ctx, n, 112, y, { size: 27, weight: 700, color: '#49382F', maxWidth: 640 });
           if (ph) text(ctx, ph, W - 112, y, { size: 27, weight: 900, color: ROXO, align: 'right' });
           line(ctx, 112, y + 14, W - 112, y + 14, 'rgba(73,56,47,.14)', 2);

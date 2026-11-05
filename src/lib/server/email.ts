@@ -38,15 +38,38 @@ async function send(to: string, subject: string, html: string, attachments?: { f
 }
 
 /** Pagamento aprovado: pede para conferir os dados (link da página de confirmação). */
-export async function sendConfirmEmail(to: string, token: string, doNome?: string): Promise<boolean> {
+export async function sendConfirmEmail(to: string, token: string, doNome?: string, bumps: { label: string; url: string }[] = []): Promise<boolean> {
   const link = `${siteUrl()}/confirmar/${token}`;
   const quem = doNome && doNome !== 'do seu pet' ? doNome : 'do seu pet';
   const title = `Falta só um passo pro kit ${quem}! 🐾`;
   const body = `
   <tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Pagamento confirmado! Agora é só conferir os dados ${quem} e completar o que faltar. Em seguida você recebe todos os documentos aqui no e-mail.</td></tr>
   <tr><td align="center" style="padding-top:24px">${button(link, 'Conferir e receber o kit')}</td></tr>
-  <tr><td style="padding-top:24px;font-size:12px;color:#8a7566;text-align:center">Se o botão não abrir, copie este link:<br>${link}</td></tr>`;
-  return send(to, title, layout(title, body));
+  <tr><td style="padding-top:24px;font-size:12px;color:#8a7566;text-align:center">Se o botão não abrir, copie este link:<br>${link}</td></tr>
+  ${bumpsBlock(bumps)}`;
+  return send(to, title, layout(title, body), bumps.map((b) => ({ filename: pdfName(b.label), path: b.url })));
+}
+
+const pdfName = (label: string) =>
+  label
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') + '.pdf';
+
+function bumpsBlock(bumps: { label: string; url: string }[]): string {
+  if (!bumps.length) return '';
+  return `<tr><td style="padding-top:24px;font-size:15px;line-height:1.5"><b>Seus extras já estão anexados:</b>${bumps
+    .map((b) => `<p style="margin:8px 0 0"><a href="${b.url}" style="color:#6F2A7A;font-weight:bold">⬇ ${b.label}</a></p>`)
+    .join('')}</td></tr>`;
+}
+
+/** Order bump comprado em pedido separado: entrega na hora. */
+export async function sendBumpsEmail(to: string, bumps: { label: string; url: string }[]): Promise<boolean> {
+  if (!bumps.length) return false;
+  const title = 'Seu extra chegou! 🐾';
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Obrigado pela compra! O material está anexado a este e-mail.</td></tr>${bumpsBlock(bumps)}`;
+  return send(to, title, layout(title, body), bumps.map((b) => ({ filename: pdfName(b.label), path: b.url })));
 }
 
 export interface KitFile {
@@ -63,13 +86,13 @@ export async function sendKitEmail(to: string, doNome: string, files: KitFile[],
   const zip = files.find((f) => f.kind === 'zip');
   const ficha = files.find((f) => f.kind === 'ficha');
   const links = [
-    ...pdfs.map((f) => ({ label: f.kind === 'kit-pdf' ? 'Documentos para imprimir (PDF)' : 'Bônus personalizados (PDF)', url: f.url })),
-    ...(zip ? [{ label: 'Todas as imagens em alta resolução (.zip)', url: zip.url }] : []),
+    ...pdfs.map((f) => ({ label: f.kind === 'kit-pdf' ? 'Kit completo para imprimir (PDF)' : 'Bônus personalizados (PDF)', url: f.url })),
+    ...(zip ? [{ label: 'Imagens soltas em alta resolução (.zip, opcional)', url: zip.url }] : []),
     ...(ficha ? [{ label: 'Identidade que abre no QR Code da tag', url: ficha.url }] : []),
     ...extraLinks,
   ];
   const body = `
-  <tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Os PDFs estão anexados a este e-mail, prontos pra imprimir em folha A4 (tudo em tamanho real, com linha de corte). Guarde este e-mail: os links abaixo ficam sempre disponíveis.</td></tr>
+  <tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Está tudo num PDF só, anexado a este e-mail: capa, instruções de montagem, documentos e bônus. É só imprimir em A4 (tamanho real), recortar na linha pontilhada e plastificar. Guarde este e-mail: os links abaixo ficam sempre disponíveis.</td></tr>
   <tr><td style="padding-top:20px">${links
     .map((l) => `<p style="margin:0 0 10px"><a href="${l.url}" style="color:#6F2A7A;font-weight:bold;font-size:15px">⬇ ${l.label}</a></p>`)
     .join('')}</td></tr>

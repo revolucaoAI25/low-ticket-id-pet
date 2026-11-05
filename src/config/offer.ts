@@ -19,7 +19,7 @@ export const kitItems: OfferItem[] = [
     short: 'RG do Pet',
     title: 'RG do Pet',
     lines: ['Frente e verso com foto, nome, raça, personalidade e tutores.', 'Campos para o nº do microchip e do RG Animal. 5 cores.'],
-    value: 27,
+    value: 12,
   },
   {
     id: 'cnh',
@@ -27,7 +27,7 @@ export const kitItems: OfferItem[] = [
     short: 'CNH Pet',
     title: 'CNH Pet',
     lines: ['A carteira de habilitação mais divertida: categorias, validade "eterna" e tudo.', 'Com foto, nome e os tutores.'],
-    value: 27,
+    value: 10,
   },
   {
     id: 'certidao',
@@ -35,7 +35,7 @@ export const kitItems: OfferItem[] = [
     short: 'Certidão',
     title: 'Certidão de {certidao}',
     lines: ['A história {do} num documento lindo pra emoldurar.', 'Foto, data, cidade e o nome dos tutores.'],
-    value: 24,
+    value: 9,
   },
   {
     id: 'passaporte',
@@ -43,7 +43,7 @@ export const kitItems: OfferItem[] = [
     short: 'Passaporte',
     title: 'Passaporte de Aventuras',
     lines: ['Livreto pra "carimbar" passeios e primeiras vezes.', 'Com foto, dados {do} e páginas de carimbos.'],
-    value: 29,
+    value: 9,
   },
   {
     id: 'tag',
@@ -51,7 +51,7 @@ export const kitItems: OfferItem[] = [
     short: 'Tag QR Code',
     title: 'Tag Ossinho com QR Code',
     lines: ['Quem encontrar {nome} escaneia e vê a identidade completa, com o seu contato.', 'Formato de ossinho, pronta pra recortar e pendurar na coleira.'],
-    value: 37,
+    value: 12,
   },
   {
     id: 'vacina',
@@ -59,7 +59,7 @@ export const kitItems: OfferItem[] = [
     short: 'Vacinação',
     title: 'Carteira de Vacinação',
     lines: ['Vacinas, vermífugo e antipulgas organizados, com foto.', 'Lista de vacinas certa pra cada espécie.'],
-    value: 19,
+    value: 8,
   },
   {
     id: 'torcedor',
@@ -67,7 +67,7 @@ export const kitItems: OfferItem[] = [
     short: 'Torcedor',
     title: 'Carteirinha de Torcedor Pet',
     lines: ['"Torcedor oficial — Fã nº 1" com o escudo do time.', 'A carteirinha mais divertida da família.'],
-    value: 17,
+    value: 7,
   },
 ];
 
@@ -88,7 +88,7 @@ export const bonusItems: BonusItem[] = [
     doc: 'aniversario',
     title: 'Kit Aniversário {do}',
     lines: ['Convite, topo de bolo, plaquinhas e certificado.', 'Com as fotos, o nome e a cor favorita {do}.'],
-    value: 29,
+    value: 9,
     personalized: true,
     imageKey: 'bonusAniversario',
     emoji: '🎂',
@@ -98,7 +98,7 @@ export const bonusItems: BonusItem[] = [
     doc: 'quemcuida',
     title: 'Kit Quem Cuida {do}',
     lines: ['Ficha de rotina pra pet sitter, avós, creche ou hotel.', 'Comida, passeios, remédios, manias e contatos.'],
-    value: 19,
+    value: 7,
     personalized: true,
     imageKey: 'bonusQuemCuida',
     emoji: '📋',
@@ -107,7 +107,7 @@ export const bonusItems: BonusItem[] = [
     id: 'calendario',
     title: 'Calendário de Saúde por Idade',
     lines: ['O que fazer em cada fase da vida, de filhote a idoso.', 'Versões para cão e para gato.'],
-    value: 27,
+    value: 9,
     personalized: false,
     imageKey: 'bonusCalendario',
     emoji: '🗓️',
@@ -116,12 +116,12 @@ export const bonusItems: BonusItem[] = [
     id: 'viagem',
     title: 'Guia: Como Viajar com seu Pet',
     lines: ['Carro, avião, ônibus e hotel: o que levar e o que exigir.', 'Checklist pronto pra imprimir.'],
-    value: 24,
+    value: 7,
     personalized: false,
     imageKey: 'bonusViagem',
     emoji: '🧳',
   },
 ];
 
-export const kitTotal = kitItems.reduce((s, i) => s + i.value, 0); // 180
-export const fullTotal = kitTotal + bonusItems.reduce((s, i) => s + i.value, 0); // 279
+export const kitTotal = kitItems.reduce((s, i) => s + i.value, 0); // 67
+export const fullTotal = kitTotal + bonusItems.reduce((s, i) => s + i.value, 0); // 99

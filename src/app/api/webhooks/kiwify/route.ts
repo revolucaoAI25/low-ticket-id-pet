@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
-import { sendConfirmEmail } from '@/lib/server/email';
+import { bumpFiles, bumpsInPayload, productIsBump } from '@/lib/server/bumps';
+import { sendBumpsEmail, sendConfirmEmail } from '@/lib/server/email';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail, normPhone, token } from '@/lib/server/util';
@@ -75,6 +76,11 @@ export async function POST(req: Request) {
   const payloadText = normalize(JSON.stringify(o));
   const bumpExtraPet = !productIsExtraPet && keywords.some((k) => payloadText.includes(k));
   const extraPets = productIsExtraPet || bumpExtraPet ? 1 : 0;
+  // Order bumps de conteúdo (PDF): no próprio pedido ou como pedido separado.
+  const bumps = bumpsInPayload(JSON.stringify(o), settings);
+  const onlyBump = !productIsExtraPet && productIsBump(productName, settings);
+  /** Pedido que não é o kit em si (só "+1 pet" ou só um bump): não libera o kit sozinho. */
+  const addOn = productIsExtraPet || onlyBump;
 
   const { data: existing } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle();
   const alreadyPaid = existing?.status === 'paid';
@@ -98,7 +104,7 @@ export async function POST(req: Request) {
 
   if (isRefund) {
     const custId = existing?.customer_id;
-    if (custId && !productIsExtraPet) await sb.from('customers').update({ refunded_at: new Date().toISOString() }).eq('id', custId);
+    if (custId && !addOn) await sb.from('customers').update({ refunded_at: new Date().toISOString() }).eq('id', custId);
     else if (custId && productIsExtraPet) {
       const { data: c } = await sb.from('customers').select('extra_pet_slots').eq('id', custId).maybeSingle();
       if (c) await sb.from('customers').update({ extra_pet_slots: Math.max(0, (c.extra_pet_slots ?? 0) - 1) }).eq('id', custId);
@@ -109,16 +115,16 @@ export async function POST(req: Request) {
   if (!isPaid || alreadyPaid) return json({ ok: true, skipped: !isPaid ? 'not paid' : 'duplicate' });
 
   // ---------- encontra o lead ----------
-  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; created_at: string; pets: { data: Obj }[] };
+  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; pets: { data: Obj }[] };
   let candidates: Cust[] = [];
   if (email) {
-    const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, created_at, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
+    const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
     candidates = (data as unknown as Cust[]) ?? [];
   }
   if (!candidates.length && phone.length >= 10) {
     const { data } = await sb
       .from('customers')
-      .select('id, access_token, paid_at, extra_pet_slots, created_at, pets(data)')
+      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, pets(data)')
       .like('phone', `%${phone.slice(-8)}`)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -126,7 +132,7 @@ export async function POST(req: Request) {
   }
 
   let cust: Cust | undefined;
-  if (productIsExtraPet) {
+  if (addOn) {
     cust = candidates.find((c) => c.paid_at) ?? candidates[0];
   } else {
     cust = candidates.find((c) => !c.paid_at && c.pets?.length) ?? candidates.find((c) => !c.paid_at) ?? candidates[0];
@@ -137,27 +143,35 @@ export async function POST(req: Request) {
     const { data } = await sb
       .from('customers')
       .insert({ email: email || null, phone: phone || null, name: fullName || null, access_token: token() })
-      .select('id, access_token, paid_at, extra_pet_slots, created_at')
+      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at')
       .single();
     if (!data) return json({ error: 'customer' }, 500);
     cust = { ...(data as Omit<Cust, 'pets'>), pets: [] };
   }
 
   const wasPaid = !!cust.paid_at;
+  const had = new Set(cust.bumps ?? []);
+  const newBumps = bumps.filter((b) => !had.has(b));
   const patch: Obj = {
     name: fullName || undefined,
     extra_pet_slots: (cust.extra_pet_slots ?? 0) + extraPets,
+    bumps: [...had, ...newBumps],
     updated_at: new Date().toISOString(),
   };
-  if (!productIsExtraPet && !wasPaid) {
+  if (!addOn && !wasPaid) {
     patch.paid_at = new Date().toISOString();
     patch.refunded_at = null;
   }
   await sb.from('customers').update(patch).eq('id', cust.id);
   await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderId);
 
-  if (!productIsExtraPet && !wasPaid && email) {
-    await sendConfirmEmail(email, cust.access_token, cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined);
+  const doNome = cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined;
+  if (!addOn && !wasPaid && email) {
+    // Kit liberado: e-mail para conferir os dados (com os bumps comprados já anexados).
+    await sendConfirmEmail(email, cust.access_token, doNome, bumpFiles(patch.bumps as string[], settings));
+  } else if (newBumps.length && email) {
+    // Bump chegou num pedido separado: manda só ele.
+    await sendBumpsEmail(email, bumpFiles(newBumps, settings));
   }
-  return json({ ok: true, customer: cust.id, extraPets });
+  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps });
 }

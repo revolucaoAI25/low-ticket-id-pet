@@ -1,6 +1,8 @@
 import { doPet, type PetData } from '@/lib/pet';
 import { sendKitEmail, type KitFile } from '@/lib/server/email';
+import { bumpFiles } from '@/lib/server/bumps';
 import { fixedBonusLinks } from '@/lib/server/notify';
+import { getSettings } from '@/lib/server/settings';
 import { createPet, petOut, sanitizePet, saveExtraPhotos, savePhoto, type PetRow } from '@/lib/server/pets';
 import { BUCKET_KITS, db, fichaPath } from '@/lib/server/supabase';
 import { json, normPhone } from '@/lib/server/util';
@@ -13,7 +15,7 @@ async function loadCustomer(tokenValue: unknown) {
   if (!sb || typeof tokenValue !== 'string' || tokenValue.length < 16) return null;
   const { data } = await sb
     .from('customers')
-    .select('id, email, phone, name, paid_at, refunded_at, extra_pet_slots')
+    .select('id, email, phone, name, paid_at, refunded_at, extra_pet_slots, bumps')
     .eq('access_token', tokenValue)
     .maybeSingle();
   return data;
@@ -29,7 +31,8 @@ export async function GET(req: Request) {
   if (!paid) return json({ paid: false, refunded: !!cust.refunded_at });
   const { data: pets } = await sb.from('pets').select('*').eq('customer_id', cust.id).order('created_at');
   const list = ((pets as PetRow[]) ?? []).map(petOut);
-  const bonus = list[0] ? await fixedBonusLinks(list[0].data) : [];
+  // PDFs prontos que entram no fim do PDF do kit: bônus fixos + order bumps comprados.
+  const bonus = [...(await fixedBonusLinks(list[0]?.data ?? {})), ...bumpFiles(cust.bumps, await getSettings())];
   return json({
     paid: true,
     customer: { email: cust.email, phone: cust.phone, name: cust.name },
@@ -106,7 +109,9 @@ export async function POST(req: Request) {
       .filter((f) => typeof f.path === 'string' && (f.path.startsWith(`${pet.id}/`) || f.path === fichaPath(pet.slug)))
       .map((f) => ({ name: String(f.name).slice(0, 80), kind: f.kind, url: sb.storage.from(BUCKET_KITS).getPublicUrl(f.path).data.publicUrl }));
     await sb.from('pets').update({ files, submitted_at: new Date().toISOString() }).eq('id', pet.id);
-    const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, await fixedBonusLinks(pet.data)) : false;
+    // Os bônus fixos e bumps já vão dentro do PDF; os links ficam no e-mail como reserva.
+    const extras = [...(await fixedBonusLinks(pet.data)), ...bumpFiles(cust.bumps, await getSettings())];
+    const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, extras) : false;
     return json({ ok: true, files, emailed });
   }
 

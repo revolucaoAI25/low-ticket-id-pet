@@ -1,6 +1,6 @@
 # Clube do Focinho · Kit Identidade Pet
 
-Funil de quiz que vende o Kit Identidade Pet (R$ 19,90): o anúncio cai direto no quiz, a pessoa "preenche" o documento do pet, vê a prévia do RG com foto e nome e recebe a oferta. Depois da compra, ela confere os dados **uma única vez** e recebe tudo no e-mail: PDF pronto pra imprimir (A4, tamanho real, linha de corte), PDF dos bônus, ZIP com todas as imagens e a identidade do pet que abre pelo QR Code da tag.
+Funil de quiz que vende o Kit Identidade Pet (R$ 19,90): o anúncio cai direto no quiz, a pessoa "preenche" o documento do pet, vê a prévia do RG com foto e nome e recebe a oferta. Depois da compra, ela confere os dados **uma única vez** e recebe tudo no e-mail num **PDF só**: capa, instruções de montagem, documentos (A4, tamanho real, linha de corte), bônus personalizados, bônus em PDF e os order bumps comprados. Vai também um ZIP opcional com as imagens soltas e a identidade do pet que abre pelo QR Code da tag.
 
 **Stack:** Next.js 15 (App Router) na Vercel · Supabase (banco + fotos) · Resend (e-mail de acesso, opcional) · documentos gerados no navegador por template (Canvas → PNG/PDF), sem IA.
 
@@ -31,7 +31,7 @@ Funil de quiz que vende o Kit Identidade Pet (R$ 19,90): o anúncio cai direto n
 
 ## O que trocar sem mexer no código (painel `/admin`)
 
-Pedidos (reenviar e-mail, liberar edição, copiar link) · links dos 3 checkouts · preço e ancoragem · timer · nota e nº de tutores · Pixel da Meta e Utmify · avatares, fotos do kit na vida real, prints de WhatsApp e Instagram, avaliações · imagem da abertura · capas dos bônus · fundos prontos dos documentos · PDFs dos bônus · times extras e escudos · suporte e dados da empresa. A aba **Funil** mostra quantas pessoas chegaram em cada tela.
+Pedidos (reenviar e-mail, liberar edição, copiar link) · links dos 3 checkouts · preço e ancoragem · timer · nota e nº de tutores · Pixel da Meta e Utmify · avatares, fotos do kit na vida real, prints de WhatsApp e Instagram, avaliações · imagem da abertura · capas dos bônus · fundos prontos dos documentos · PDFs dos bônus · order bumps (PDF entregue por e-mail e no kit) · times extras e escudos · suporte e dados da empresa. A aba **Funil** mostra quantas pessoas chegaram em cada tela.
 
 Prova social começa como espaço reservado (caixa tracejada com a etiqueta do que vai ali). Nenhum depoimento inventado.
 
@@ -68,7 +68,8 @@ Enquanto uma página não tem template + campos mapeados, ela usa o desenho prov
 | Tag ossinho | `tag-nome`, `tag-qr` |
 | Identidade (QR) | `ficha` |
 | Vacinação | `vacina-capa`, `vacina-vacinas`, `vacina-tratamentos` |
-| Torcedor | `torcedor` |
+| Torcedor (montada em código com o time, sem template) | `torcedor-frente`, `torcedor-verso` |
+| Capa e instruções (início do PDF) | `guia-capa`, `guia-instrucoes` |
 | Bônus Aniversário | `aniv-convite`, `aniv-topo`, `aniv-plaquinhas`, `aniv-certificado` |
 | Bônus Quem Cuida | `quemcuida` |
 

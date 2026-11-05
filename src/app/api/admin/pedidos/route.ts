@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const sb = db();
   if (!sb) return json({ error: 'Supabase não configurado' }, 503);
   const { action, customerId } = await req.json().catch(() => ({}));
-  const { data: c } = await sb.from('customers').select('email, access_token, pets(id, data, files, submitted_at)').eq('id', customerId).maybeSingle();
+  const { data: c } = await sb.from('customers').select('email, access_token, bumps, pets(id, data, files, submitted_at)').eq('id', customerId).maybeSingle();
   if (!c) return json({ error: 'not_found' }, 404);
   if (action === 'resend') return json({ ok: await resendCustomer(c as never) });
   if (action === 'unlock') {

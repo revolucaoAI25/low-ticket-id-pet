@@ -22,8 +22,9 @@ Anúncio (Meta) ──UTMs──▶ Quiz ──▶ Oferta ──clique──▶ 
 ### Produtos e checkouts
 1. Crie o produto **Kit Identidade Pet** (R$ 19,90) e os **3 checkouts** (Cachorro, Gato, Outros pets), cada um com seus order bumps.
 2. O order bump **"+1 pet no kit"** precisa ter no nome uma das palavras-chave configuradas em **/admin → Checkouts** (padrão: `pet adicional`, `+1 pet`, `mais 1 pet`, `pet extra`). É assim que o site sabe que precisa liberar mais um pet na confirmação.
-3. (Opcional) Um produto **"Pet adicional"** separado, com uma dessas palavras no nome, também libera mais um pet: o cliente recebe o link para preencher o novo pet.
-4. Cole os 3 links em **/admin → Checkouts**.
+3. **Order bumps de conteúdo** (Petiscos Fit, Xixi no Lugar Certo, Caixa de Areia etc.): já estão cadastrados em **/admin → Order bumps**, cada um com palavras-chave. Suba o PDF de cada um ali e confira se o nome do bump na Kiwify contém a palavra-chave. Quando o webhook trouxer um bump, o PDF vai **anexado no e-mail de pagamento confirmado** e também entra **no fim do PDF do kit**. Se a Kiwify mandar o bump como pedido separado, ele é entregue num e-mail próprio.
+4. (Opcional) Um produto **"Pet adicional"** separado, com uma dessas palavras no nome, também libera mais um pet: o cliente recebe o link para preencher o novo pet.
+5. Cole os 3 links em **/admin → Checkouts**.
 
 ### Página de obrigado
 Em cada produto: **Configurações → Página de obrigado personalizada** → `https://SEU-DOMINIO/obrigado`.
@@ -43,7 +44,7 @@ Em cada produto: **Configurações → Pixel** → Facebook → cole o **mesmo I
 ### ✅ Teste antes de anunciar
 Faça uma compra real de teste (Pix) e confira:
 - o checkout abriu com nome, e-mail e telefone preenchidos (se não preencher, ajuste os nomes dos parâmetros em **/admin → Checkouts**);
-- a página `/obrigado` levou para a confirmação; depois de confirmar, o kit chegou no e-mail com os PDFs anexados;
+- a página `/obrigado` levou para a confirmação; depois de confirmar, o kit chegou no e-mail num PDF só (capa, instruções, documentos, bônus e bumps);
 - o QR Code da tag impressa abre a identidade do pet no celular;
 - o pedido aparece no Supabase (tabela `orders`) e a tabela `webhook_logs` mostra o que a Kiwify mandou;
 - o "+1 pet" liberou a segunda vaga (se comprou o bump).

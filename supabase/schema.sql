@@ -16,6 +16,8 @@ create table if not exists customers (
   paid_at timestamptz,
   refunded_at timestamptz,
   extra_pet_slots int not null default 0,
+  -- order bumps de conteúdo comprados (ids configurados no painel)
+  bumps text[] not null default '{}',
   consent_at timestamptz,
   utms jsonb,
   session_id text,
@@ -111,3 +113,4 @@ on conflict (id) do nothing;
 -- Para quem rodou uma versão anterior deste arquivo:
 alter table pets add column if not exists files jsonb;
 alter table pets add column if not exists submitted_at timestamptz;
+alter table customers add column if not exists bumps text[] not null default '{}';

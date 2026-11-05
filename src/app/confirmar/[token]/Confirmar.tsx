@@ -126,7 +126,7 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
         const { pet } = (await call({ action: 'save', pet: d })) as { pet: PetView };
         const phone = pet.data.tutors?.find((t) => t.phone)?.phone || order?.customer?.phone || '';
         const ctx = buildDocContext({ pet: pet.data, settings, seed: pet.id, slug: pet.slug, phone });
-        const files = await buildPackage(ctx, (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * 70) }));
+        const files = await buildPackage(ctx, (order?.bonusLinks ?? []).map((b) => b.url), (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * 70) }));
         setPhase({ step: `Enviando os arquivos${label}…`, pct: 78 });
         const { urls } = (await call({ action: 'upload-urls', petId: pet.id, files: files.map((f) => f.name) })) as { urls: Record<string, { signedUrl: string; path: string }> };
         let sent = 0;
@@ -294,9 +294,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | null; bonusLinks: { label: string; url: string }[] }) {
   const icon: Record<string, LucideIcon> = { 'kit-pdf': FileText, 'bonus-pdf': FileText, zip: ImagePlus, ficha: QrCode };
   const label: Record<string, string> = {
-    'kit-pdf': 'Documentos para imprimir (PDF)',
+    'kit-pdf': 'Kit completo para imprimir (PDF)',
     'bonus-pdf': 'Bônus personalizados (PDF)',
-    zip: 'Todas as imagens (.zip)',
+    zip: 'Imagens soltas (.zip, opcional)',
     ficha: 'Identidade do QR Code',
   };
   return (
