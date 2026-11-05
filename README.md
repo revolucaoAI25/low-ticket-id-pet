@@ -81,7 +81,7 @@ cp .env.example .env.local   # preencha
 npm run dev                  # http://localhost:3000
 ```
 
-Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Com `DEMO_PROOF=1` (ou o "Modo demonstração" do painel), o site mostra avaliações de exemplo — só para mockup; desligue antes de anunciar. Se já rodou uma versão anterior do `schema.sql`, rode de novo: ele só acrescenta o que falta.
+Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Com `DEMO_PROOF=1` (ou o "Modo demonstração" do painel), o site mostra avaliações, fotos e prints de exemplo — só para mockup; desligue antes de anunciar. A variável vale a partir do próximo deploy. Se já rodou uma versão anterior do `schema.sql`, rode de novo: ele só acrescenta o que falta.
 
 ## Imagens de exemplo
 

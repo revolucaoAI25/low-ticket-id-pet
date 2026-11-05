@@ -18,6 +18,14 @@ export const DEMO_TUTORS = 1287;
 /** Fotos da fileira ao lado da nota (demonstração). */
 export const DEMO_AVATARS = ['/demo/avatars/a45.webp', '/demo/avatars/a31.webp', '/demo/avatars/a14.webp', '/demo/avatars/a13.webp', '/demo/avatars/a34.webp'];
 
+const P = '/demo/proof/';
+/** Fotos do kit com pets, prints de WhatsApp e comentários (demonstração, imagens fornecidas pelo dono do projeto). */
+export const DEMO_REAL_LIFE = Array.from({ length: 14 }, (_, i) => ({ url: `${P}foto-${String(i + 1).padStart(2, '0')}.webp` }));
+export const DEMO_WHATSAPP = Array.from({ length: 8 }, (_, i) => ({ url: `${P}whatsapp-${i + 1}.webp` }));
+export const DEMO_INSTAGRAM = Array.from({ length: 3 }, (_, i) => ({ url: `${P}instagram-${i + 1}.webp` }));
+
+const filled = (l: { url: string }[]) => l.filter((x) => x.url).length > 0;
+
 /** Aplica a demonstração só nas páginas públicas (o painel continua mostrando os dados reais). */
 export function withDemoProof(s: SiteSettings): SiteSettings {
   // Liga pelo painel, ou com a variável DEMO_PROOF=1 (útil em deploy de teste).
@@ -25,6 +33,13 @@ export function withDemoProof(s: SiteSettings): SiteSettings {
   return {
     ...s,
     tutorsCount: s.tutorsCount || DEMO_TUTORS,
-    proof: { ...s.proof, avatars: s.proof.avatars.length ? s.proof.avatars : DEMO_AVATARS, reviews: s.proof.reviews.length ? s.proof.reviews : DEMO_REVIEWS },
+    proof: {
+      ...s.proof,
+      avatars: s.proof.avatars.length ? s.proof.avatars : DEMO_AVATARS,
+      reviews: s.proof.reviews.length ? s.proof.reviews : DEMO_REVIEWS,
+      realLife: filled(s.proof.realLife) ? s.proof.realLife : DEMO_REAL_LIFE,
+      whatsapp: filled(s.proof.whatsapp) ? s.proof.whatsapp : DEMO_WHATSAPP,
+      instagram: filled(s.proof.instagram) ? s.proof.instagram : DEMO_INSTAGRAM,
+    },
   };
 }

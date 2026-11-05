@@ -363,12 +363,13 @@ function Continue({ onClick, label = 'Continuar' }: { onClick: () => void; label
 function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () => void }) {
   return (
     <section className="flex flex-1 flex-col items-center pt-4 text-center">
-      <Logo size={140} priority />
-      <h1 className="h-display mt-4 text-[32px] leading-[1.08]">
-        O <span className="text-roxo">RG do seu pet</span>, com foto e nome
+      <Logo size={110} priority />
+      <h1 className="h-display mt-3 text-[36px] leading-[1.02]">
+        <span className="text-roxo">Kit Identidade Pet</span>
       </h1>
-      <p className="mt-3 text-[16px] font-semibold leading-snug text-cacau/70">
-        E mais: CNH Pet, certidão, tag com QR Code, carteira de vacinação e muito mais. Tudo personalizado e pronto pra imprimir.
+      <p className="mt-2 font-display text-[21px] font-semibold leading-tight text-cacau">O RG do seu pet, com foto e nome</p>
+      <p className="mt-2 text-[15px] font-semibold leading-snug text-cacau/70">
+        E mais: CNH Pet, certidão, passaporte, carteira de vacinação e tag com QR Code. Tudo personalizado e pronto pra imprimir.
       </p>
       <div className="mt-5 w-full">
         {settings.images.heroMockup ? (
@@ -376,7 +377,7 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
           <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto w-full max-w-[380px]" fetchPriority="high" />
         ) : (
           // Mockup estático (leve e instantâneo). Para trocar, suba uma imagem em /admin → Imagens.
-          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão e tag do Kit Identidade Pet" width={1000} height={710} priority sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto w-full max-w-[400px]" />
+          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão, carteira de vacinação e tag do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto w-full max-w-[400px]" />
         )}
       </div>
       <div className="mt-7 w-full">

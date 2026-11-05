@@ -36,6 +36,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
   );
 
   const name = hasName(pet) ? petName(pet) : 'seu pet';
+  const realLife = settings.proof.realLife.filter((x) => x.url);
+  const whatsapp = settings.proof.whatsapp.filter((x) => x.url);
+  const instagram = settings.proof.instagram.filter((x) => x.url);
   const doNome = doPet(pet);
   const discount = Math.round((1 - settings.price / settings.anchorPrice) * 100);
   const team = findTeam(pet.team?.id, allTeams(settings.extraTeams));
@@ -201,14 +204,16 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       {/* 6. Kit na vida real */}
       <Section title="O kit na vida real" subtitle="É só imprimir em casa ou na papelaria.">
         <Marquee seconds={38}>
-          {proofSlots.realLife.map((label, i) => {
-            const img = settings.proof.realLife[i];
-            return (
-              <div key={i} className="w-[240px] shrink-0">
-                {img?.url ? <ProofImg src={img.url} caption={img.caption} ratio="4 / 5" /> : <Slot label={label} ratio="4 / 5" />}
-              </div>
-            );
-          })}
+          {(realLife.length ? realLife : proofSlots.realLife.map((label) => ({ url: '', caption: label }))).map((img, i) => (
+            <div key={i} className="h-[230px] shrink-0">
+              {img.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img.url} alt={img.caption ?? 'Kit impresso com o pet'} loading="lazy" decoding="async" className="h-full w-auto rounded-2xl object-cover shadow-card" />
+              ) : (
+                <Slot label={img.caption ?? ''} ratio="4 / 5" className="h-full" />
+              )}
+            </div>
+          ))}
         </Marquee>
       </Section>
 
@@ -255,24 +260,28 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       {/* 9. WhatsApp */}
       <Section title="O que os tutores mandam pra gente" subtitle="Mensagens reais no WhatsApp.">
         <Marquee seconds={34} reverse>
-          {proofSlots.whatsapp.map((label, i) => {
-            const img = settings.proof.whatsapp[i];
-            return (
-              <div key={i} className="w-[210px] shrink-0">
-                {img?.url ? <ProofImg src={img.url} caption={img.caption} ratio="9 / 16" /> : <Slot label={label} ratio="9 / 16" />}
-              </div>
-            );
-          })}
+          {(whatsapp.length ? whatsapp : proofSlots.whatsapp.map((label) => ({ url: '', caption: label }))).map((img, i) => (
+            <div key={i} className="h-[300px] shrink-0">
+              {img.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img.url} alt={img.caption ?? 'Mensagem de cliente'} loading="lazy" decoding="async" className="h-full w-auto rounded-2xl border border-linha object-cover shadow-card" />
+              ) : (
+                <Slot label={img.caption ?? ''} ratio="9 / 16" className="h-full" />
+              )}
+            </div>
+          ))}
         </Marquee>
       </Section>
 
       {/* 10. Instagram */}
       <Section title="E no Instagram…">
         <div className="space-y-3">
-          {proofSlots.instagram.map((label, i) => {
-            const img = settings.proof.instagram[i];
-            return img?.url ? <ProofImg key={i} src={img.url} caption={img.caption} ratio="auto" /> : <Slot key={i} label={label} ratio="3 / 1" />;
-          })}
+          {instagram.length
+            ? instagram.map((img, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={img.url} alt={img.caption ?? 'Comentário no Instagram'} loading="lazy" decoding="async" className="mx-auto w-full max-w-[340px] rounded-2xl border border-linha bg-white shadow-card" />
+              ))
+            : proofSlots.instagram.map((label, i) => <Slot key={i} label={label} ratio="3 / 1" />)}
         </div>
       </Section>
 

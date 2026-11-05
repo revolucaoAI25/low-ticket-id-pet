@@ -110,15 +110,22 @@ const MAKERS: Record<string, (c: DocContext) => Promise<HTMLCanvasElement>> = {
   torcedor: (c) => single('torcedor', 0, c),
 };
 
+/** Documentos cujo exemplo é uma imagem pronta em public/demo/examples (gerada com os pets de exemplo). */
+const STATIC_IDS = ['rg', 'cnh', 'certidao', 'passaporte', 'tag', 'vacina'];
+
 export function KitList({ settings, pet }: { settings: SiteSettings; pet: PetData }) {
-  const [srcs, setSrcs] = useState<Record<string, string>>({});
+  // Exemplos prontos (imagens estáticas, leves). Só a carteirinha de torcedor é desenhada na hora, com o time da pessoa.
+  const [srcs, setSrcs] = useState<Record<string, string>>(() => Object.fromEntries(STATIC_IDS.map((id) => [id, `/demo/examples/${id}.webp`])));
   // Carteirinha de torcedor: com o time que a pessoa escolheu (ou genérica, sem time).
   const teamKey = pet.team?.none || !pet.team?.name ? 'none' : `${pet.team.id ?? ''}:${pet.team.name}`;
 
   useEffect(() => {
     let alive = true;
     (async () => {
+      // Espera a página ficar ociosa para não disputar com o carregamento.
+      await new Promise((r) => ('requestIdleCallback' in window ? (window as Window & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(() => r(null)) : setTimeout(r, 600)));
       for (const it of kitItems) {
+        if (STATIC_IDS.includes(it.id)) continue;
         const make = MAKERS[it.id];
         const ex = EXAMPLE_PETS[it.id];
         if (!make || !ex) continue;
@@ -144,7 +151,7 @@ export function KitList({ settings, pet }: { settings: SiteSettings; pet: PetDat
             <div className="flex aspect-[4/3] w-[48%] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FBF4EC] to-[#F2E6D8] p-2">
               {srcs[it.id] ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={srcs[it.id]} alt={`${it.title} de exemplo`} className="anim-fade-up max-h-full max-w-full rounded-md object-contain drop-shadow-md" />
+                <img src={srcs[it.id]} alt={`${it.title} de exemplo`} loading="lazy" decoding="async" className="anim-fade-up max-h-full max-w-full rounded-md object-contain drop-shadow-md" />
               ) : (
                 <div className="h-3/4 w-3/4 animate-pulse rounded-lg bg-white/70" />
               )}

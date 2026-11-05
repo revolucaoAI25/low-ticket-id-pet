@@ -7,6 +7,7 @@ import { Logo } from '@/components/ui';
 import { allPages } from '@/lib/docs/render';
 import { TEAMS } from '@/lib/teams';
 import { Modelos } from './Modelos';
+import { DEMO_AVATARS, DEMO_INSTAGRAM, DEMO_REAL_LIFE, DEMO_REVIEWS, DEMO_WHATSAPP } from '@/config/demo-proof';
 
 type Tab = 'funil' | 'pedidos' | 'modelos' | 'bumps' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
 const TABS: [Tab, string][] = [
@@ -355,19 +356,26 @@ function Funnel() {
 function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>) => void }) {
   const listEditor = (key: 'realLife' | 'whatsapp' | 'instagram', labels: readonly string[]) => {
     const list = s.proof[key];
-    const update = (i: number, v: ProofImage | null) => {
-      const next = [...list];
-      while (next.length <= i) next.push({ url: '' });
-      if (v) next[i] = v;
-      else next[i] = { url: '' };
-      set({ proof: { ...s.proof, [key]: next } });
-    };
-    return labels.map((label, i) => (
-      <div key={i} className="rounded-2xl bg-areia/50 p-3">
-        <Upload label={label} value={list[i]?.url ?? ''} folder={`prova-${key}`} onChange={(url) => update(i, { ...(list[i] ?? {}), url })} />
-        <input className="input mt-2 !min-h-[40px] !text-sm" placeholder="Legenda (opcional)" value={list[i]?.caption ?? ''} onChange={(e) => update(i, { url: list[i]?.url ?? '', caption: e.target.value })} />
-      </div>
-    ));
+    const setList = (next: ProofImage[]) => set({ proof: { ...s.proof, [key]: next } });
+    const rows: ProofImage[] = list.length ? list : labels.map(() => ({ url: '' }));
+    return (
+      <>
+        {rows.map((item, i) => (
+          <div key={i} className="rounded-2xl bg-areia/50 p-3">
+            <Upload label={labels[i] ?? `Imagem ${i + 1}`} value={item.url} folder={`prova-${key}`} onChange={(url) => setList(rows.map((x, j) => (j === i ? { ...x, url } : x)))} />
+            <div className="mt-2 flex gap-2">
+              <input className="input !min-h-[40px] !text-sm" placeholder="Legenda (opcional)" value={item.caption ?? ''} onChange={(e) => setList(rows.map((x, j) => (j === i ? { ...x, caption: e.target.value } : x)))} />
+              <button type="button" className="shrink-0 text-sm font-bold text-red-600" onClick={() => setList(rows.filter((_, j) => j !== i))}>
+                Remover
+              </button>
+            </div>
+          </div>
+        ))}
+        <button type="button" className="btn-ghost w-full !min-h-[44px] !text-base" onClick={() => setList([...rows, { url: '' }])}>
+          + Adicionar imagem
+        </button>
+      </>
+    );
   };
   const reviews = s.proof.reviews;
   const setReviews = (r: Review[]) => set({ proof: { ...s.proof, reviews: r } });
@@ -378,6 +386,26 @@ function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
           <input type="checkbox" className="h-5 w-5" checked={s.proof.demo} onChange={(e) => set({ proof: { ...s.proof, demo: e.target.checked } })} />
           {s.proof.demo ? 'LIGADO: desligue antes de anunciar (avaliação inventada para cliente real é propaganda enganosa).' : 'Mostrar avaliações de demonstração'}
         </label>
+      </Card>
+      <Card title="Imagens de exemplo" hint="Coloca no painel as fotos do kit, os prints de WhatsApp e Instagram, as avaliações e os avatares de exemplo. Depois é só remover o que não quiser e clicar em Salvar. Substitua por material real antes de anunciar.">
+        <button
+          type="button"
+          className="btn-ghost w-full !min-h-[44px] !text-base"
+          onClick={() =>
+            set({
+              proof: {
+                ...s.proof,
+                realLife: DEMO_REAL_LIFE,
+                whatsapp: DEMO_WHATSAPP,
+                instagram: DEMO_INSTAGRAM,
+                reviews: s.proof.reviews.length ? s.proof.reviews : DEMO_REVIEWS,
+                avatars: s.proof.avatars.length ? s.proof.avatars : DEMO_AVATARS,
+              },
+            })
+          }
+        >
+          Carregar imagens de exemplo no painel
+        </button>
       </Card>
       <Card title="Avatares de clientes (ao lado da nota)" hint="Até 5 fotos pequenas.">
         {Array.from({ length: 5 }, (_, i) => (
