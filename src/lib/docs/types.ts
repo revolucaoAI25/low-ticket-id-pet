@@ -54,6 +54,23 @@ export interface TextSlot {
   /** Quebra em até N linhas (com altura de linha = size * 1.2). */
   lines?: number;
   letterSpacing?: number;
+  /** Fonte monoespaçada (linhas de leitura de máquina). */
+  mono?: boolean;
+  /** Só escreve quando este campo tiver valor. */
+  when?: string;
+}
+
+/** Retângulo de cor para tapar algo do template (ex.: "___/___/____") antes de escrever. */
+export interface PatchSlot {
+  type: 'patch';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  radius?: number;
+  /** Só tapa quando este campo tiver valor (senão o espaço fica para escrever à mão). */
+  when?: string;
 }
 
 export interface BoxSlot {
@@ -68,7 +85,15 @@ export interface BoxSlot {
   index?: number;
 }
 
-export type Slot = TextSlot | BoxSlot;
+export type Slot = TextSlot | BoxSlot | PatchSlot;
+
+/** Template escolhido conforme o pet (ex.: certidão de nascimento ou de adoção). */
+export interface Layout {
+  template: string;
+  slots: Slot[];
+  /** Área do template na página, em fração [x, y, w, h] (padrão: a página toda). */
+  box?: [number, number, number, number];
+}
 
 export interface DocPage {
   /** id único (também é a chave do template de fundo no painel). */
@@ -89,6 +114,8 @@ export interface DocPage {
   template?: string;
   /** Campos escritos sobre o template. Com template + slots, o desenho provisório é ignorado. */
   slots?: Slot[];
+  /** Template + campos escolhidos conforme o pet (tem prioridade sobre template/slots). */
+  layout?: (c: DocContext) => Layout;
   /** Desenho provisório em código (usado enquanto não há template). */
   draw: (ctx: Ctx, c: DocContext, a: Assets) => void;
 }

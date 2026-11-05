@@ -18,7 +18,7 @@ export const kitItems: OfferItem[] = [
     doc: 'rg',
     short: 'RG do Pet',
     title: 'RG do Pet',
-    lines: ['Frente e verso com foto, nome, raça, personalidade e tutores.', 'Campos para o nº do microchip e do RG Animal. 5 cores.'],
+    lines: ['Em 2 versões (estilo identidade brasileira e colorida), frente e verso, com foto e QR Code.', 'Nome, raça, pelagem, tutores, microchip e contato.'],
     value: 12,
   },
   {

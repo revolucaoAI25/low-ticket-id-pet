@@ -18,14 +18,15 @@ export const SAMPLE_PET: PetData = {
 export const EXAMPLE_DOG: PetData = {
   species: 'cachorro',
   name: 'Thor',
-  breed: 'Golden Retriever',
+  breed: 'Shih-tzu',
   sex: 'macho',
   personality: 'brincalhao',
   origin: 'nascimento',
   date: '2024-02-10',
   team: { id: 'flamengo', name: 'Flamengo' },
   tutors: [{ name: 'Juliana Martins', phone: '31999990000' }],
-  address: { city: 'Belo Horizonte - MG' },
+  address: { city: 'Belo Horizonte - MG', street: 'Rua das Flores, 120', district: 'Santa Tereza' },
+  extras: { coat: 'Branco e caramelo', microchip: '985112004567890' },
   photo: '/demo/pet-cachorro.jpg',
 };
 
@@ -39,7 +40,8 @@ export const EXAMPLE_CAT: PetData = {
   date: '2023-06-18',
   team: { id: 'palmeiras', name: 'Palmeiras' },
   tutors: [{ name: 'Camila Rocha', phone: '81999990000' }],
-  address: { city: 'Recife - PE' },
+  address: { city: 'Recife - PE', street: 'Av. Boa Viagem, 500' },
+  extras: { coat: 'Rajada cinza' },
   photo: '/demo/pet-gato.jpg',
 };
 

@@ -5,6 +5,7 @@ import { maskNumber, photoBox } from '../common';
 import { line, paw, rr, text } from '../draw';
 import type { Ctx } from '../draw';
 import type { DocDef } from '../types';
+import { CNH_FRENTE, CNH_VERSO } from './slots';
 import { clubSeal, guilloche } from './rg';
 
 const W = 1000;
@@ -54,9 +55,11 @@ export const cnhDoc: DocDef = {
     {
       id: 'cnh-frente',
       label: 'Frente',
-      w: W,
-      h: H,
-      mm: [85.6, 54],
+      w: 1059,
+      h: 738,
+      mm: [100, 70],
+      needsQr: true,
+      layout: () => ({ template: '/templates/cnh-frente.webp', slots: CNH_FRENTE }),
       draw(ctx, c, a) {
         const p = c.pet;
         frame(ctx, a.background, 3);
@@ -106,9 +109,10 @@ export const cnhDoc: DocDef = {
     {
       id: 'cnh-verso',
       label: 'Verso',
-      w: W,
-      h: H,
-      mm: [85.6, 54],
+      w: 1059,
+      h: 743,
+      mm: [100, 70],
+      layout: () => ({ template: '/templates/cnh-verso.webp', slots: CNH_VERSO }),
       draw(ctx, c, a) {
         const p = c.pet;
         frame(ctx, a.background, 4);

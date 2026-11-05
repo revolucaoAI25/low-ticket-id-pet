@@ -5,6 +5,7 @@ import { getSpecies } from '@/lib/species';
 import { DISCLAIMER, photoCircle } from '../common';
 import { dashedRect, field, heart, line, paw, rr, star, text, wrap } from '../draw';
 import type { DocDef } from '../types';
+import { CERT_ADOCAO, CERT_NASCIMENTO } from './slots';
 
 const W = 1240;
 const H = 1754;
@@ -23,6 +24,12 @@ export const certidaoDoc: DocDef = {
       w: W,
       h: H,
       mm: [210, 297],
+      needsQr: true,
+      // Adoção: arte em A4 inteira. Nascimento: arte um pouco mais larga, centralizada na folha.
+      layout: (c) =>
+        c.pet.origin === 'adocao'
+          ? { template: '/templates/certidao-adocao.webp', slots: CERT_ADOCAO }
+          : { template: '/templates/certidao-nascimento.webp', slots: CERT_NASCIMENTO, box: [0, 0.0283, 1, 0.9435] },
       draw(ctx, c, a) {
         const p = c.pet;
         const adocao = p.origin === 'adocao';

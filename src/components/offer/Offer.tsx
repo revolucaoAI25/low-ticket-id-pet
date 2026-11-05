@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, BadgePercent, Bone, Car, Check, CreditCard, FileText, Gift, IdCard, Lock, Mail, PawPrint, Plane, Printer, ShieldCheck, Syringe, Timer, Trophy, Zap, type LucideIcon } from 'lucide-react';
-import { ExampleDocs } from './ExampleDocs';
+import { KitList } from './ExampleDocs';
 import { ExitIntent } from './ExitIntent';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -214,31 +214,11 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 7. O que vem no kit */}
       <Section title={`O que vem no kit ${doNome}`} subtitle={`${kitItems.length} documentos personalizados, prontos pra imprimir.`}>
-        {settings.images.kitExample ? (
+        {settings.images.kitExample && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={settings.images.kitExample} alt="Exemplo do kit impresso" loading="lazy" className="mb-3 w-full rounded-3xl shadow-card" />
-        ) : (
-          <div className="mb-4">
-            <ExampleDocs settings={settings} species={pet.species} />
-          </div>
         )}
-        <ul className="card divide-y divide-linha overflow-hidden">
-          {kitItems.map((it) => {
-            const Icon = ITEM_ICON[it.id] ?? FileText;
-            return (
-              <li key={it.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F7EEF8] text-roxo">
-                  <Icon size={20} strokeWidth={2.2} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-extrabold leading-tight">{fill(it.title, pet)}</span>
-                  <span className="block text-[13px] font-semibold leading-snug text-cacau/65">{fill(it.lines[0], pet)}</span>
-                </span>
-                <span className="shrink-0 text-[13px] font-bold text-cacau/40 line-through">{formatBRL(it.value)}</span>
-              </li>
-            );
-          })}
-        </ul>
+        <KitList settings={settings} pet={pet} />
       </Section>
 
       {/* 8. Bônus */}

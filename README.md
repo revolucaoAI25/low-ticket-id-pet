@@ -82,3 +82,9 @@ npm run dev                  # http://localhost:3000
 ```
 
 Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Com `DEMO_PROOF=1` (ou o "Modo demonstração" do painel), o site mostra avaliações de exemplo — só para mockup; desligue antes de anunciar. Se já rodou uma versão anterior do `schema.sql`, rode de novo: ele só acrescenta o que falta.
+
+## Imagens de exemplo
+
+- `public/demo/pet-cachorro.jpg`: foto de shih-tzu de Mostafa Meraji, Wikimedia Commons, licença CC0 (domínio público).
+- `public/demo/pet-gato.jpg`, `public/bonus/*`, `public/demo/avatars/*`, `public/templates/*`: imagens fornecidas pelo dono do projeto.
+- As avaliações e fotos de perfil em `src/config/demo-proof.ts` são de demonstração: só aparecem com o Modo demonstração ligado.

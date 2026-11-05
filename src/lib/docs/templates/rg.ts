@@ -5,10 +5,17 @@ import { getSpecies } from '@/lib/species';
 import { maskNumber, photoBox } from '../common';
 import { dashedRect, line, paw, rr, text } from '../draw';
 import type { Ctx } from '../draw';
-import type { DocDef } from '../types';
+import type { DocContext, DocDef } from '../types';
+import { RG_COR_VERSO, RG_FRENTE, RG_VERSO, rgCorFrente } from './slots';
 
 const W = 1000;
 const H = 640;
+// Tamanho do template de imagem (proporção da arte em public/templates).
+const TW = 1000;
+const TH = 782;
+
+/** Cor do RG colorido: azul (macho), rosa (fêmea), verde (não informado). */
+const COR = (c: DocContext) => (c.pet.sex === 'femea' ? { k: 'rosa', pill: '#fdf8f9' } : c.pet.sex === 'macho' ? { k: 'azul', pill: '#f9fbfd' } : { k: 'verde', pill: '#fafcf3' });
 export const RG_GREEN = { paper: '#DFEBD3', paper2: '#EEF4E4', ink: '#2C5A36', line: 'rgba(44,90,54,.35)', guilloche: 'rgba(60,120,75,.13)' };
 
 /** Fundo com guilhochê (as ondinhas finas do papel de documento). */
@@ -88,9 +95,11 @@ export const rgDoc: DocDef = {
     {
       id: 'rg-frente',
       label: 'Frente',
-      w: W,
-      h: H,
-      mm: [100, 64],
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      needsQr: true,
+      layout: () => ({ template: '/templates/rg-frente.webp', slots: RG_FRENTE }),
       draw(ctx, c, a) {
         const ink = RG_GREEN.ink;
         frame(ctx, a.background, 1);
@@ -124,9 +133,10 @@ export const rgDoc: DocDef = {
     {
       id: 'rg-verso',
       label: 'Verso',
-      w: W,
-      h: H,
-      mm: [100, 64],
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      layout: () => ({ template: '/templates/rg-verso.webp', slots: RG_VERSO }),
       draw(ctx, c, a) {
         const ink = RG_GREEN.ink;
         const p = c.pet;
@@ -170,6 +180,25 @@ export const rgDoc: DocDef = {
         text(ctx, 'VÁLIDA EM TODO O CORAÇÃO DOS TUTORES', W / 2, 570, { size: 18, weight: 900, color: ink, align: 'center', letterSpacing: 3 });
         text(ctx, 'Clube do Focinho · produto personalizado de uso pessoal, sem validade oficial', W / 2, 600, { size: 14, weight: 700, color: 'rgba(44,90,54,.65)', align: 'center' });
       },
+    },
+    {
+      id: 'rg-cor-frente',
+      label: 'Colorido · frente',
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      needsQr: true,
+      layout: (c) => ({ template: `/templates/rg-${COR(c).k}-frente.webp`, slots: rgCorFrente(COR(c).pill) }),
+      draw: () => undefined,
+    },
+    {
+      id: 'rg-cor-verso',
+      label: 'Colorido · verso',
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      layout: (c) => ({ template: `/templates/rg-${COR(c).k}-verso.webp`, slots: RG_COR_VERSO }),
+      draw: () => undefined,
     },
   ],
 };

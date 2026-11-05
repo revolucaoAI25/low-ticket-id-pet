@@ -62,14 +62,14 @@ function makeQr(text: string): Promise<HTMLCanvasElement | null> {
   return p;
 }
 
-async function loadAssets(page: DocPage, c: DocContext): Promise<Assets> {
+async function loadAssets(page: DocPage, c: DocContext, templateSrc: string | null): Promise<Assets> {
   const extra = c.pet.extras?.photos ?? [];
   const [photo, crest, logo, qr, background, ...photos] = await Promise.all([
     loadImage(c.pet.photo),
     page.needsCrest ? loadImage(c.team?.crest ?? null) : Promise.resolve(null),
     loadImage(brand.logo),
     page.needsQr ? makeQr(qrUrl(c)) : Promise.resolve(null),
-    loadImage(c.templates?.[page.id] || page.template || null),
+    loadImage(templateSrc),
     ...extra.map((u) => loadImage(u)),
   ]);
   return {
@@ -89,7 +89,11 @@ async function loadAssets(page: DocPage, c: DocContext): Promise<Assets> {
 export async function renderPage(doc: DocDef, pageIndex: number, c: DocContext, scale = 1): Promise<HTMLCanvasElement> {
   await ensureFonts();
   const page = doc.pages[pageIndex];
-  const assets = await loadAssets(page, c);
+  // Template enviado no painel > template escolhido pelo layout > template fixo da página.
+  const layout = page.layout?.(c);
+  const templateSrc = c.templates?.[page.id] || layout?.template || page.template || null;
+  const slots = layout?.slots ?? page.slots;
+  const assets = await loadAssets(page, c, templateSrc);
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(page.w * scale);
   canvas.height = Math.round(page.h * scale);
@@ -97,7 +101,7 @@ export async function renderPage(doc: DocDef, pageIndex: number, c: DocContext, 
   ctx.scale(scale, scale);
   ctx.imageSmoothingQuality = 'high';
   // Template pronto + campos mapeados → escreve por cima. Senão, desenho provisório.
-  if (assets.background && page.slots?.length) drawSlots(ctx, page, c, assets);
+  if (assets.background && slots?.length) drawSlots(ctx, page, c, assets, slots, layout?.box);
   else page.draw(ctx, c, assets);
   if (c.preview) {
     ctx.save();
@@ -127,7 +131,8 @@ export function fileName(doc: DocDef, c: DocContext, suffix = ''): string {
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  return doc.file.replace('{nome}', safe) + suffix;
+  const file = c.pet.sex === 'femea' ? doc.file.replace('-do-', '-da-') : doc.file;
+  return file.replace('{nome}', safe) + suffix;
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/png', quality?: number): Promise<Blob> {
