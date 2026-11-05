@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRight, BadgePercent, Check, CreditCard, Gift, Lock, Mail, PawPrint, Printer, ShieldCheck, Timer, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bonusItems, fullTotal, kitItems } from '@/config/offer';
@@ -7,12 +8,19 @@ import { proofSlots, type SiteSettings } from '@/config/site';
 import { DocImage } from '@/components/DocImage';
 import { Logo, Slot, Stars, formatBRL, formatInt } from '@/components/ui';
 import { buildDocContext } from '@/lib/doc-context';
-import { PERSONALITIES, PLACES, doPet, fill, hasName, personalityLabel, petName } from '@/lib/pet';
+import { PERSONALITIES, doPet, fill, hasName, personalityLabel, petName } from '@/lib/pet';
+import { PERSONALITY_ICON, SPECIES_ICON } from '@/components/icons';
 import { useHydrated, useQuiz } from '@/lib/quiz-store';
 import { checkoutGroup, getSpecies } from '@/lib/species';
 import { allTeams, findTeam } from '@/lib/teams';
 import { buildCheckoutUrl, track } from '@/lib/tracking';
 import { useCountdown } from './useCountdown';
+
+const PREVIEW_TABS = [
+  { label: 'RG · frente', doc: 'rg', page: 0 },
+  { label: 'RG · verso', doc: 'rg', page: 1 },
+  { label: 'CNH Pet', doc: 'cnh', page: 0 },
+];
 
 export function Offer({ settings }: { settings: SiteSettings }) {
   const hydrated = useHydrated();
@@ -56,7 +64,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       const base = settings.checkout[group];
       track('InitiateCheckout', { value: settings.price, currency: 'BRL', content_name: 'Kit Identidade Pet', content_category: group, num_items: 1 });
       track('CliqueComprar', { origem: from, checkout: group }, { pixel: false });
-      const firstTutor = (pet.tutors ?? '').split(/,| e /i)[0]?.trim();
+      const firstTutor = pet.tutors?.[0]?.name?.trim();
       const url = buildCheckoutUrl({
         baseUrl: base,
         params: settings.checkoutParams,
@@ -75,8 +83,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
   if (!hydrated) return <div className="min-h-dvh" />;
 
-  const species = getSpecies(pet.species);
   const persona = pet.personality ? PERSONALITIES[pet.personality] : undefined;
+  const SpeciesIcon = SPECIES_ICON[pet.species ?? 'outro'];
+  const PersonaIcon = pet.personality ? PERSONALITY_ICON[pet.personality] : PawPrint;
   const ctaLabel = `Liberar o kit ${hasName(pet) ? doNome : 'do meu pet'}`;
 
   return (
@@ -88,9 +97,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 1. Título */}
       <section className="px-4 pt-3 text-center">
-        <span className="chip !bg-[#E6F4EA] !text-verde">✓ Prévia pronta</span>
+        <span className="chip !bg-[#E6F4EA] !text-verde"><Check size={14} strokeWidth={3} /> Prévia pronta</span>
         <h1 className="h-display mt-3 text-[30px] leading-[1.1]">
-          O kit {hasName(pet) ? doNome : 'do seu pet'} está pronto! 🎉
+          O kit {hasName(pet) ? doNome : 'do seu pet'} está pronto!
         </h1>
         <p className="mt-2 font-semibold text-cacau/70">Montamos tudo com o que você contou. Olha só:</p>
       </section>
@@ -103,17 +112,19 @@ export function Offer({ settings }: { settings: SiteSettings }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={pet.photo} alt={name} className="h-full w-full object-cover" />
             ) : (
-              <span className="flex h-full w-full items-center justify-center text-4xl">{species?.emoji ?? '🐾'}</span>
+              <span className="flex h-full w-full items-center justify-center text-roxo">
+                <SpeciesIcon size={36} />
+              </span>
             )}
           </div>
           <div className="min-w-0">
             <p className="font-display text-xl font-semibold leading-tight">
               {persona ? (
                 <>
-                  {hasName(pet) ? name : 'Seu pet'} é {pet.sex === 'femea' ? 'uma' : 'um'} <span className="text-roxo">{personalityLabel(pet)}</span> {persona.emoji}
+                  {hasName(pet) ? name : 'Seu pet'} é {pet.sex === 'femea' ? 'uma' : 'um'} <span className="text-roxo">{personalityLabel(pet)}</span>
                 </>
               ) : (
-                <>{hasName(pet) ? name : 'Seu pet'} é único 💛</>
+                <>{hasName(pet) ? name : 'Seu pet'} é único</>
               )}
             </p>
             <p className="mt-1 text-[14px] font-semibold leading-snug text-cacau/75">
@@ -121,12 +132,12 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {pet.breed && <span className="chip !px-2 !py-0.5 !text-xs">{pet.breed}</span>}
-              {pet.place && (
+              {pet.personality && (
                 <span className="chip !px-2 !py-0.5 !text-xs">
-                  {PLACES[pet.place].emoji} {PLACES[pet.place].label}
+                  <PersonaIcon size={12} /> {personalityLabel(pet)}
                 </span>
               )}
-              {team && <span className="chip !px-2 !py-0.5 !text-xs">⚽ {team.short}</span>}
+              {team && <span className="chip !px-2 !py-0.5 !text-xs">{team.short}</span>}
             </div>
           </div>
         </div>
@@ -134,23 +145,27 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 3. Prévia */}
       <section className="px-4 pt-6">
-        <div className="anim-pop relative">
-          <DocImage doc="rg" page={side} ctx={ctx} scale={0.7} className="drop-shadow-2xl" alt={`RG ${doNome}`} />
+        <div key={side} className="anim-pop relative">
+          <DocImage doc={PREVIEW_TABS[side].doc} page={PREVIEW_TABS[side].page} ctx={ctx} scale={0.7} className="overflow-hidden rounded-[18px] drop-shadow-2xl" alt={`${PREVIEW_TABS[side].label} ${doNome}`} />
         </div>
-        <div className="mt-3 flex justify-center gap-2">
-          {['Frente', 'Verso'].map((l, i) => (
-            <button key={l} type="button" onClick={() => setSide(i)} className={`rounded-full px-4 py-1.5 text-sm font-bold ${side === i ? 'bg-cacau text-white' : 'bg-white text-cacau shadow-card'}`}>
-              {l}
+        <div className="mt-4 flex justify-center gap-1.5 rounded-full bg-white p-1 shadow-card">
+          {PREVIEW_TABS.map((t, i) => (
+            <button key={t.label} type="button" onClick={() => setSide(i)} className={`flex-1 rounded-full px-3 py-2 text-sm font-bold transition-colors ${side === i ? 'bg-cacau text-white' : 'text-cacau/70'}`}>
+              {t.label}
             </button>
           ))}
         </div>
-        <p className="mt-3 text-center text-sm font-bold text-cacau/60">🔒 Prévia com marca d&apos;água. O arquivo final sai limpo, em alta resolução.</p>
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-sm font-bold text-cacau/55">
+          <Lock size={14} /> Prévia com marca d&apos;água. O arquivo final sai limpo.
+        </p>
         <div className="mt-4 grid grid-cols-3 gap-2">
-          {kitItems.slice(1).map((it) => (
-            <LockedThumb key={it.id} title={it.short} doc={it.doc!} ctx={ctx} />
-          ))}
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-roxo p-2 text-center text-white">
-            <span className="text-2xl">🎁</span>
+          {kitItems
+            .filter((it) => it.id !== 'rg' && it.id !== 'cnh')
+            .map((it) => (
+              <LockedThumb key={it.id} title={it.short} doc={it.doc!} ctx={ctx} />
+            ))}
+          <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-roxo p-2 text-center text-white">
+            <Gift size={26} strokeWidth={2} />
             <span className="text-[11px] font-extrabold leading-tight">+ 4 bônus</span>
           </div>
         </div>
@@ -171,8 +186,8 @@ export function Offer({ settings }: { settings: SiteSettings }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={i} src={a} alt="" className="h-10 w-10 rounded-full border-2 border-white object-cover" />
               ) : (
-                <span key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-areia text-sm" title="Foto de cliente">
-                  🐾
+                <span key={i} className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-areia text-roxo/60" title="Foto de cliente">
+                  <PawPrint size={16} />
                 </span>
               ),
             )}
@@ -204,7 +219,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       </Section>
 
       {/* 7. O que vem no kit */}
-      <Section title={`O que vem no kit ${doNome}`} subtitle="6 documentos personalizados, prontos pra imprimir.">
+      <Section title={`O que vem no kit ${doNome}`} subtitle={`${kitItems.length} documentos personalizados, prontos pra imprimir.`}>
         <div className="space-y-3">
           {kitItems.map((it, i) => (
             <div key={it.id} className="card flex items-center gap-3 p-3">
@@ -240,8 +255,8 @@ export function Offer({ settings }: { settings: SiteSettings }) {
                       <DocImage doc={b.doc} ctx={ctx} scale={0.22} className="w-full overflow-hidden rounded-md shadow-lg" />
                     </div>
                   ) : (
-                    <div className="flex h-full flex-col items-center justify-center p-3 text-center">
-                      <span className="text-5xl">{b.emoji}</span>
+                    <div className="flex h-full flex-col items-center justify-center p-3 text-center text-roxo/70">
+                      <Gift size={44} strokeWidth={1.6} />
                       <span className="mt-2 text-[11px] font-bold text-cacau/50">Capa do bônus</span>
                     </div>
                   )}
@@ -262,7 +277,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       <div className="px-4 pt-8">
         <button type="button" onClick={() => buy('apos-bonus')} className="btn-cta shine">
-          {ctaLabel} →
+          {ctaLabel} <ArrowRight size={20} strokeWidth={2.6} />
         </button>
       </div>
 
@@ -301,7 +316,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={r.photo} alt={r.petName ?? ''} className="h-12 w-12 rounded-full object-cover" />
                     ) : (
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-areia text-xl">🐾</span>
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-areia text-roxo/60">
+                        <PawPrint size={20} />
+                      </span>
                     )}
                     <div>
                       <p className="font-extrabold leading-tight">{r.name}</p>
@@ -315,7 +332,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             : Array.from({ length: proofSlots.reviews }, (_, i) => (
                 <div key={i} className="placeholder-slot !justify-start !p-4 !text-left" style={{ minHeight: 120 }}>
                   <span>
-                    ⭐ Avaliação real {i + 1}
+                    Avaliação real {i + 1}
                     <br />
                     foto do pet · nome · cidade · estrelas · texto
                   </span>
@@ -327,15 +344,16 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       {/* 12. Como funciona */}
       <Section title="Como funciona">
         <ol className="space-y-3">
-          {[
-            ['💳', 'Pague com Pix ou cartão', 'Pagamento único, sem mensalidade.'],
-            ['⚡', 'Baixe na hora', `Os documentos ${doNome} aparecem prontos, em PDF e imagem.`],
-            ['✏️', 'Complete se quiser', 'Microchip, veterinário, contatos de emergência… tudo atualiza na hora.'],
-            ['🖨️', 'Imprima e use', 'Em casa ou na papelaria. A tag vai direto pra coleira.'],
-          ].map(([e, t, d], i) => (
+          {(
+            [
+              [CreditCard, 'Pague com Pix ou cartão', 'Pagamento único, sem mensalidade.'],
+              [Mail, 'Receba tudo no e-mail', `Os documentos ${doNome} chegam prontos, em PDF e imagem.`],
+              [Printer, 'Imprima e use', 'Em casa ou na papelaria. Já vem no tamanho certo, com linha de corte.'],
+            ] as const
+          ).map(([Icon, t, d], i) => (
             <li key={t} className="card flex items-center gap-3 p-4">
-              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-areia text-2xl">
-                {e}
+              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F7EEF8] text-roxo">
+                <Icon size={22} strokeWidth={2.2} />
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-roxo text-[11px] font-extrabold text-white">{i + 1}</span>
               </span>
               <span>
@@ -353,13 +371,13 @@ export function Offer({ settings }: { settings: SiteSettings }) {
           <ul className="divide-y divide-linha">
             {kitItems.map((it) => (
               <li key={it.id} className="flex items-center justify-between gap-3 px-4 py-3 text-[15px] font-bold">
-                <span>✅ {fill(it.title, pet)}</span>
+                <span className="flex items-start gap-2"><Check size={18} strokeWidth={3} className="mt-0.5 shrink-0 text-verde" /> {fill(it.title, pet)}</span>
                 <span className="shrink-0 text-cacau/40 line-through">{formatBRL(it.value)}</span>
               </li>
             ))}
             {bonusItems.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-3 bg-[#FFF8EA] px-4 py-3 text-[15px] font-bold">
-                <span>🎁 {fill(b.title, pet)}</span>
+                <span className="flex items-start gap-2"><Gift size={18} strokeWidth={2.4} className="mt-0.5 shrink-0 text-laranja" /> {fill(b.title, pet)}</span>
                 <span className="shrink-0 text-cacau/40 line-through">{formatBRL(b.value)}</span>
               </li>
             ))}
@@ -371,7 +389,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             <p className="mt-1 text-sm font-bold">Hoje, pagamento único de</p>
             <p className="font-display text-5xl font-semibold text-mel">{formatBRL(settings.price)}</p>
             <button type="button" onClick={() => buy('oferta-completa')} className="btn-cta shine mt-4">
-              {ctaLabel} →
+              {ctaLabel} <ArrowRight size={20} strokeWidth={2.6} />
             </button>
             <p className="mt-3 text-xs font-bold opacity-80">Pix ou cartão · acesso imediato · garantia de 7 dias</p>
           </div>
@@ -383,7 +401,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
         <div className="card flex items-center gap-4 p-4">
           <GuaranteeSeal />
           <p className="text-[15px] font-semibold leading-snug">
-            Monte, baixe e imprima. Se não amar o kit {doNome}, é só pedir em até 7 dias que devolvemos <b>100% do valor</b>. Sem perguntas, sem burocracia.
+            Receba, imprima e use. Se não amar o kit {doNome}, é só pedir em até 7 dias que devolvemos <b>100% do valor</b>. Sem perguntas, sem burocracia.
           </p>
         </div>
       </Section>
@@ -396,7 +414,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       {/* 16. Rodapé */}
       <footer className="px-4 pt-10 text-center">
         <button type="button" onClick={() => buy('rodape')} className="btn-cta shine">
-          {ctaLabel} →
+          {ctaLabel} <ArrowRight size={20} strokeWidth={2.6} />
         </button>
         <div className="mt-8 flex justify-center">
           <Logo size={110} />
@@ -427,10 +445,10 @@ export function Offer({ settings }: { settings: SiteSettings }) {
           <div className="shrink-0 leading-tight">
             <p className="text-xs font-bold text-cacau/50 line-through">{formatBRL(settings.anchorPrice)}</p>
             <p className="font-display text-xl font-semibold text-roxo">{formatBRL(settings.price)}</p>
-            {left > 0 && <p className="text-[11px] font-extrabold text-[#C2410C]">⏱ {timer}</p>}
+            {left > 0 && <p className="flex items-center gap-1 text-[11px] font-extrabold text-[#C2410C]"><Timer size={11} strokeWidth={3} /> {timer}</p>}
           </div>
           <button type="button" onClick={() => buy('barra-fixa')} className="btn-cta !min-h-[52px] !text-base">
-            Liberar o kit →
+            Liberar o kit <ArrowRight size={18} strokeWidth={2.6} />
           </button>
         </div>
       </div>
@@ -470,7 +488,9 @@ function LockedThumb({ title, doc, ctx }: { title: string; doc: string; ctx: Par
       <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-areia/60">
         <DocImage doc={doc} ctx={ctx} scale={0.18} className="w-[86%] blur-[1.5px]" />
       </div>
-      <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-cacau/85 text-[11px]">🔒</span>
+      <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-cacau/85 text-white">
+        <Lock size={12} strokeWidth={2.6} />
+      </span>
       <p className="mt-1 truncate text-center text-[11px] font-extrabold">{title}</p>
     </div>
   );
@@ -495,7 +515,7 @@ function PriceBox({
 }) {
   return (
     <div ref={refEl} className="card relative overflow-hidden border-2 border-mel p-5 text-center">
-      <span className="mb-2 inline-block -rotate-2 rounded-lg bg-verde px-3 py-1 text-sm font-extrabold text-white shadow">✓ -{discount}% aplicado</span>
+      <span className="mb-2 inline-flex -rotate-2 items-center gap-1 rounded-lg bg-verde px-3 py-1 text-sm font-extrabold text-white shadow"><BadgePercent size={15} strokeWidth={2.6} /> -{discount}% aplicado</span>
       <p className="text-sm font-bold text-cacau/60">
         De <span className="line-through">{formatBRL(settings.anchorPrice)}</span> por apenas
       </p>
@@ -504,30 +524,28 @@ function PriceBox({
       <div className={`mx-auto mt-4 flex w-fit items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold ${left > 0 ? 'bg-[#FFF1E0] text-[#C2410C]' : 'bg-areia text-cacau'}`}>
         {left > 0 ? (
           <>
-            ⏱ Desconto reservado por <span className="font-mono tabular-nums">{timer}</span>
+            <Timer size={15} strokeWidth={2.6} /> Desconto reservado por <span className="font-mono tabular-nums">{timer}</span>
           </>
         ) : (
-          <>✨ Seu desconto continua reservado</>
+          <>Seu desconto continua reservado</>
         )}
       </div>
       <button type="button" onClick={onBuy} className="btn-cta shine anim-pulse mt-4 text-xl">
-        {ctaLabel} →
+        {ctaLabel} <ArrowRight size={22} strokeWidth={2.6} />
       </button>
       <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] font-extrabold leading-tight text-cacau/75">
-        <span className="rounded-xl bg-areia/70 p-2">
-          ⚡<br />
-          Acesso imediato
-        </span>
-        <span className="rounded-xl bg-areia/70 p-2">
-          🛡️
-          <br />
-          Garantia de 7 dias
-        </span>
-        <span className="rounded-xl bg-areia/70 p-2">
-          🏷️
-          <br />
-          Desconto garantido
-        </span>
+        {(
+          [
+            [Zap, 'Acesso imediato'],
+            [ShieldCheck, 'Garantia de 7 dias'],
+            [BadgePercent, 'Desconto garantido'],
+          ] as const
+        ).map(([Icon, l]) => (
+          <span key={l} className="flex flex-col items-center gap-1 rounded-xl bg-areia/70 p-2">
+            <Icon size={18} className="text-roxo" strokeWidth={2.3} />
+            {l}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -565,7 +583,7 @@ function Faq({ doNome }: { doNome: string }) {
   const items: [string, React.ReactNode][] = [
     [
       'Como eu recebo o kit?',
-      `Assim que o pagamento é aprovado (Pix cai na hora, cartão em segundos), você vai direto para a página do kit ${doNome}, com tudo pronto pra baixar em PDF e imagem. O link de acesso também vai para o seu e-mail, pra baixar de novo quando quiser.`,
+      `Assim que o pagamento é aprovado (Pix cai na hora, cartão em segundos), você confere os dados ${doNome} e recebe todos os documentos no seu e-mail: PDF pronto pra imprimir e todas as imagens.`,
     ],
     [
       'Dá pra imprimir em casa?',
@@ -573,15 +591,15 @@ function Faq({ doNome }: { doNome: string }) {
     ],
     [
       'Errei um dado. Consigo corrigir?',
-      'Consegue, quantas vezes quiser. Na área do pet você troca foto, cor, nome, datas e completa o que faltou (microchip, veterinário, contatos de emergência). Os documentos atualizam na hora.',
+      'Logo depois do pagamento, antes de gerar os arquivos, você confere tudo com calma e corrige o que precisar. Se mesmo assim algo sair errado, fale com o nosso suporte.',
     ],
     [
       'Tenho mais de um pet. Como faço?',
-      'No pagamento você pode incluir mais 1 pet no kit. Tem mais de dois? Depois da compra, dentro da área do pet, dá pra adicionar quantos quiser por R$ 9,90 cada.',
+      'No pagamento você pode incluir mais 1 pet no kit, com todos os documentos e bônus dele também.',
     ],
     [
       'Como funciona a tag com QR Code?',
-      'Você recorta a tag, plastifica e pendura na coleira (um porta-tag de pet shop ajuda). Quem encontrar seu pet aponta a câmera do celular e abre a página dele, com foto, contatos e botões de ligar e chamar no WhatsApp. Se ele sumir, você ativa o Modo Perdido e a página mostra um aviso em destaque. Não precisa de aplicativo.',
+      'A tag vem em formato de ossinho: de um lado o nome, do outro o QR Code. É só recortar, plastificar e pendurar na coleira. Quem encontrar seu pet aponta a câmera do celular e vê a identidade completa dele, com foto, dados e o contato dos tutores. Não precisa de aplicativo.',
     ],
     [
       'Os documentos têm validade oficial?',

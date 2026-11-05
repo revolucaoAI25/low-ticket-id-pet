@@ -1,5 +1,6 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { SiteSettings } from '@/config/site';
 import { Stars, formatInt } from '@/components/ui';
@@ -10,9 +11,10 @@ const DURATION = 4800;
 export function Loading({ pet, settings, onDone }: { pet: PetData; settings: SiteSettings; onDone: () => void }) {
   const items = [
     `RG ${doPet(pet)}`,
+    'CNH Pet',
     pet.origin === 'adocao' ? 'Certidão de adoção' : 'Certidão de nascimento',
     'Passaporte de aventuras',
-    'Tag com QR Code',
+    'Tag ossinho com QR Code',
     'Carteira de vacinação',
     'Carteirinha de torcedor',
   ];
@@ -86,7 +88,7 @@ export function Loading({ pet, settings, onDone }: { pet: PetData; settings: Sit
               <span
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm text-white transition-colors ${state === 'done' ? 'bg-verde' : state === 'doing' ? 'bg-mel' : 'bg-linha'}`}
               >
-                {state === 'done' ? '✓' : state === 'doing' ? '…' : ''}
+                {state === 'done' ? <Check size={15} strokeWidth={3.5} /> : state === 'doing' ? '…' : ''}
               </span>
               {state === 'doing' ? `Gerando ${label.charAt(0).toLowerCase() + label.slice(1)}…` : label}
             </li>

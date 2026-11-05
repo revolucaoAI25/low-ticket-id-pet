@@ -31,8 +31,10 @@ create table if not exists pets (
   slug text unique not null,
   data jsonb not null default '{}',
   photo_url text,
-  lost_mode boolean not null default false,
-  lost_since timestamptz,
+  -- Arquivos gerados na confirmação (PDFs, imagens, identidade do QR)
+  files jsonb,
+  -- Quando a pessoa confirmou os dados e o kit foi gerado (depois disso não edita mais)
+  submitted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -101,7 +103,11 @@ language sql stable as $$
   order by step nulls last, event;
 $$;
 
--- Storage: fotos dos pets e imagens do painel (leitura pública por URL)
+-- Storage: fotos dos pets, imagens do painel e kits gerados (leitura pública por URL não adivinhável)
 insert into storage.buckets (id, name, public)
-values ('pet-photos', 'pet-photos', true), ('site-assets', 'site-assets', true)
+values ('pet-photos', 'pet-photos', true), ('site-assets', 'site-assets', true), ('kits', 'kits', true)
 on conflict (id) do nothing;
+
+-- Para quem rodou uma versão anterior deste arquivo:
+alter table pets add column if not exists files jsonb;
+alter table pets add column if not exists submitted_at timestamptz;

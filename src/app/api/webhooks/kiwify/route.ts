@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
-import { sendAccessEmail } from '@/lib/server/email';
+import { sendConfirmEmail } from '@/lib/server/email';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail, normPhone, token } from '@/lib/server/util';
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
   await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderId);
 
   if (!productIsExtraPet && !wasPaid && email) {
-    await sendAccessEmail(email, cust.access_token, cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined);
+    await sendConfirmEmail(email, cust.access_token, cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined);
   }
   return json({ ok: true, customer: cust.id, extraPets });
 }

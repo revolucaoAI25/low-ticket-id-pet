@@ -22,6 +22,14 @@ export const kitItems: OfferItem[] = [
     value: 27,
   },
   {
+    id: 'cnh',
+    doc: 'cnh',
+    short: 'CNH Pet',
+    title: 'CNH Pet',
+    lines: ['A carteira de habilitação mais divertida: categorias, validade "eterna" e tudo.', 'Com foto, nome e os tutores.'],
+    value: 27,
+  },
+  {
     id: 'certidao',
     doc: 'certidao',
     short: 'Certidão',
@@ -34,15 +42,15 @@ export const kitItems: OfferItem[] = [
     doc: 'passaporte',
     short: 'Passaporte',
     title: 'Passaporte de Aventuras',
-    lines: ['Livreto pra "carimbar" passeios e primeiras vezes.', 'O primeiro carimbo já vem com o lugar favorito {do}.'],
+    lines: ['Livreto pra "carimbar" passeios e primeiras vezes.', 'Com foto, dados {do} e páginas de carimbos.'],
     value: 29,
   },
   {
     id: 'tag',
     doc: 'tag',
     short: 'Tag QR Code',
-    title: 'Tag com QR Code + Página do Pet',
-    lines: ['Quem encontrar {nome} escaneia e fala com você na hora.', 'Página com contatos, botão de WhatsApp e Modo Perdido.'],
+    title: 'Tag Ossinho com QR Code',
+    lines: ['Quem encontrar {nome} escaneia e vê a identidade completa, com o seu contato.', 'Formato de ossinho, pronta pra recortar e pendurar na coleira.'],
     value: 37,
   },
   {
@@ -79,7 +87,7 @@ export const bonusItems: BonusItem[] = [
     id: 'aniversario',
     doc: 'aniversario',
     title: 'Kit Aniversário {do}',
-    lines: ['Convite, topo de bolo, plaquinhas e certificado.', 'Tudo com a foto e o nome {do}.'],
+    lines: ['Convite, topo de bolo, plaquinhas e certificado.', 'Com as fotos, o nome e a cor favorita {do}.'],
     value: 29,
     personalized: true,
     imageKey: 'bonusAniversario',
@@ -115,5 +123,5 @@ export const bonusItems: BonusItem[] = [
   },
 ];
 
-export const kitTotal = kitItems.reduce((s, i) => s + i.value, 0); // 153
-export const fullTotal = kitTotal + bonusItems.reduce((s, i) => s + i.value, 0); // 252
+export const kitTotal = kitItems.reduce((s, i) => s + i.value, 0); // 180
+export const fullTotal = kitTotal + bonusItems.reduce((s, i) => s + i.value, 0); // 279

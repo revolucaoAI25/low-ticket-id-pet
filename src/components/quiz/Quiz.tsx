@@ -1,28 +1,15 @@
 'use client';
 
+import { ArrowLeft, ArrowRight, Baby, Check, Clock, Eye, House, Mail, MapPin, Plus, Printer, ShieldCheck, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { rgColors, type RgColor } from '@/config/brand';
 import type { SiteSettings } from '@/config/site';
 import { DocImage } from '@/components/DocImage';
+import { IconBubble, PERSONALITY_ICON, SPECIES_ICON } from '@/components/icons';
 import { KitFan } from '@/components/KitFan';
 import { Logo, Stars, formatInt } from '@/components/ui';
 import { buildDocContext } from '@/lib/doc-context';
-import {
-  PERSONALITIES,
-  PLACES,
-  defaultRgColor,
-  doPet,
-  g,
-  hasName,
-  oPet,
-  petName,
-  type Origin,
-  type Personality,
-  type Place,
-  type Sex,
-  type TeamChoice,
-} from '@/lib/pet';
+import { PERSONALITIES, doPet, g, hasName, oPet, petName, type Origin, type Personality, type Sex, type TeamChoice, type Tutor } from '@/lib/pet';
 import { useHydrated, useQuiz, quizStore } from '@/lib/quiz-store';
 import { SPECIES, getSpecies, type Species } from '@/lib/species';
 import { allTeams } from '@/lib/teams';
@@ -32,8 +19,24 @@ import { PhotoPicker } from './PhotoPicker';
 import { TeamPicker } from './TeamPicker';
 import { Loading } from './Loading';
 
-const STEPS = ['abertura', 'especie', 'nome', 'raca-sexo', 'personalidade', 'origem', 'lugar', 'time', 'tutores', 'foto', 'cor', 'contato', 'carregando'] as const;
-const LAST_QUESTION = 11;
+const STEPS = [
+  'abertura',
+  'especie',
+  'nome',
+  'sexo',
+  'raca',
+  'personalidade',
+  'origem',
+  'time',
+  'tutores',
+  'cidade',
+  'endereco',
+  'foto',
+  'contato',
+  'carregando',
+] as const;
+const LAST_QUESTION = STEPS.indexOf('contato');
+const SRD = 'SRD (vira-lata)';
 
 export function Quiz({ settings }: { settings: SiteSettings }) {
   const router = useRouter();
@@ -61,8 +64,7 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
 
   useEffect(() => {
     const st = quizStore.get();
-    // Quem já chegou no fim volta direto para o resultado.
-    if (st.step >= LAST_QUESTION + 1) {
+    if (st.step > LAST_QUESTION) {
       router.replace('/resultado');
       return;
     }
@@ -90,9 +92,8 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
   // ---------- eventos por tela ----------
   useEffect(() => {
     if (!hydrated) return;
-    const name = STEPS[step];
     if (step === 0) track('ViewContent', { content_name: 'Abertura do quiz' }, { step });
-    track('QuizEtapa', { etapa: step, tela: name }, { step });
+    track('QuizEtapa', { etapa: step, tela: STEPS[step] }, { step });
   }, [step, hydrated]);
 
   const pick = useCallback(
@@ -137,126 +138,123 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
   const isQuestion = step >= 1 && step <= LAST_QUESTION;
   const progress = Math.min(1, step / LAST_QUESTION);
   const anim = dir === 'fwd' ? 'anim-screen' : 'anim-screen-back';
+  const name = hasName(pet) ? petName(pet) : '';
+  const id = STEPS[step];
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
       {isQuestion && (
-        <header className="sticky top-0 z-30 bg-creme/95 px-4 pb-3 pt-3 backdrop-blur">
+        <header className="sticky top-0 z-30 bg-creme/90 px-4 pb-3 pt-3 backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <button type="button" onClick={back} aria-label="Voltar" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl shadow-card active:scale-95">
-              ←
+            <button type="button" onClick={back} aria-label="Voltar" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-cacau shadow-card active:scale-95">
+              <ArrowLeft size={20} strokeWidth={2.4} />
             </button>
-            <Logo size={64} />
-            <button type="button" onClick={step === LAST_QUESTION ? () => go(LAST_QUESTION + 1) : next} className="h-10 rounded-full px-3 text-sm font-bold text-cacau/60 active:bg-areia">
+            <Logo size={58} />
+            <button type="button" onClick={next} className="h-10 rounded-full px-3 text-sm font-bold text-cacau/55 active:bg-areia">
               Pular
             </button>
           </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-linha" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-linha/80" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
             <div className="h-full rounded-full bg-gradient-to-r from-coral to-roxo transition-[width] duration-500 ease-out" style={{ width: `${Math.max(4, progress * 100)}%` }} />
           </div>
         </header>
       )}
 
       <main key={step} className={`flex flex-1 flex-col px-4 pb-8 ${anim}`}>
-        {step === 0 && <Opening settings={settings} onStart={next} />}
+        {id === 'abertura' && <Opening settings={settings} onStart={next} />}
 
-        {step === 1 && (
+        {id === 'especie' && (
           <Screen title="Quem é o seu melhor amigo?" subtitle="Vamos montar o kit com a cara dele.">
             <div className="grid grid-cols-2 gap-3">
               {SPECIES.map((sp) => (
-                <button
-                  key={sp.id}
-                  type="button"
-                  data-selected={pet.species === sp.id}
-                  onClick={() => pick({ species: sp.id as Species })}
-                  className="option !flex-col !gap-2 !py-5 text-center text-lg"
-                >
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-areia text-4xl">{sp.emoji}</span>
+                <Option key={sp.id} selected={pet.species === sp.id} onClick={() => pick({ species: sp.id as Species })} vertical>
+                  <IconBubble icon={SPECIES_ICON[sp.id]} selected={pet.species === sp.id} size="lg" />
                   {sp.label}
-                </button>
+                </Option>
               ))}
             </div>
           </Screen>
         )}
 
-        {step === 2 && (
+        {id === 'nome' && (
           <Screen title={`Qual é o nome do seu ${species?.noun ?? 'pet'}?`} subtitle="Vai aparecer em todos os documentos.">
-            <TextStep
-              value={pet.name ?? ''}
+            <input
+              className="input text-center font-display !text-2xl"
+              autoFocus
               placeholder="Ex.: Paçoca"
-              onChange={(v) => quizStore.setPet({ name: v })}
-              onSubmit={next}
+              value={pet.name ?? ''}
+              maxLength={24}
+              onChange={(e) => quizStore.setPet({ name: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && next()}
               autoCapitalize="words"
+              enterKeyHint="next"
+              autoComplete="off"
             />
-            {hasName(pet) && (
-              <p className="anim-fade-up mt-4 rounded-2xl bg-white p-4 text-center font-bold shadow-card">
-                No RG vai ficar: <span className="font-display text-xl text-roxo">{petName(pet)}</span> {species?.emoji}
-              </p>
-            )}
             <Continue onClick={next} />
           </Screen>
         )}
 
-        {step === 3 && (
-          <Screen title={`Me conta mais ${hasName(pet) ? `sobre ${oPet(pet)}` : 'sobre ele'}`} subtitle="Raça e sexo vão pro RG.">
-            <Label>Sexo</Label>
+        {id === 'sexo' && (
+          <Screen title={name ? `${name} é macho ou fêmea?` : 'É macho ou fêmea?'}>
             <div className="grid grid-cols-2 gap-3">
               {(
                 [
-                  ['macho', 'Macho', '♂'],
-                  ['femea', 'Fêmea', '♀'],
-                ] as [Sex, string, string][]
-              ).map(([id, label, icon]) => (
-                <button key={id} type="button" data-selected={pet.sex === id} onClick={() => quizStore.setPet({ sex: id })} className="option justify-center text-lg">
-                  <span className={id === 'macho' ? 'text-[#3D7DC8]' : 'text-[#E06C98]'}>{icon}</span> {label}
-                </button>
+                  ['macho', 'Macho', '♂', '#3D7DC8'],
+                  ['femea', 'Fêmea', '♀', '#E06C98'],
+                ] as [Sex, string, string, string][]
+              ).map(([sx, label, sym, color]) => (
+                <Option key={sx} selected={pet.sex === sx} onClick={() => pick({ sex: sx })} vertical>
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full text-4xl font-bold" style={{ background: `${color}1A`, color }}>
+                    {sym}
+                  </span>
+                  {label}
+                </Option>
               ))}
             </div>
-            <button type="button" onClick={() => quizStore.setPet({ sex: 'nao-sei' })} className={`mt-2 text-sm font-bold ${pet.sex === 'nao-sei' ? 'text-roxo' : 'text-cacau/50'}`}>
-              {pet.sex === 'nao-sei' ? '✓ ' : ''}Não sei / prefiro não dizer
+            <button type="button" onClick={() => pick({ sex: 'nao-sei' })} className="mt-4 text-center text-sm font-bold text-cacau/50">
+              Não sei / prefiro não dizer
             </button>
-            <Label className="mt-6">Raça</Label>
-            <BreedPicker breeds={species?.breeds ?? SPECIES[0].breeds} value={pet.breed ?? ''} onChange={(v) => quizStore.setPet({ breed: v })} />
+          </Screen>
+        )}
+
+        {id === 'raca' && (
+          <Screen title={name ? `Qual é a raça ${doPet(pet)}?` : 'Qual é a raça?'} subtitle="Vai no RG e na certidão.">
+            <Option selected={pet.breed === SRD} onClick={() => pick({ breed: SRD })}>
+              <IconBubble icon={SPECIES_ICON[pet.species ?? 'outro']} selected={pet.breed === SRD} />
+              <span className="flex flex-col">
+                <span className="text-lg">Sem raça definida</span>
+                <span className="text-sm font-semibold text-cacau/60">Vira-lata, com muito orgulho</span>
+              </span>
+            </Option>
+            <p className="my-4 text-center text-xs font-extrabold uppercase tracking-wider text-cacau/40">ou escolha a raça</p>
+            <BreedPicker breeds={(species?.breeds ?? SPECIES[0].breeds).filter((b) => b !== SRD)} value={pet.breed === SRD ? '' : pet.breed ?? ''} onChange={(v) => quizStore.setPet({ breed: v })} />
             <Continue onClick={next} />
           </Screen>
         )}
 
-        {step === 4 && (
+        {id === 'personalidade' && (
           <Screen title={`Como é a personalidade ${doPet(pet)}?`} subtitle="Escolha a que mais combina.">
             <div className="space-y-3">
-              {(Object.keys(PERSONALITIES) as Personality[]).map((id) => {
-                const d = PERSONALITIES[id];
+              {(Object.keys(PERSONALITIES) as Personality[]).map((pid) => {
+                const d = PERSONALITIES[pid];
                 return (
-                  <button key={id} type="button" data-selected={pet.personality === id} onClick={() => pick({ personality: id })} className="option">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-areia text-2xl">{d.emoji}</span>
+                  <Option key={pid} selected={pet.personality === pid} onClick={() => pick({ personality: pid })}>
+                    <IconBubble icon={PERSONALITY_ICON[pid]} selected={pet.personality === pid} />
                     <span className="flex flex-col">
                       <span className="text-lg">{g(pet, d.m, d.f)}</span>
                       <span className="text-sm font-semibold text-cacau/60">{d.hint}</span>
                     </span>
-                  </button>
+                  </Option>
                 );
               })}
             </div>
           </Screen>
         )}
 
-        {step === 5 && <OriginStep onNext={next} />}
+        {id === 'origem' && <OriginStep onNext={next} />}
 
-        {step === 6 && (
-          <Screen title={`Qual é o lugar favorito ${doPet(pet)}?`} subtitle="Vai virar o primeiro carimbo do Passaporte de Aventuras ✈️">
-            <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(PLACES) as Place[]).map((id) => (
-                <button key={id} type="button" data-selected={pet.place === id} onClick={() => pick({ place: id })} className="option !flex-col !gap-2 !py-5 text-center">
-                  <span className="text-4xl">{PLACES[id].emoji}</span>
-                  {PLACES[id].label}
-                </button>
-              ))}
-            </div>
-          </Screen>
-        )}
-
-        {step === 7 && (
-          <Screen title={`${hasName(pet) ? petName(pet) : 'Seu pet'} torce pra qual time?`} subtitle="Pra carteirinha de torcedor ⚽">
+        {id === 'time' && (
+          <Screen title={`${name || 'Seu pet'} torce pra qual time?`} subtitle="Pra carteirinha de torcedor.">
             <TeamPicker
               teams={teams}
               value={pet.team}
@@ -268,48 +266,58 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
           </Screen>
         )}
 
-        {step === 8 && (
-          <Screen title={`Quem são os tutores ${doPet(pet)}?`} subtitle="Vão no RG e na certidão.">
-            <Label>Nome dos tutores</Label>
+        {id === 'tutores' && <TutorsStep onNext={next} />}
+
+        {id === 'cidade' && (
+          <Screen title={`Em que cidade ${oPet(pet)} mora?`} subtitle="Vai na certidão e no RG.">
+            <div className="relative">
+              <MapPin className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cacau/40" size={22} />
+              <input
+                className="input !pl-12"
+                autoFocus
+                placeholder="Ex.: Belo Horizonte - MG"
+                value={pet.address?.city ?? ''}
+                onChange={(e) => quizStore.setPet({ address: { ...quizStore.get().pet.address, city: e.target.value } })}
+                onKeyDown={(e) => e.key === 'Enter' && next()}
+                autoCapitalize="words"
+                autoComplete="address-level2"
+                enterKeyHint="next"
+              />
+            </div>
+            <Continue onClick={next} />
+          </Screen>
+        )}
+
+        {id === 'endereco' && (
+          <Screen title={`Qual é o endereço ${doPet(pet)}?`} subtitle="Aparece na identidade que abre pelo QR Code da tag, pra quem encontrar saber onde ele mora.">
+            <Label>Rua e número</Label>
             <input
               className="input"
-              placeholder="Ex.: Ana e Léo"
-              value={pet.tutors ?? ''}
-              onChange={(e) => quizStore.setPet({ tutors: e.target.value })}
-              autoCapitalize="words"
+              placeholder="Ex.: Rua das Flores, 120"
+              value={pet.address?.street ?? ''}
+              onChange={(e) => quizStore.setPet({ address: { ...quizStore.get().pet.address, street: e.target.value } })}
+              autoComplete="address-line1"
               enterKeyHint="next"
             />
-            <Label className="mt-5">Cidade</Label>
+            <Label className="mt-5">Bairro</Label>
             <input
               className="input"
-              placeholder="Ex.: Belo Horizonte - MG"
-              value={pet.city ?? ''}
-              onChange={(e) => quizStore.setPet({ city: e.target.value })}
-              autoCapitalize="words"
-              enterKeyHint="done"
+              placeholder="Ex.: Santa Tereza"
+              value={pet.address?.district ?? ''}
+              onChange={(e) => quizStore.setPet({ address: { ...quizStore.get().pet.address, district: e.target.value } })}
               onKeyDown={(e) => e.key === 'Enter' && next()}
+              autoComplete="address-line2"
+              enterKeyHint="done"
             />
             <Continue onClick={next} />
           </Screen>
         )}
 
-        {step === 9 && (
-          <Screen title={`Agora a parte mais fofa: uma foto ${doPet(pet)} 📸`} subtitle="Ela vai no RG, na certidão, na carteira de vacinação e nos bônus.">
-            <PhotoPicker value={pet.photo} emoji={species?.emoji ?? '🐾'} onChange={(photo) => quizStore.setPet({ photo })} />
-            <Continue onClick={next} label={pet.photo ? 'Ficou ótima! Continuar' : 'Continuar'} />
-            {!pet.photo && (
-              <button type="button" onClick={next} className="mt-3 text-center text-sm font-bold text-cacau/50">
-                Pular, coloco a foto depois
-              </button>
-            )}
-          </Screen>
-        )}
+        {id === 'foto' && <PhotoStep settings={settings} onNext={next} />}
 
-        {step === 10 && <ColorStep settings={settings} onNext={next} />}
+        {id === 'contato' && <ContactStep onSubmit={() => (saveLead(), go(LAST_QUESTION + 1))} title={`Pra onde enviamos o kit ${doPet(pet)}?`} />}
 
-        {step === 11 && <ContactStep onSubmit={() => (saveLead(), go(LAST_QUESTION + 1))} title={`Pra onde enviamos o kit ${doPet(pet)}?`} />}
-
-        {step === 12 && <Loading pet={pet} settings={settings} onDone={finishLoading} />}
+        {id === 'carregando' && <Loading pet={pet} settings={settings} onDone={finishLoading} />}
       </main>
     </div>
   );
@@ -319,55 +327,50 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
 
 function Screen({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-1 flex-col pt-3">
-      <h1 className="h-display text-[27px] leading-[1.15]">{title}</h1>
-      {subtitle && <p className="mt-2 text-[15px] font-semibold text-cacau/70">{subtitle}</p>}
+    <section className="flex flex-1 flex-col pt-4">
+      <h1 className="h-display text-[28px] leading-[1.12]">{title}</h1>
+      {subtitle && <p className="mt-2 text-[15px] font-semibold leading-snug text-cacau/65">{subtitle}</p>}
       <div className="mt-6 flex flex-1 flex-col">{children}</div>
     </section>
   );
 }
 
-function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <p className={`mb-2 text-sm font-extrabold uppercase tracking-wide text-cacau/60 ${className}`}>{children}</p>;
-}
-
-function Continue({ onClick, label = 'Continuar', disabled }: { onClick: () => void; label?: string; disabled?: boolean }) {
+function Option({ selected, onClick, children, vertical }: { selected?: boolean; onClick: () => void; children: React.ReactNode; vertical?: boolean }) {
   return (
-    <div className="mt-auto pt-8">
-      <button type="button" onClick={onClick} disabled={disabled} className="btn-primary w-full">
-        {label} →
-      </button>
-    </div>
+    <button type="button" data-selected={!!selected} onClick={onClick} className={`option ${vertical ? '!flex-col !gap-2 !py-5 text-center text-lg' : ''}`}>
+      {children}
+      {selected && (
+        <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-roxo text-white">
+          <Check size={13} strokeWidth={3.5} />
+        </span>
+      )}
+    </button>
   );
 }
 
-function TextStep(props: { value: string; placeholder: string; onChange: (v: string) => void; onSubmit: () => void; autoCapitalize?: string }) {
+function Label({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <p className={`mb-2 text-xs font-extrabold uppercase tracking-wider text-cacau/55 ${className}`}>{children}</p>;
+}
+
+function Continue({ onClick, label = 'Continuar' }: { onClick: () => void; label?: string }) {
   return (
-    <input
-      className="input text-center font-display !text-2xl"
-      autoFocus
-      placeholder={props.placeholder}
-      value={props.value}
-      maxLength={24}
-      onChange={(e) => props.onChange(e.target.value)}
-      onKeyDown={(e) => e.key === 'Enter' && props.onSubmit()}
-      autoCapitalize={props.autoCapitalize}
-      enterKeyHint="next"
-      autoComplete="off"
-    />
+    <div className="mt-auto pt-8">
+      <button type="button" onClick={onClick} className="btn-primary w-full">
+        {label} <ArrowRight size={20} strokeWidth={2.6} />
+      </button>
+    </div>
   );
 }
 
 function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () => void }) {
   return (
     <section className="flex flex-1 flex-col items-center pt-4 text-center">
-      <Logo size={150} priority />
-      <span className="chip mt-3 !bg-[#F7EEF8] !text-roxo">🐾 Kit Identidade Pet</span>
-      <h1 className="h-display mt-3 text-[32px] leading-[1.08]">
-        Crie o <span className="text-roxo">RG do seu pet</span> com foto e nome
+      <Logo size={140} priority />
+      <h1 className="h-display mt-4 text-[32px] leading-[1.08]">
+        O <span className="text-roxo">RG do seu pet</span>, com foto e nome
       </h1>
-      <p className="mt-3 text-[16px] font-semibold leading-snug text-cacau/75">
-        E mais 5 documentos personalizados: certidão, passaporte de aventuras, tag com QR Code, carteira de vacinação e carteirinha de torcedor.
+      <p className="mt-3 text-[16px] font-semibold leading-snug text-cacau/70">
+        E mais: CNH Pet, certidão, tag com QR Code, carteira de vacinação e muito mais. Tudo personalizado e pronto pra imprimir.
       </p>
       <div className="mt-5 w-full">
         {settings.images.heroMockup ? (
@@ -379,27 +382,31 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
       </div>
       <div className="mt-7 w-full">
         <button type="button" onClick={onStart} className="btn-cta shine anim-pulse text-xl">
-          Montar o kit do meu pet →
+          Montar o kit do meu pet <ArrowRight size={22} strokeWidth={2.6} />
         </button>
-        <p className="mt-3 text-sm font-bold text-cacau/70">⏱️ Leva 2 minutos · prévia grátis</p>
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-cacau/65">
+          <Clock size={15} strokeWidth={2.5} /> Leva 2 minutos · prévia grátis
+        </p>
       </div>
-      <div className="mt-5 flex flex-col items-center gap-1">
-        <div className="flex items-center gap-2">
-          <Stars value={settings.rating} />
-          <span className="font-extrabold">{settings.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</span>
-        </div>
-        {settings.tutorsCount > 0 && <p className="text-sm font-bold text-cacau/70">+{formatInt(settings.tutorsCount)} tutores já montaram o kit</p>}
+      <div className="mt-5 flex items-center gap-2">
+        <Stars value={settings.rating} />
+        <span className="font-extrabold">{settings.rating.toLocaleString('pt-BR', { minimumFractionDigits: 1 })}</span>
+        {settings.tutorsCount > 0 && <span className="text-sm font-bold text-cacau/60">· +{formatInt(settings.tutorsCount)} tutores</span>}
       </div>
-      <ul className="mt-6 grid w-full grid-cols-3 gap-2 text-[12px] font-bold text-cacau/75">
-        <li className="rounded-2xl bg-white p-3 shadow-card">
-          <span className="block text-xl">👀</span>Veja antes de pagar
-        </li>
-        <li className="rounded-2xl bg-white p-3 shadow-card">
-          <span className="block text-xl">⚡</span>Download na hora
-        </li>
-        <li className="rounded-2xl bg-white p-3 shadow-card">
-          <span className="block text-xl">🖨️</span>Imprima em casa
-        </li>
+      <ul className="mt-6 grid w-full grid-cols-3 gap-2 text-[12px] font-bold leading-tight text-cacau/75">
+        {[
+          [Eye, 'Veja antes de pagar'],
+          [Mail, 'Receba no e-mail'],
+          [Printer, 'Imprima em casa'],
+        ].map(([Icon, label]) => {
+          const I = Icon as typeof Eye;
+          return (
+            <li key={label as string} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-card">
+              <I size={20} className="text-roxo" strokeWidth={2.2} />
+              {label as string}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -408,25 +415,24 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
 function OriginStep({ onNext }: { onNext: () => void }) {
   const { pet } = useQuiz();
   const today = new Date().toISOString().slice(0, 10);
-  const opts: [Origin, string, string][] = [
-    ['nascimento', 'Nasceu com a gente', '🍼'],
-    ['adocao', g(pet, 'Foi adotado', 'Foi adotada'), '🏡'],
+  const opts: [Origin, string, typeof Baby][] = [
+    ['nascimento', 'Nasceu com a gente', Baby],
+    ['adocao', g(pet, 'Foi adotado', 'Foi adotada'), House],
   ];
   return (
     <Screen title={`Como ${oPet(pet)} chegou na sua vida?`} subtitle="Define se vem a certidão de nascimento ou de adoção.">
       <div className="grid grid-cols-2 gap-3">
-        {opts.map(([id, label, emoji]) => (
-          <button key={id} type="button" data-selected={pet.origin === id} onClick={() => quizStore.setPet({ origin: id })} className="option !flex-col !gap-2 !py-5 text-center">
-            <span className="text-4xl">{emoji}</span>
+        {opts.map(([oid, label, Icon]) => (
+          <Option key={oid} selected={pet.origin === oid} onClick={() => quizStore.setPet({ origin: oid })} vertical>
+            <IconBubble icon={Icon} selected={pet.origin === oid} size="lg" />
             {label}
-          </button>
+          </Option>
         ))}
       </div>
       {pet.origin && (
         <div className="anim-fade-up mt-6">
           <Label>{pet.origin === 'adocao' ? 'Data da adoção' : 'Data de nascimento'} (se souber)</Label>
           <input type="date" className="input" max={today} value={pet.date ?? ''} onChange={(e) => quizStore.setPet({ date: e.target.value })} />
-          <p className="mt-2 text-sm font-semibold text-cacau/60">Não sabe a data certinha? Pode deixar em branco e completar depois.</p>
         </div>
       )}
       <Continue onClick={onNext} />
@@ -434,33 +440,71 @@ function OriginStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-function ColorStep({ settings, onNext }: { settings: SiteSettings; onNext: () => void }) {
-  const s = useQuiz();
-  const pet = s.pet;
-  const color = defaultRgColor(pet);
-  const ctx = useMemo(
-    () => buildDocContext({ pet: { ...pet, rgColor: color }, settings, seed: s.lead?.petId || pet.name || 'pet', slug: s.lead?.slug, phone: s.contact.phone, preview: true }),
-    [pet, color, settings, s.lead, s.contact.phone],
-  );
+function TutorsStep({ onNext }: { onNext: () => void }) {
+  const { pet } = useQuiz();
+  const list: Tutor[] = pet.tutors?.length ? pet.tutors : [{ name: '' }];
+  const set = (t: Tutor[]) => quizStore.setPet({ tutors: t });
   return (
-    <Screen title={`Escolha a cor do RG ${doPet(pet)}`} subtitle="Toque nas cores pra ver ao vivo.">
-      <div className="anim-pop">
-        <DocImage doc="rg" ctx={ctx} scale={0.62} className="drop-shadow-xl" />
-      </div>
-      <div className="mt-6 flex justify-center gap-3">
-        {(Object.keys(rgColors) as RgColor[]).map((c) => (
-          <button
-            key={c}
-            type="button"
-            aria-label={rgColors[c].label}
-            onClick={() => quizStore.setPet({ rgColor: c })}
-            className={`h-12 w-12 rounded-full border-4 transition-transform active:scale-90 ${color === c ? 'scale-110 border-cacau' : 'border-white'}`}
-            style={{ background: rgColors[c].main, boxShadow: '0 4px 12px -4px rgba(0,0,0,.3)' }}
-          />
+    <Screen title={`Quem são os tutores ${doPet(pet)}?`} subtitle="Vão no RG, na CNH e na certidão.">
+      <div className="space-y-3">
+        {list.map((t, i) => (
+          <div key={i} className="anim-fade-up relative">
+            <input
+              className="input pr-12"
+              autoFocus={i === list.length - 1 && i > 0}
+              placeholder={i === 0 ? 'Seu nome' : `Nome do tutor ${i + 1}`}
+              value={t.name}
+              onChange={(e) => set(list.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+              autoCapitalize="words"
+              autoComplete={i === 0 ? 'name' : 'off'}
+              enterKeyHint="next"
+            />
+            {list.length > 1 && (
+              <button
+                type="button"
+                aria-label="Remover tutor"
+                onClick={() => set(list.filter((_, j) => j !== i))}
+                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-cacau/40 active:bg-areia"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
         ))}
       </div>
-      <p className="mt-3 text-center text-sm font-bold text-cacau/60">{rgColors[color].label}</p>
-      <Continue onClick={onNext} label="Ficou lindo! Continuar" />
+      {list.length < 4 && (
+        <button
+          type="button"
+          onClick={() => set([...list, { name: '' }])}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-linha py-3 font-bold text-roxo active:bg-white"
+        >
+          <Plus size={18} strokeWidth={2.6} /> Adicionar mais um tutor
+        </button>
+      )}
+      <Continue onClick={onNext} />
+    </Screen>
+  );
+}
+
+function PhotoStep({ settings, onNext }: { settings: SiteSettings; onNext: () => void }) {
+  const s = useQuiz();
+  const pet = s.pet;
+  const ctx = useMemo(
+    () => buildDocContext({ pet, settings, seed: s.lead?.petId || pet.name || 'pet', slug: s.lead?.slug, phone: s.contact.phone, preview: true }),
+    [pet, settings, s.lead, s.contact.phone],
+  );
+  return (
+    <Screen title={`Agora a parte mais fofa: uma foto ${doPet(pet)}`} subtitle="De frente, com boa luz. Ela vai no RG, na CNH, na certidão e nos bônus.">
+      {pet.photo ? (
+        <div className="anim-pop">
+          <DocImage doc="rg" ctx={ctx} scale={0.6} className="overflow-hidden rounded-2xl drop-shadow-xl" />
+          <p className="mt-3 text-center text-sm font-bold text-verde">Ficou demais! Assim vai sair no RG.</p>
+        </div>
+      ) : null}
+      <div className={pet.photo ? 'mt-5' : ''}>
+        <PhotoPicker value={pet.photo} species={pet.species} compact={!!pet.photo} onChange={(photo) => quizStore.setPet({ photo })} />
+      </div>
+      <Continue onClick={onNext} label={pet.photo ? 'Continuar' : 'Continuar sem foto'} />
     </Screen>
   );
 }
@@ -488,7 +532,7 @@ function ContactStep({ onSubmit, title }: { onSubmit: () => void; title: string 
   }
 
   return (
-    <Screen title={title} subtitle="Assim que liberar, o acesso chega no seu WhatsApp e e-mail.">
+    <Screen title={title} subtitle="O kit chega completo no seu e-mail, pronto pra imprimir.">
       <Label>WhatsApp</Label>
       <input
         className="input"
@@ -528,8 +572,10 @@ function ContactStep({ onSubmit, title }: { onSubmit: () => void; title: string 
           . Vamos usar seus dados só para enviar o kit e falar sobre ele.
         </span>
       </label>
-      {nudge && !contact.consent && <p className="mt-1 px-3 text-sm font-bold text-[#B45309]">Marque a caixinha pra gente poder guardar o kit no seu nome 💛</p>}
-      <p className="mt-4 text-center text-sm font-bold text-cacau/60">🔒 Seus dados ficam protegidos. Nada de spam.</p>
+      {nudge && !contact.consent && <p className="mt-1 px-3 text-sm font-bold text-[#B45309]">Marque a caixinha pra gente poder guardar o kit no seu nome.</p>}
+      <p className="mt-4 flex items-center justify-center gap-1.5 text-sm font-bold text-cacau/55">
+        <ShieldCheck size={16} /> Seus dados ficam protegidos. Nada de spam.
+      </p>
       <Continue onClick={submit} label="Ver o kit pronto" />
     </Screen>
   );

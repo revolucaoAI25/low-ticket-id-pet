@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown, PawPrint, Search, Sofa, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import type { TeamChoice } from '@/lib/pet';
@@ -14,8 +15,8 @@ interface Props {
 function Crest({ team, size = 44 }: { team: Team; size?: number }) {
   if (!team.crest)
     return (
-      <span className="flex items-center justify-center rounded-full text-lg" style={{ width: size, height: size, background: team.primary, color: '#fff' }}>
-        🐾
+      <span className="flex items-center justify-center rounded-full" style={{ width: size, height: size, background: team.primary, color: '#fff' }}>
+        <PawPrint size={size * 0.5} />
       </span>
     );
   return <Image src={team.crest} alt="" width={size} height={size} className="object-contain" style={{ width: size, height: size }} />;
@@ -45,7 +46,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xl">🔎</span>
+        <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cacau/40" size={20} />
         <input
           className="input !pl-12"
           placeholder="Busque o time (ex.: Galo, Timão, Mengão)"
@@ -58,7 +59,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
 
       {noMatch && (
         <div className="anim-fade-up rounded-2xl border-2 border-mel/60 bg-[#FFF6E5] p-4 text-[15px]">
-          <p className="font-bold">Ainda não temos o escudo do “{typed}” 😕</p>
+          <p className="font-bold">Ainda não temos o escudo do “{typed}”</p>
           <p className="mt-1 text-cacau/80">
             Sem problema: a carteirinha sai com um escudo especial do Clube do Focinho e o nome do seu time. Depois da compra você pode trocar
             quando quiser.
@@ -90,7 +91,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
           <details className="group rounded-2xl border-2 border-linha bg-white">
             <summary className="flex cursor-pointer list-none items-center justify-between p-4 font-bold">
               Ver todos os {teams.length} times
-              <span className="transition-transform group-open:rotate-180">⌄</span>
+              <ChevronDown size={20} className="transition-transform group-open:rotate-180" />
             </summary>
             <div className="grid grid-cols-1 gap-2 p-3 pt-0">{others.map(row)}</div>
           </details>
@@ -99,7 +100,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
 
       <div className="grid grid-cols-2 gap-2">
         <button type="button" className="option justify-center !p-3 text-[15px]" data-selected={value?.none === true} onClick={() => onPick({ id: null, name: '', none: true })}>
-          🛋️ Não torce
+          <Sofa size={18} className="text-roxo" /> Não torce
         </button>
         <button
           type="button"
@@ -109,7 +110,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
             el?.focus();
           }}
         >
-          ⚽ Outro time
+          <Trophy size={18} className="text-roxo" /> Outro time
         </button>
       </div>
     </div>

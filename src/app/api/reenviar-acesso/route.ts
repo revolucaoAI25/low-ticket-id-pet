@@ -1,11 +1,10 @@
-import { doPet } from '@/lib/pet';
-import { sendAccessEmail } from '@/lib/server/email';
+import { resendCustomer } from '@/lib/server/notify';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail } from '@/lib/server/util';
 
 export const runtime = 'nodejs';
 
-/** Reenvia o link de acesso para o e-mail da compra. Nunca revela se o e-mail existe. */
+/** Reenvia o kit (ou o link de confirmação) para o e-mail da compra. Nunca revela se o e-mail existe. */
 export async function POST(req: Request) {
   const sb = db();
   const { email: raw } = await req.json().catch(() => ({ email: '' }));
@@ -13,17 +12,14 @@ export async function POST(req: Request) {
   if (sb && email) {
     const { data } = await sb
       .from('customers')
-      .select('id, access_token, pets(data)')
+      .select('email, access_token, pets(data, files, submitted_at)')
       .eq('email', email)
       .not('paid_at', 'is', null)
       .is('refunded_at', null)
       .order('paid_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (data) {
-      const pets = (data as unknown as { pets?: { data: Record<string, unknown> }[] }).pets ?? [];
-      await sendAccessEmail(email, data.access_token, pets[0] ? doPet(pets[0].data) : undefined);
-    }
+    if (data) await resendCustomer(data as never);
   }
   return json({ ok: true });
 }

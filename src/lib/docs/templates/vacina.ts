@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDateBR, petName, sexLabel } from '@/lib/pet';
+import { formatDateBR, petName, sexLabel, cityOf, tutorNames } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { formatPhone, photoBox } from '../common';
 import { field, line, paw, pawPattern, rr, text } from '../draw';
@@ -97,9 +97,9 @@ export const vacinaDoc: DocDef = {
         const full = W - 120;
         field(ctx, 'Pelagem / sinais', ex.coat ?? '', 60, 700, (full - 30) / 2, opt);
         field(ctx, 'Nº do microchip', ex.microchip ?? '', 60 + (full - 30) / 2 + 30, 700, (full - 30) / 2, opt);
-        field(ctx, 'Tutores', p.tutors ?? '', 60, 800, full, opt);
+        field(ctx, 'Tutores', tutorNames(p), 60, 800, full, opt);
         field(ctx, 'Telefone', formatPhone(c.phone), 60, 900, (full - 30) / 2, opt);
-        field(ctx, 'Cidade', p.city ?? '', 60 + (full - 30) / 2 + 30, 900, (full - 30) / 2, opt);
+        field(ctx, 'Cidade', cityOf(p), 60 + (full - 30) / 2 + 30, 900, (full - 30) / 2, opt);
         field(ctx, 'Veterinário(a) / clínica', [ex.vetName, ex.vetClinic].filter(Boolean).join(' · '), 60, 1000, (full - 30) / 2, opt);
         field(ctx, 'Telefone da clínica', formatPhone(ex.vetPhone), 60 + (full - 30) / 2 + 30, 1000, (full - 30) / 2, opt);
         field(ctx, 'Alergias / condições', [ex.allergies, ex.conditions].filter(Boolean).join(' · '), 60, 1100, full, opt);

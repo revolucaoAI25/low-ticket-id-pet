@@ -6,18 +6,21 @@ import { bonusItems } from '@/config/offer';
 import { Logo } from '@/components/ui';
 import { allPages } from '@/lib/docs/render';
 import { TEAMS } from '@/lib/teams';
+import { Modelos } from './Modelos';
 
-type Tab = 'funil' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
+type Tab = 'funil' | 'pedidos' | 'modelos' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
 const TABS: [Tab, string][] = [
-  ['funil', '📊 Funil'],
-  ['oferta', '💰 Oferta'],
-  ['checkout', '🛒 Checkouts'],
-  ['rastreamento', '🎯 Pixel e UTMs'],
-  ['prova', '⭐ Prova social'],
-  ['imagens', '🖼️ Imagens'],
-  ['bonus', '🎁 PDFs dos bônus'],
-  ['times', '⚽ Times'],
-  ['contato', '☎️ Suporte'],
+  ['funil', 'Funil'],
+  ['pedidos', 'Pedidos'],
+  ['oferta', 'Oferta'],
+  ['checkout', 'Checkouts'],
+  ['rastreamento', 'Pixel e UTMs'],
+  ['prova', 'Prova social'],
+  ['imagens', 'Imagens e templates'],
+  ['modelos', 'Conferir documentos'],
+  ['bonus', 'PDFs dos bônus'],
+  ['times', 'Times'],
+  ['contato', 'Suporte'],
 ];
 
 export function Admin() {
@@ -86,6 +89,8 @@ export function Admin() {
 
       <div className="mt-4 space-y-4">
         {tab === 'funil' && <Funnel />}
+        {tab === 'pedidos' && <Orders />}
+        {tab === 'modelos' && <Modelos settings={s} />}
 
         {tab === 'oferta' && (
           <Card title="Preço, ancoragem e números">
@@ -162,7 +167,7 @@ export function Admin() {
             </Card>
             <Card
               title="Fundos prontos dos documentos"
-              hint="Quando a IA de imagens entregar os templates, suba aqui o fundo de cada página (sem os dados escritos). O código continua escrevendo foto, nome e campos por cima. Pode ser preciso ajustar as posições em src/lib/docs/templates."
+              hint="Suba aqui a imagem do template de cada página (sem os dados escritos). Depois que as posições dos campos forem mapeadas no código, o site escreve foto, nome e dados por cima. Confira em 'Conferir documentos'."
             >
               {allPages().map(({ doc, page }) => (
                 <Upload
@@ -199,7 +204,7 @@ export function Admin() {
         )}
       </div>
 
-      {tab !== 'funil' && (
+      {!['funil', 'pedidos', 'modelos'].includes(tab) && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-linha bg-white/95 p-3 backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <p className="flex-1 text-sm font-bold text-cacau/70">
@@ -217,7 +222,7 @@ export function Admin() {
 
 /* ---------------- abas ---------------- */
 
-const STEP_NAMES = ['Abertura', 'Espécie', 'Nome', 'Raça e sexo', 'Personalidade', 'Origem', 'Lugar favorito', 'Time', 'Tutores', 'Foto', 'Cor do RG', 'Contato', 'Carregando'];
+const STEP_NAMES = ['Abertura', 'Espécie', 'Nome', 'Sexo', 'Raça', 'Personalidade', 'Origem', 'Time', 'Tutores', 'Cidade', 'Endereço', 'Foto', 'Contato', 'Carregando'];
 
 function Funnel() {
   const [days, setDays] = useState(7);
@@ -395,6 +400,103 @@ function TeamsTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
         <summary className="cursor-pointer font-bold">Ver códigos dos times que já existem</summary>
         <p className="mt-2 leading-relaxed text-cacau/70">{TEAMS.map((t) => `${t.short} (${t.id})`).join(' · ')}</p>
       </details>
+    </Card>
+  );
+}
+
+interface OrderRow {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  name: string | null;
+  paid_at: string;
+  refunded_at: string | null;
+  extra_pet_slots: number;
+  access_token: string;
+  pets: { id: string; data: { name?: string }; submitted_at: string | null; files: { url: string; kind: string }[] | null }[];
+}
+
+function Orders() {
+  const [q, setQ] = useState('');
+  const [rows, setRows] = useState<OrderRow[] | null>(null);
+  const [msg, setMsg] = useState('');
+  const load = useCallback(async (term = '') => {
+    const r = await fetch(`/api/admin/pedidos?q=${encodeURIComponent(term)}`, { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) setRows(d.orders);
+    else setMsg(d.error || 'Erro');
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  const act = async (action: 'resend' | 'unlock', customerId: string) => {
+    const r = await fetch('/api/admin/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, customerId }) });
+    const d = await r.json().catch(() => ({}));
+    setMsg(r.ok ? (action === 'resend' ? (d.ok ? 'E-mail reenviado.' : 'Não foi possível enviar (confira o Resend).') : 'Edição liberada: o cliente pode corrigir e gerar de novo pelo mesmo link.') : d.error || 'Erro');
+    load(q);
+  };
+  return (
+    <Card title="Pedidos pagos" hint="Busque pelo e-mail. 'Liberar edição' deixa o cliente corrigir os dados e gerar o kit de novo pelo mesmo link.">
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          load(q);
+        }}
+      >
+        <input className="input !min-h-[44px] !text-base" placeholder="E-mail do cliente" value={q} onChange={(e) => setQ(e.target.value)} />
+        <button className="btn-primary !min-h-[44px] !px-4 !text-base" type="submit">
+          Buscar
+        </button>
+      </form>
+      {msg && <p className="rounded-xl bg-areia p-2 text-sm font-bold">{msg}</p>}
+      {!rows ? (
+        <p>Carregando…</p>
+      ) : !rows.length ? (
+        <p className="text-sm text-cacau/60">Nenhum pedido.</p>
+      ) : (
+        <ul className="divide-y divide-linha">
+          {rows.map((o) => {
+            const link = `${window.location.origin}/confirmar/${o.access_token}`;
+            const pending = !o.pets.length || o.pets.some((p) => !p.submitted_at);
+            return (
+              <li key={o.id} className="py-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <b>{o.email || '(sem e-mail)'}</b>
+                  {o.refunded_at ? (
+                    <span className="rounded-full bg-red-100 px-2 text-xs font-bold text-red-700">reembolsado</span>
+                  ) : pending ? (
+                    <span className="rounded-full bg-[#FFF1E0] px-2 text-xs font-bold text-[#9A3412]">aguardando dados</span>
+                  ) : (
+                    <span className="rounded-full bg-[#E6F4EA] px-2 text-xs font-bold text-verde">kit enviado</span>
+                  )}
+                  <span className="text-cacau/50">{new Date(o.paid_at).toLocaleString('pt-BR')}</span>
+                </div>
+                <p className="mt-1 text-cacau/70">
+                  Pets: {o.pets.map((p) => p.data?.name || 'sem nome').join(', ') || '—'} · vagas: {1 + o.extra_pet_slots}
+                  {o.phone ? ` · ${o.phone}` : ''}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-3 font-bold text-roxo">
+                  <button type="button" onClick={() => act('resend', o.id)}>
+                    Reenviar e-mail
+                  </button>
+                  <button type="button" onClick={() => act('unlock', o.id)}>
+                    Liberar edição
+                  </button>
+                  <button type="button" onClick={() => navigator.clipboard.writeText(link).then(() => setMsg('Link copiado.'))}>
+                    Copiar link
+                  </button>
+                  {o.pets.flatMap((p) => p.files ?? []).filter((f) => f.kind === 'kit-pdf').map((f) => (
+                    <a key={f.url} href={f.url} target="_blank" rel="noreferrer">
+                      Ver PDF
+                    </a>
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }

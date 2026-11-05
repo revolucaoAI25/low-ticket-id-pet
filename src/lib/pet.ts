@@ -1,10 +1,8 @@
-import type { RgColor } from '@/config/brand';
 import { getSpecies, type Species } from './species';
 
 export type Sex = 'macho' | 'femea' | 'nao-sei';
 export type Personality = 'aventureiro' | 'dorminhoco' | 'comilao' | 'brincalhao' | 'grudinho';
 export type Origin = 'nascimento' | 'adocao';
-export type Place = 'praia' | 'parque' | 'sofa' | 'carro' | 'casa-da-vo' | 'trilha';
 
 export interface TeamChoice {
   /** id do time na lista, ou null quando a pessoa digitou um time que não temos. */
@@ -13,13 +11,24 @@ export interface TeamChoice {
   none?: boolean;
 }
 
+export interface Tutor {
+  name: string;
+  phone?: string;
+}
+
+export interface Address {
+  street?: string;
+  district?: string;
+  city?: string;
+}
+
 export interface EmergencyContact {
   name: string;
   phone: string;
   relation?: string;
 }
 
-/** Dados completados depois da compra, na área do pet. */
+/** Dados completados uma vez, na página de confirmação depois da compra. */
 export interface PetExtras {
   coat?: string;
   size?: string;
@@ -38,9 +47,10 @@ export interface PetExtras {
   vetClinic?: string;
   vetPhone?: string;
   contacts?: EmergencyContact[];
-  lostMessage?: string;
-  showPhone?: boolean;
-  reward?: string;
+  /** Cor favorita (hex), usada nos bônus. */
+  favoriteColor?: string;
+  /** Fotos extras (URLs ou dataURLs), usadas nos bônus. */
+  photos?: string[];
 }
 
 export interface PetData {
@@ -51,62 +61,58 @@ export interface PetData {
   personality?: Personality;
   origin?: Origin;
   date?: string; // AAAA-MM-DD
-  place?: Place;
   team?: TeamChoice;
-  tutors?: string;
-  city?: string;
-  rgColor?: RgColor;
+  tutors?: Tutor[];
+  address?: Address;
   /** Foto: dataURL (no navegador, antes de salvar) ou URL pública (Supabase). */
   photo?: string;
   extras?: PetExtras;
 }
 
-export const PERSONALITIES: Record<Personality, { m: string; f: string; emoji: string; hint: string; about: (n: string, o: string) => string }> = {
+export const PERSONALITIES: Record<Personality, { m: string; f: string; hint: string; about: (n: string, o: string) => string }> = {
   aventureiro: {
     m: 'Aventureiro',
     f: 'Aventureira',
-    emoji: '🧭',
     hint: 'Quer explorar tudo',
     about: (n, o) => `${n} não perde uma chance de explorar. Rua nova, cheiro novo, gente nova: pra ${o}, tudo é aventura.`,
   },
   dorminhoco: {
     m: 'Dorminhoco',
     f: 'Dorminhoca',
-    emoji: '😴',
     hint: 'Especialista em soneca',
     about: (n) => `${n} sabe aproveitar a vida: acha o cantinho mais quentinho da casa e transforma qualquer tarde numa soneca.`,
   },
   comilao: {
     m: 'Comilão',
     f: 'Comilona',
-    emoji: '🍗',
     hint: 'Ouve o pacote abrindo de longe',
     about: (n) => `${n} escuta pacote abrindo do outro lado da casa. Comida é amor, e amor nunca é demais.`,
   },
   brincalhao: {
     m: 'Brincalhão',
     f: 'Brincalhona',
-    emoji: '🎾',
     hint: 'Energia infinita',
     about: (n) => `${n} tem energia de sobra e sempre um brinquedo por perto. Com essa companhia, não existe dia sem graça.`,
   },
   grudinho: {
     m: 'Grudinho',
     f: 'Grudinha',
-    emoji: '🥰',
     hint: 'Sombra do tutor',
     about: (n) => `${n} é a sua sombra: vai aonde você vai, deita onde você deita e faz festa toda vez que você chega.`,
   },
 };
 
-export const PLACES: Record<Place, { label: string; emoji: string; stamp: string }> = {
-  praia: { label: 'Praia', emoji: '🏖️', stamp: 'PRAIA' },
-  parque: { label: 'Parque', emoji: '🌳', stamp: 'PARQUE' },
-  sofa: { label: 'Sofá', emoji: '🛋️', stamp: 'SOFÁ' },
-  carro: { label: 'Passeio de carro', emoji: '🚗', stamp: 'PASSEIO DE CARRO' },
-  'casa-da-vo': { label: 'Casa da vó', emoji: '👵', stamp: 'CASA DA VÓ' },
-  trilha: { label: 'Trilha', emoji: '🥾', stamp: 'TRILHA' },
-};
+/** Cores que a pessoa pode escolher como favorita (bônus). */
+export const FAVORITE_COLORS: { id: string; label: string; hex: string }[] = [
+  { id: 'rosa', label: 'Rosa', hex: '#E8789E' },
+  { id: 'azul', label: 'Azul', hex: '#4D8FD6' },
+  { id: 'verde', label: 'Verde', hex: '#4FA36F' },
+  { id: 'amarelo', label: 'Amarelo', hex: '#EDB12C' },
+  { id: 'laranja', label: 'Laranja', hex: '#E8833A' },
+  { id: 'vermelho', label: 'Vermelho', hex: '#D9534F' },
+  { id: 'roxo', label: 'Roxo', hex: '#8A4BA0' },
+  { id: 'lilas', label: 'Lilás', hex: '#B79AD9' },
+];
 
 export function isFemale(p: PetData): boolean {
   return p.sex === 'femea';
@@ -150,16 +156,27 @@ export function sexLabel(p: PetData): string {
   return '';
 }
 
-export function defaultRgColor(p: PetData): RgColor {
-  if (p.rgColor) return p.rgColor;
-  return p.sex === 'femea' ? 'rosa' : 'azul';
-}
-
 export function speciesNoun(p: PetData): string {
   return getSpecies(p.species)?.noun ?? 'pet';
 }
 
-/** Texto do template: troca {nome} e {do}. */
+/** Nomes dos tutores separados por vírgula ("Ana, Léo e Bia"). */
+export function tutorNames(p: PetData): string {
+  const names = (p.tutors ?? []).map((t) => t.name.trim()).filter(Boolean);
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
+}
+
+export function cityOf(p: PetData): string {
+  return p.address?.city?.trim() ?? '';
+}
+
+export function addressLine(p: PetData): string {
+  const a = p.address ?? {};
+  return [a.street, a.district, a.city].map((s) => s?.trim()).filter(Boolean).join(' · ');
+}
+
+/** Texto do template: troca {nome}, {do} e {certidao}. */
 export function fill(text: string, p: PetData): string {
   const certidao = p.origin === 'adocao' ? 'Adoção' : p.origin === 'nascimento' ? 'Nascimento' : 'Nascimento ou de Adoção';
   return text
@@ -202,5 +219,23 @@ export function clubNumber(seed: string): string {
     h = Math.imul(h, 16777619);
   }
   const n = (h >>> 0).toString().padStart(10, '0').slice(0, 8);
-  return `CF ${n.slice(0, 4)}-${n.slice(4, 8)}`;
+  return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5, 8)}`;
+}
+
+/** Converte dados antigos (tutores em texto, cidade solta) para o formato atual. */
+export function normalizePet(raw: unknown): PetData {
+  const p = (raw && typeof raw === 'object' ? raw : {}) as PetData & { tutors?: unknown; city?: unknown };
+  const out: PetData = { ...p };
+  if (typeof p.tutors === 'string') {
+    out.tutors = (p.tutors as string)
+      .split(/,| e /i)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((name) => ({ name }));
+  }
+  if (typeof p.city === 'string' && !out.address?.city) out.address = { ...(out.address ?? {}), city: p.city };
+  delete (out as Record<string, unknown>).city;
+  delete (out as Record<string, unknown>).place;
+  delete (out as Record<string, unknown>).rgColor;
+  return out;
 }

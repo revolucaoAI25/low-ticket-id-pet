@@ -1,14 +1,84 @@
 'use client';
 
-import { rgColors } from '@/config/brand';
-import { clubNumber, defaultRgColor, formatDateBR, personalityLabel, petName, sexLabel } from '@/lib/pet';
+import { clubNumber, cityOf, formatDateBR, petName, sexLabel, tutorNames } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
-import { brandMark, DISCLAIMER, formatPhone, maskNumber, photoBox } from '../common';
-import { dashedRect, field, fillRR, line, paw, pawPattern, rr, text } from '../draw';
+import { maskNumber, photoBox } from '../common';
+import { dashedRect, line, paw, rr, text } from '../draw';
+import type { Ctx } from '../draw';
 import type { DocDef } from '../types';
 
 const W = 1000;
-const H = 630;
+const H = 640;
+export const RG_GREEN = { paper: '#DFEBD3', paper2: '#EEF4E4', ink: '#2C5A36', line: 'rgba(44,90,54,.35)', guilloche: 'rgba(60,120,75,.13)' };
+
+/** Fundo com guilhochê (as ondinhas finas do papel de documento). */
+export function guilloche(ctx: Ctx, w: number, h: number, colors: { paper: string; paper2: string; guilloche: string }, seed = 1) {
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, colors.paper2);
+  grad.addColorStop(0.5, colors.paper);
+  grad.addColorStop(1, colors.paper2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.strokeStyle = colors.guilloche;
+  ctx.lineWidth = 1.4;
+  for (let k = 0; k < 26; k++) {
+    ctx.beginPath();
+    const base = (k / 26) * h * 1.2 - h * 0.1;
+    for (let x = 0; x <= w; x += 6) {
+      const y = base + Math.sin((x / w) * Math.PI * (3 + seed) + k * 0.45) * 26 + Math.sin((x / w) * Math.PI * 11 + k) * 6;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // roseta central
+  ctx.translate(w / 2, h / 2);
+  for (let i = 0; i < 36; i++) {
+    ctx.rotate(Math.PI / 18);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, h * 0.36, h * 0.12, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Emblema do clube (no lugar do brasão: nada de símbolo oficial). */
+export function clubSeal(ctx: Ctx, cx: number, cy: number, r: number, ink: string) {
+  ctx.save();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = r * 0.07;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = r * 0.03;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  paw(ctx, cx, cy + r * 0.05, r * 1.05, ink);
+}
+
+function label(ctx: Ctx, s: string, x: number, y: number, w: number, ink: string) {
+  text(ctx, s, x, y, { size: 15, weight: 800, color: ink, letterSpacing: 1.2, maxWidth: w });
+}
+
+function value(ctx: Ctx, s: string, x: number, y: number, w: number, size = 27) {
+  if (s) text(ctx, s.toUpperCase(), x, y, { size, weight: 700, color: '#1f2a22', maxWidth: w, family: 'body', letterSpacing: 0.5 });
+}
+
+function frame(ctx: Ctx, bg: HTMLImageElement | null, seed: number) {
+  ctx.save();
+  rr(ctx, 0, 0, W, H, 34);
+  ctx.clip();
+  if (bg) ctx.drawImage(bg, 0, 0, W, H);
+  else guilloche(ctx, W, H, RG_GREEN, seed);
+  ctx.restore();
+  ctx.strokeStyle = RG_GREEN.line;
+  ctx.lineWidth = 3;
+  rr(ctx, 14, 14, W - 28, H - 28, 24);
+  ctx.stroke();
+}
 
 export const rgDoc: DocDef = {
   id: 'rg',
@@ -20,62 +90,35 @@ export const rgDoc: DocDef = {
       label: 'Frente',
       w: W,
       h: H,
-      mm: [85.6, 54],
+      mm: [100, 64],
       draw(ctx, c, a) {
-        const color = rgColors[defaultRgColor(c.pet)];
-        const p = c.pet;
-        // Cartão
-        ctx.save();
-        rr(ctx, 0, 0, W, H, 40);
-        ctx.clip();
-        if (a.background) {
-          ctx.drawImage(a.background, 0, 0, W, H);
-        } else {
-          ctx.fillStyle = color.light;
-          ctx.fillRect(0, 0, W, H);
-          pawPattern(ctx, 0, 110, W, H - 110, 'rgba(255,255,255,.55)', 120, 40);
-          // Faixa do topo
-          const grad = ctx.createLinearGradient(0, 0, W, 0);
-          grad.addColorStop(0, color.main);
-          grad.addColorStop(1, color.dark);
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, W, 112);
-          paw(ctx, 905, 40, 70, 'rgba(255,255,255,.18)', 0.3);
-          paw(ctx, 960, 92, 44, 'rgba(255,255,255,.14)', -0.4);
-          text(ctx, 'RG DO PET', 40, 76, { size: 54, weight: 700, family: 'display', color: '#fff', letterSpacing: 2 });
-          brandMark(ctx, 950, 70, 26, 'rgba(255,255,255,.95)', 'right');
-          // Rodapé
-          ctx.fillStyle = color.dark;
-          ctx.fillRect(0, H - 46, W, 46);
-          text(ctx, `Kit Identidade Pet · ${DISCLAIMER}`, W / 2, H - 16, { size: 17, weight: 700, color: 'rgba(255,255,255,.9)', align: 'center', maxWidth: W - 60 });
+        const ink = RG_GREEN.ink;
+        frame(ctx, a.background, 1);
+        if (!a.background) {
+          clubSeal(ctx, 92, 92, 46, ink);
+          text(ctx, 'CLUBE DO FOCINHO', W / 2 + 40, 76, { size: 26, weight: 800, color: ink, align: 'center', letterSpacing: 3 });
+          text(ctx, 'CARTEIRA DE IDENTIDADE PET', W / 2 + 40, 116, { size: 36, weight: 900, color: ink, align: 'center', letterSpacing: 2, maxWidth: 760 });
         }
-        ctx.restore();
-
-        // Foto
-        photoBox(ctx, a.photo, p, 44, 146, 262, 318, 26, { border: 7, borderColor: '#fff', bg: '#fff' });
-        // Número do RG do Clube
-        const num = maskNumber(clubNumber(c.seed), c.preview);
-        fillRR(ctx, 44, 494, 262, 66, 16, '#fff');
-        text(ctx, 'Nº DO CLUBE', 175, 518, { size: 15, weight: 800, color: color.dark, align: 'center', letterSpacing: 1.5 });
-        text(ctx, num, 175, 549, { size: 27, weight: 900, color: '#3a2a22', align: 'center', letterSpacing: 1 });
-
-        // Campos
-        const x = 345;
-        const full = W - x - 44;
-        const half = (full - 30) / 2;
-        const opt = { labelColor: color.dark, lineColor: 'rgba(73,56,47,.18)' };
-        text(ctx, 'NOME', x, 160, { size: 17, weight: 800, color: color.dark, letterSpacing: 1.5 });
-        text(ctx, petName(p) === 'seu pet' ? '' : petName(p), x, 214, { size: 50, weight: 700, family: 'display', color: '#3a2a22', maxWidth: full });
-        line(ctx, x, 228, x + full, 228, 'rgba(73,56,47,.18)', 2);
-
-        field(ctx, 'Raça', p.breed ?? '', x, 270, half, opt);
-        field(ctx, 'Sexo', sexLabel(p), x + half + 30, 270, half, opt);
-        const dateLabel = p.origin === 'adocao' ? 'Adoção' : 'Nascimento';
-        field(ctx, dateLabel, formatDateBR(p.date), x, 348, half, opt);
-        field(ctx, 'Espécie', getSpecies(p.species)?.label ?? '', x + half + 30, 348, half, opt);
-        field(ctx, 'Personalidade', personalityLabel(p) ?? '', x, 426, half, opt);
-        field(ctx, 'Cidade', p.city ?? '', x + half + 30, 426, half, opt);
-        field(ctx, 'Tutores', p.tutors ?? '', x, 504, full, opt);
+        // Foto 3x4
+        photoBox(ctx, a.photo, c.pet, 70, 168, 290, 370, 10, { border: 5, borderColor: '#fff', bg: '#F1F5EC' });
+        // Patinha (no lugar do polegar)
+        dashedRect(ctx, 420, 168, 230, 260, 14, RG_GREEN.line, 3, [8, 7]);
+        paw(ctx, 535, 290, 110, 'rgba(44,90,54,.12)');
+        label(ctx, 'PATINHA DIREITA', 435, 455, 220, ink);
+        // Nome e nº
+        label(ctx, 'NOME', 690, 190, 260, ink);
+        value(ctx, petName(c.pet) === 'seu pet' ? '' : petName(c.pet), 690, 230, 260, 30);
+        line(ctx, 690, 242, 930, 242, RG_GREEN.line, 2);
+        label(ctx, 'REGISTRO GERAL', 690, 290, 260, ink);
+        value(ctx, maskNumber(clubNumber(c.seed), c.preview), 690, 330, 260, 30);
+        line(ctx, 690, 342, 930, 342, RG_GREEN.line, 2);
+        label(ctx, 'ESPÉCIE', 690, 390, 260, ink);
+        value(ctx, getSpecies(c.pet.species)?.label ?? '', 690, 430, 260);
+        line(ctx, 690, 442, 930, 442, RG_GREEN.line, 2);
+        // Assinatura
+        line(ctx, 420, 530, 930, 530, '#1f2a22', 2);
+        label(ctx, 'ASSINATURA DO TUTOR', 420, 560, 400, ink);
+        text(ctx, 'Uso pessoal · sem validade oficial', W - 40, H - 30, { size: 14, weight: 700, color: 'rgba(44,90,54,.6)', align: 'right' });
       },
     },
     {
@@ -83,56 +126,49 @@ export const rgDoc: DocDef = {
       label: 'Verso',
       w: W,
       h: H,
-      mm: [85.6, 54],
-      needsQr: true,
+      mm: [100, 64],
       draw(ctx, c, a) {
-        const color = rgColors[defaultRgColor(c.pet)];
+        const ink = RG_GREEN.ink;
         const p = c.pet;
         const ex = p.extras ?? {};
-        ctx.save();
-        rr(ctx, 0, 0, W, H, 40);
-        ctx.clip();
-        if (a.background) ctx.drawImage(a.background, 0, 0, W, H);
-        else {
-          ctx.fillStyle = '#FFFDF9';
-          ctx.fillRect(0, 0, W, H);
-          pawPattern(ctx, 0, 0, W, H, color.light, 130, 40);
-          ctx.fillStyle = color.main;
-          ctx.fillRect(0, 0, W, 78);
-          text(ctx, 'Se me encontrar, fale com meu tutor ♥', W / 2, 52, { size: 32, weight: 700, family: 'display', color: '#fff', align: 'center', maxWidth: W - 80 });
-          ctx.fillStyle = color.dark;
-          ctx.fillRect(0, H - 46, W, 46);
-          text(ctx, 'Escaneie o QR Code para ver minha página com os contatos de emergência', W / 2, H - 16, { size: 17, weight: 700, color: 'rgba(255,255,255,.92)', align: 'center', maxWidth: W - 60 });
-        }
-        ctx.restore();
-
-        // QR
-        fillRR(ctx, 44, 108, 270, 270, 24, '#fff');
-        rr(ctx, 44, 108, 270, 270, 24);
-        ctx.strokeStyle = color.main;
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        if (a.qr) {
-          ctx.save();
-          if (c.preview) ctx.globalAlpha = 0.35;
-          ctx.drawImage(a.qr, 64, 128, 230, 230);
-          ctx.restore();
-        }
-        // Patinha
-        dashedRect(ctx, 44, 400, 270, 140, 20, color.main, 3);
-        paw(ctx, 179, 462, 60, color.light);
-        text(ctx, 'PATINHA DO PET', 179, 528, { size: 15, weight: 800, color: color.dark, align: 'center', letterSpacing: 1.5 });
-
-        const x = 345;
-        const w = W - x - 44;
-        const opt = { labelColor: color.dark, lineColor: 'rgba(73,56,47,.2)', size: 28 };
-        field(ctx, 'Telefone do tutor', formatPhone(c.phone), x, 130, w, opt);
-        field(ctx, 'Nº do microchip', ex.microchip ?? '', x, 210, w, opt);
-        field(ctx, 'Nº do RG Animal (SinPatinhas)', ex.rgAnimal ?? '', x, 290, w, opt);
-        field(ctx, 'Pelagem / sinais', ex.coat ?? '', x, 370, (w - 30) / 2, opt);
-        field(ctx, 'Porte / peso', [ex.size, ex.weight].filter(Boolean).join(' · '), x + (w - 30) / 2 + 30, 370, (w - 30) / 2, opt);
-        field(ctx, 'Alergias / cuidados', ex.allergies ?? ex.conditions ?? '', x, 450, w, opt);
-        text(ctx, petName(p) === 'seu pet' ? '' : `${petName(p)} · ${maskNumber(clubNumber(c.seed), c.preview)}`, W - 44, 560, { size: 18, weight: 800, color: 'rgba(73,56,47,.45)', align: 'right', maxWidth: w });
+        frame(ctx, a.background, 2);
+        const x1 = 60;
+        const full = W - 120;
+        const half = (full - 40) / 2;
+        const x2 = x1 + half + 40;
+        // linha 1
+        label(ctx, 'REGISTRO GERAL', x1, 70, half, ink);
+        value(ctx, maskNumber(clubNumber(c.seed), c.preview), x1, 106, half, 30);
+        label(ctx, 'DATA DE EXPEDIÇÃO', x2, 70, half, ink);
+        value(ctx, formatDateBR(new Date().toISOString().slice(0, 10)), x2, 106, half, 30);
+        line(ctx, x1, 122, x1 + full, 122, RG_GREEN.line, 2);
+        // nome
+        label(ctx, 'NOME', x1, 162, full, ink);
+        value(ctx, petName(p) === 'seu pet' ? '' : petName(p), x1, 200, full, 32);
+        line(ctx, x1, 214, x1 + full, 214, RG_GREEN.line, 2);
+        // filiação
+        label(ctx, 'FILIAÇÃO (TUTORES)', x1, 254, full, ink);
+        const tutors = (p.tutors ?? []).map((t) => t.name.trim()).filter(Boolean);
+        value(ctx, tutors.slice(0, 2).join(', '), x1, 290, full);
+        if (tutors.length > 2) value(ctx, tutors.slice(2).join(', '), x1, 324, full);
+        else if (!tutors.length) value(ctx, tutorNames(p), x1, 290, full);
+        line(ctx, x1, 338, x1 + full, 338, RG_GREEN.line, 2);
+        // naturalidade + nascimento
+        label(ctx, 'NATURALIDADE', x1, 378, half, ink);
+        value(ctx, cityOf(p), x1, 414, half);
+        label(ctx, p.origin === 'adocao' ? 'DATA DE ADOÇÃO' : 'DATA DE NASCIMENTO', x2, 378, half, ink);
+        value(ctx, formatDateBR(p.date), x2, 414, half);
+        line(ctx, x1, 428, x1 + full, 428, RG_GREEN.line, 2);
+        // raça e sexo
+        label(ctx, 'RAÇA', x1, 468, half, ink);
+        value(ctx, p.breed ?? '', x1, 504, half);
+        label(ctx, 'SEXO', x2, 468, (half - 20) / 2, ink);
+        value(ctx, sexLabel(p), x2, 504, (half - 20) / 2);
+        label(ctx, 'MICROCHIP', x2 + (half + 20) / 2, 468, (half - 20) / 2, ink);
+        value(ctx, ex.microchip ?? '', x2 + (half + 20) / 2, 504, (half - 20) / 2, 22);
+        line(ctx, x1, 518, x1 + full, 518, RG_GREEN.line, 2);
+        text(ctx, 'VÁLIDA EM TODO O CORAÇÃO DOS TUTORES', W / 2, 570, { size: 18, weight: 900, color: ink, align: 'center', letterSpacing: 3 });
+        text(ctx, 'Clube do Focinho · produto personalizado de uso pessoal, sem validade oficial', W / 2, 600, { size: 14, weight: 700, color: 'rgba(44,90,54,.65)', align: 'center' });
       },
     },
   ],

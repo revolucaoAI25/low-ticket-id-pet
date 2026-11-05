@@ -62,7 +62,7 @@ export const torcedorDoc: DocDef = {
         const primary = team?.primary ?? (none ? '#6F2A7A' : '#2F4858');
         const secondary = team?.secondary ?? (none ? '#F5A524' : '#F5A524');
         const fg = onColor(primary);
-        const teamName = none ? (p.tutors?.trim() ? `Família ${p.tutors.trim()}` : 'Família') : team?.short ?? choice?.name ?? '';
+        const teamName = none ? (p.tutors?.[0]?.name ? `Família ${p.tutors[0].name.trim().split(' ').pop()}` : 'Família') : team?.short ?? choice?.name ?? '';
 
         ctx.save();
         rr(ctx, 0, 0, W, H, 40);

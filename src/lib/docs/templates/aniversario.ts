@@ -7,7 +7,11 @@ import type { Ctx } from '../draw';
 import type { DocDef } from '../types';
 
 const PARTY = ['#E9A092', '#F5A524', '#6F2A7A', '#A9BAA6', '#E8833A', '#7FB7E6'];
-const ROXO = '#6F2A7A';
+const DEFAULT_ACCENT = '#6F2A7A';
+/** Cor de destaque: a cor favorita escolhida no formulário (ou o roxo da marca). */
+const accent = (p: { extras?: { favoriteColor?: string } }) => p.extras?.favoriteColor || DEFAULT_ACCENT;
+/** Foto extra i (ou a principal). */
+const pic = (a: { photo: HTMLImageElement | null; photos: HTMLImageElement[] }, i: number) => (a.photos.length ? a.photos[i % a.photos.length] : a.photo);
 
 function bunting(ctx: Ctx, x: number, y: number, w: number, n: number) {
   const step = w / n;
@@ -70,16 +74,16 @@ export const aniversarioDoc: DocDef = {
           ctx.fillStyle = 'rgba(255,250,243,.94)';
           ctx.fill();
         }
-        text(ctx, 'Vem comemorar comigo!', W / 2, 250, { size: 56, weight: 700, family: 'display', color: ROXO, align: 'center', maxWidth: W - 120 });
+        text(ctx, 'Vem comemorar comigo!', W / 2, 250, { size: 56, weight: 700, family: 'display', color: accent(c.pet), align: 'center', maxWidth: W - 120 });
         photoCircle(ctx, a.photo, p, W / 2, 520, 210, { ring: 16, ringColor: '#F5A524' });
         text(ctx, partyTitle(p), W / 2, 820, { size: 36, weight: 900, color: '#E8833A', align: 'center', letterSpacing: 5, maxWidth: W - 160 });
         text(ctx, name ? doPet(p) : 'do meu pet', W / 2, 920, { size: 92, weight: 700, family: 'display', color: '#3a2a22', align: 'center', maxWidth: W - 120 });
         const age = ageText(p);
-        if (age) text(ctx, age, W / 2, 990, { size: 40, weight: 700, family: 'display', color: ROXO, align: 'center' });
+        if (age) text(ctx, age, W / 2, 990, { size: 40, weight: 700, family: 'display', color: accent(c.pet), align: 'center' });
         const fields = ['Dia', 'Hora', 'Local'];
         fields.forEach((f, i) => {
           const y = 1090 + i * 80;
-          text(ctx, f.toUpperCase(), 160, y, { size: 24, weight: 900, color: ROXO, letterSpacing: 2 });
+          text(ctx, f.toUpperCase(), 160, y, { size: 24, weight: 900, color: accent(c.pet), letterSpacing: 2 });
           line(ctx, 290, y + 6, W - 160, y + 6, 'rgba(73,56,47,.3)', 3, [2, 8]);
         });
         text(ctx, 'Traga seu pet, petiscos e muito carinho!', W / 2, 1340, { size: 28, weight: 700, color: 'rgba(73,56,47,.7)', align: 'center' });
@@ -123,11 +127,11 @@ export const aniversarioDoc: DocDef = {
         ctx.restore();
         photoCircle(ctx, a.photo, p, cx, cy - 70, 190, { ring: 12, ringColor: '#F5A524' });
         rr(ctx, cx - 300, cy + 150, 600, 120, 60);
-        ctx.fillStyle = ROXO;
+        ctx.fillStyle = accent(c.pet);
         ctx.fill();
         text(ctx, name, cx, cy + 232, { size: 80, weight: 700, family: 'display', color: '#fff', align: 'center', maxWidth: 540 });
         const age = ageText(p);
-        text(ctx, age || 'Feliz aniversário!', cx, cy + 330, { size: 40, weight: 700, family: 'display', color: ROXO, align: 'center' });
+        text(ctx, age || 'Feliz aniversário!', cx, cy + 330, { size: 40, weight: 700, family: 'display', color: accent(c.pet), align: 'center' });
         // toppers pequenos
         const small = [
           [250, 1220],
@@ -146,7 +150,7 @@ export const aniversarioDoc: DocDef = {
           ctx.arc(x, y, 150, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
-          if (i % 2 === 0) photoCircle(ctx, a.photo, p, x, y, 135, { ring: 8, ringColor: PARTY[i % PARTY.length] });
+          if (i % 2 === 0) photoCircle(ctx, pic(a, i / 2), p, x, y, 135, { ring: 8, ringColor: i === 0 ? accent(p) : PARTY[i % PARTY.length] });
           else {
             ctx.beginPath();
             ctx.arc(x, y, 140, 0, Math.PI * 2);
@@ -184,7 +188,7 @@ export const aniversarioDoc: DocDef = {
           const row = Math.floor(i / 2);
           const x = 80 + col * 560;
           const y = 160 + row * 520;
-          const color = PARTY[(i + 2) % PARTY.length];
+          const color = i === 0 ? accent(p) : PARTY[(i + 2) % PARTY.length];
           dashedRect(ctx, x - 14, y - 14, 528, 468, 34, 'rgba(73,56,47,.35)', 2, [8, 8]);
           rr(ctx, x, y, 500, 440, 28);
           ctx.fillStyle = color;
@@ -215,14 +219,14 @@ export const aniversarioDoc: DocDef = {
           rr(ctx, 50, 50, W - 100, H - 100, 40);
           ctx.stroke();
           ctx.lineWidth = 3;
-          ctx.strokeStyle = ROXO;
+          ctx.strokeStyle = accent(c.pet);
           rr(ctx, 86, 86, W - 172, H - 172, 26);
           ctx.stroke();
           confetti(ctx, 100, 100, W - 200, 160, PARTY, 30, 21);
         }
-        text(ctx, 'CERTIFICADO', W / 2, 300, { size: 110, weight: 700, family: 'display', color: ROXO, align: 'center', letterSpacing: 8 });
+        text(ctx, 'CERTIFICADO', W / 2, 300, { size: 110, weight: 700, family: 'display', color: accent(c.pet), align: 'center', letterSpacing: 8 });
         text(ctx, 'de Melhor Pet do Mundo', W / 2, 380, { size: 56, weight: 600, family: 'display', color: '#E8833A', align: 'center' });
-        photoCircle(ctx, a.photo, p, 330, 720, 180, { ring: 12, ringColor: '#F5A524' });
+        photoCircle(ctx, pic(a, 1), p, 330, 720, 180, { ring: 12, ringColor: '#F5A524' });
         text(ctx, 'Conferido com todo o amor a', 520, 560, { size: 38, weight: 700, color: 'rgba(73,56,47,.7)' });
         text(ctx, name || '____________', 520, 680, { size: 110, weight: 700, family: 'display', color: '#3a2a22', maxWidth: W - 640 });
         wrap(

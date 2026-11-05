@@ -22,13 +22,5 @@ export const brand = {
   },
 } as const;
 
-/** Cores do RG. A cor padrão sai pelo sexo (macho → azul, fêmea → rosa). */
-export const rgColors = {
-  azul: { label: 'Azul', main: '#3D7DC8', dark: '#22528C', light: '#E1EEFB' },
-  rosa: { label: 'Rosa', main: '#E06C98', dark: '#A83A66', light: '#FCE6EF' },
-  verde: { label: 'Verde', main: '#3E9A68', dark: '#256B45', light: '#E0F2E7' },
-  amarelo: { label: 'Amarelo', main: '#E8A21E', dark: '#9E6A06', light: '#FFF3D1' },
-  roxo: { label: 'Roxo', main: '#7A3388', dark: '#4E1C57', light: '#F2E3F5' },
-} as const;
-
-export type RgColor = keyof typeof rgColors;
+/** Cores neutras da tag em formato de ossinho. */
+export const tagColors = { base: '#EAD9BF', light: '#F6EDE0', dark: '#8A6A4A', ink: '#4A3626' } as const;

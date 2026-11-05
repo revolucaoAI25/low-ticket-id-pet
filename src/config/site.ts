@@ -80,7 +80,7 @@ export interface SiteSettings {
 
 export const defaultSettings: SiteSettings = {
   price: 19.9,
-  anchorPrice: 153,
+  anchorPrice: 180,
   timerMinutes: 10,
   rating: 4.9,
   tutorsCount: 0,

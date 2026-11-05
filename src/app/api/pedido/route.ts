@@ -1,0 +1,114 @@
+import { doPet, type PetData } from '@/lib/pet';
+import { sendKitEmail, type KitFile } from '@/lib/server/email';
+import { fixedBonusLinks } from '@/lib/server/notify';
+import { createPet, petOut, sanitizePet, saveExtraPhotos, savePhoto, type PetRow } from '@/lib/server/pets';
+import { BUCKET_KITS, db, fichaPath } from '@/lib/server/supabase';
+import { json, normPhone } from '@/lib/server/util';
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
+async function loadCustomer(tokenValue: unknown) {
+  const sb = db();
+  if (!sb || typeof tokenValue !== 'string' || tokenValue.length < 16) return null;
+  const { data } = await sb
+    .from('customers')
+    .select('id, email, phone, name, paid_at, refunded_at, extra_pet_slots')
+    .eq('access_token', tokenValue)
+    .maybeSingle();
+  return data;
+}
+
+/** Página de confirmação: dados do pedido e dos pets. */
+export async function GET(req: Request) {
+  const sb = db();
+  if (!sb) return json({ error: 'offline' }, 503);
+  const cust = await loadCustomer(new URL(req.url).searchParams.get('token'));
+  if (!cust) return json({ error: 'not_found' }, 404);
+  const paid = !!cust.paid_at && !cust.refunded_at;
+  if (!paid) return json({ paid: false, refunded: !!cust.refunded_at });
+  const { data: pets } = await sb.from('pets').select('*').eq('customer_id', cust.id).order('created_at');
+  const list = ((pets as PetRow[]) ?? []).map(petOut);
+  const bonus = list[0] ? await fixedBonusLinks(list[0].data) : [];
+  return json({
+    paid: true,
+    customer: { email: cust.email, phone: cust.phone, name: cust.name },
+    petsAllowed: 1 + (cust.extra_pet_slots ?? 0),
+    pets: list,
+    bonusLinks: bonus,
+  });
+}
+
+export async function POST(req: Request) {
+  const sb = db();
+  if (!sb) return json({ error: 'offline' }, 503);
+  const body = await req.json().catch(() => ({}));
+  const cust = await loadCustomer(body.token);
+  if (!cust || !cust.paid_at || cust.refunded_at) return json({ error: 'forbidden' }, 403);
+
+  // 1) Salvar os dados conferidos (e as fotos)
+  if (body.action === 'save') {
+    const input = body.pet ?? {};
+    const raw = (input.data ?? {}) as PetData & Record<string, unknown>;
+    const clean = sanitizePet(raw);
+    let row: PetRow | null = null;
+    if (input.id) {
+      const { data } = await sb.from('pets').select('*').eq('id', input.id).eq('customer_id', cust.id).maybeSingle();
+      if (!data) return json({ error: 'pet_not_found' }, 404);
+      if ((data as PetRow).submitted_at) return json({ error: 'locked' }, 409);
+      row = data as PetRow;
+    } else {
+      const { count } = await sb.from('pets').select('id', { count: 'exact', head: true }).eq('customer_id', cust.id);
+      if ((count ?? 0) >= 1 + (cust.extra_pet_slots ?? 0)) return json({ error: 'limit' }, 402);
+      row = await createPet(cust.id, clean);
+      if (!row) return json({ error: 'db' }, 500);
+    }
+    const photoUrl = await savePhoto(row.id, raw.photo);
+    const extraPhotos = await saveExtraPhotos(row.id, raw.extras?.photos);
+    const data: PetData = { ...clean, extras: { ...(clean.extras ?? {}), photos: extraPhotos } };
+    const { data: saved } = await sb
+      .from('pets')
+      .update({ data, ...(photoUrl ? { photo_url: photoUrl } : {}), updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .select('*')
+      .single();
+    // Telefone principal: o do primeiro tutor, se informado.
+    const firstPhone = normPhone(data.tutors?.find((t) => t.phone)?.phone);
+    if (firstPhone && !cust.phone) await sb.from('customers').update({ phone: firstPhone }).eq('id', cust.id);
+    return json({ pet: petOut(saved as PetRow) });
+  }
+
+  // 2) URLs para o navegador enviar os arquivos gerados direto para o Storage
+  if (body.action === 'upload-urls') {
+    const { data: pet } = await sb.from('pets').select('id, slug, submitted_at').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
+    if (!pet) return json({ error: 'pet_not_found' }, 404);
+    if (pet.submitted_at) return json({ error: 'locked' }, 409);
+    const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 8) : [];
+    const out: Record<string, { signedUrl: string; path: string }> = {};
+    for (const n of names) {
+      const safe = String(n).replace(/[^a-zA-Z0-9._-]/g, '');
+      if (!safe) continue;
+      const path = safe === 'ficha.jpg' ? fichaPath(pet.slug) : `${pet.id}/${safe}`;
+      const { data, error } = await sb.storage.from(BUCKET_KITS).createSignedUploadUrl(path, { upsert: true });
+      if (error || !data) return json({ error: error?.message ?? 'storage' }, 500);
+      out[safe] = { signedUrl: data.signedUrl, path };
+    }
+    return json({ urls: out });
+  }
+
+  // 3) Finalizar: grava os arquivos, trava a edição e manda o e-mail
+  if (body.action === 'finish') {
+    const { data: row } = await sb.from('pets').select('*').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
+    if (!row) return json({ error: 'pet_not_found' }, 404);
+    const pet = row as PetRow;
+    const incoming: { name: string; path: string; kind: KitFile['kind'] }[] = Array.isArray(body.files) ? body.files : [];
+    const files: KitFile[] = incoming
+      .filter((f) => typeof f.path === 'string' && (f.path.startsWith(`${pet.id}/`) || f.path === fichaPath(pet.slug)))
+      .map((f) => ({ name: String(f.name).slice(0, 80), kind: f.kind, url: sb.storage.from(BUCKET_KITS).getPublicUrl(f.path).data.publicUrl }));
+    await sb.from('pets').update({ files, submitted_at: new Date().toISOString() }).eq('id', pet.id);
+    const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, await fixedBonusLinks(pet.data)) : false;
+    return json({ ok: true, files, emailed });
+  }
+
+  return json({ error: 'action' }, 400);
+}

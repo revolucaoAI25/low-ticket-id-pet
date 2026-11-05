@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDateBR, g, personalityLabel, petName, sexLabel } from '@/lib/pet';
+import { formatDateBR, g, personalityLabel, petName, sexLabel, cityOf, tutorNames } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { DISCLAIMER, photoCircle } from '../common';
 import { dashedRect, field, heart, line, paw, rr, star, text, wrap } from '../draw';
@@ -80,8 +80,8 @@ export const certidaoDoc: DocDef = {
         // Texto
         const blank = '__________';
         const date = formatDateBR(p.date) || blank;
-        const city = p.city?.trim() || blank;
-        const tutors = p.tutors?.trim() || blank;
+        const city = cityOf(p) || blank;
+        const tutors = tutorNames(p) || blank;
         const who = name || 'este pet';
         const body = adocao
           ? `Certificamos, com muito amor, que em ${date} ${who} foi ${g(p, 'adotado', 'adotada')} por ${tutors}, na cidade de ${city}, e ganhou para sempre uma família.`

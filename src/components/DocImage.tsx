@@ -43,7 +43,7 @@ export function DocImage({ doc, page = 0, ctx, scale = 0.6, className = '', alt,
         if (latest.current !== key) return;
         const canvas = await renderPage(def, page, ctx, scale);
         if (latest.current !== key) return;
-        const fmt = format ?? (p?.round ? 'png' : 'jpeg');
+        const fmt = format ?? (p?.shape ? 'png' : 'jpeg');
         setSrc(fmt === 'png' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.88));
       }).catch(() => undefined);
     }, 60);
@@ -58,7 +58,7 @@ export function DocImage({ doc, page = 0, ctx, scale = 0.6, className = '', alt,
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt ?? def.title} className="block h-full w-full select-none" draggable={false} />
       ) : (
-        <div className={`h-full w-full animate-pulse bg-areia ${p.round ? 'rounded-full' : 'rounded-xl'}`} />
+        <div className={`h-full w-full animate-pulse bg-areia ${p.shape === 'round' ? 'rounded-full' : 'rounded-xl'}`} />
       )}
     </div>
   );

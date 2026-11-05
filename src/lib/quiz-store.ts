@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import type { PetData } from './pet';
+import { normalizePet, type PetData } from './pet';
 
 export interface Contact {
   phone: string;
@@ -29,6 +29,7 @@ export interface QuizState {
 }
 
 const KEY = 'cdf:quiz:v1';
+// v1 guardava tutores em texto e cidade solta: normalizePet converte ao carregar.
 
 const empty: QuizState = {
   v: 1,
@@ -50,7 +51,7 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as QuizState;
-      if (parsed?.v === 1) state = { ...empty, ...parsed, contact: { ...empty.contact, ...parsed.contact } };
+      if (parsed?.v === 1) state = { ...empty, ...parsed, pet: normalizePet(parsed.pet), contact: { ...empty.contact, ...parsed.contact } };
     }
   } catch {
     /* ignore */

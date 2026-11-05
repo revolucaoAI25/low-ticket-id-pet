@@ -14,8 +14,8 @@ export default async function Termos() {
       </p>
       <h2>1. O que é o produto</h2>
       <p>
-        O Kit Identidade Pet é um <b>produto digital personalizado de uso pessoal</b>: arquivos para baixar e imprimir (RG do pet, certidão, passaporte de aventuras, tag com QR
-        Code, carteira de vacinação, carteirinha de torcedor e bônus) e uma página online do pet ligada à tag.
+        O Kit Identidade Pet é um <b>produto digital personalizado de uso pessoal</b>: arquivos para imprimir (RG do pet, CNH Pet, certidão, passaporte de aventuras, tag
+        ossinho com QR Code, carteira de vacinação, carteirinha de torcedor e bônus) e a imagem de identidade do pet que abre pelo QR Code.
       </p>
       <h2>2. Sem validade oficial</h2>
       <p>
@@ -25,13 +25,13 @@ export default async function Termos() {
       </p>
       <h2>3. Entrega e acesso</h2>
       <p>
-        Após a confirmação do pagamento, o acesso é liberado na hora pela página de obrigado e por um link enviado ao e-mail da compra. Você pode baixar os arquivos e editar os
-        dados quantas vezes quiser enquanto o acesso estiver ativo.
+        Após a confirmação do pagamento, você confere os dados do pet uma única vez e recebe todos os arquivos no e-mail da compra. Revise com atenção antes de gerar: depois disso,
+        alterações só pelo suporte.
       </p>
       <h2>4. Garantia de 7 dias</h2>
       <p>
         Você pode pedir o reembolso integral em até 7 dias após a compra, sem precisar justificar, pelo e-mail {s.support.email} ou pela plataforma de pagamento. Com o reembolso, o
-        acesso ao kit e a página do pet são desativados.
+        acesso aos arquivos é desativado.
       </p>
       <h2>5. Seu conteúdo</h2>
       <p>
@@ -43,10 +43,10 @@ export default async function Termos() {
         Nomes e escudos de clubes de futebol pertencem aos seus respectivos donos e aparecem apenas para personalizar a carteirinha de uso pessoal do cliente. O Clube do Focinho não
         tem relação com os clubes.
       </p>
-      <h2>7. Página do pet</h2>
+      <h2>7. Identidade do QR Code</h2>
       <p>
-        A página ligada ao QR Code fica no ar enquanto o acesso estiver ativo. Fazemos o possível para mantê-la sempre disponível, mas não garantimos funcionamento ininterrupto nem
-        que o pet será encontrado.
+        A imagem ligada ao QR Code fica disponível online. Fazemos o possível para mantê-la sempre no ar, mas não garantimos funcionamento ininterrupto nem que o pet será
+        encontrado.
       </p>
       <h2>8. Contato</h2>
       <p>

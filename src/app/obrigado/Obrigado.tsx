@@ -31,7 +31,7 @@ export function Obrigado({ supportEmail }: { supportEmail: string }) {
         const d = await r.json();
         if (d.paid) {
           setPaid(true);
-          setTimeout(() => router.push(`/kit/${token}`), 1600);
+          setTimeout(() => router.push(`/confirmar/${token}`), 1400);
           return;
         }
       } catch {
@@ -56,26 +56,23 @@ export function Obrigado({ supportEmail }: { supportEmail: string }) {
         paid ? (
           <div className="anim-pop mt-8">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-verde text-4xl text-white">✓</div>
-            <h1 className="h-display mt-5 text-3xl">Pronto! O kit {doNome} está liberado 🎉</h1>
-            <p className="mt-2 font-semibold text-cacau/70">Abrindo seus documentos…</p>
-            <a href={`/kit/${token}`} className="btn-primary mt-6 w-full">
-              Abrir o kit →
+            <h1 className="h-display mt-5 text-3xl">Pagamento confirmado!</h1>
+            <p className="mt-2 font-semibold text-cacau/70">Agora é só conferir os dados {doNome} e receber o kit.</p>
+            <a href={`/confirmar/${token}`} className="btn-primary mt-6 w-full">
+              Continuar
             </a>
           </div>
         ) : (
           <div className="mt-8 w-full">
             <div className="mx-auto h-16 w-16 animate-spin rounded-full border-[6px] border-linha border-t-roxo" />
             <h1 className="h-display mt-6 text-[26px] leading-tight">Confirmando seu pagamento…</h1>
-            <p className="mt-2 font-semibold text-cacau/70">Deixe esta página aberta. Assim que confirmar, o kit {doNome} abre sozinho.</p>
+            <p className="mt-2 font-semibold text-cacau/70">Deixe esta página aberta. Assim que confirmar, você segue para receber o kit {doNome}.</p>
             {slow && (
               <div className="anim-fade-up card mt-6 p-4 text-left text-[15px] font-semibold">
                 <p>
-                  ⏳ Pagou com Pix? Às vezes o banco leva alguns minutos para confirmar. Pode fechar esta página: <b>o link de acesso vai para o seu e-mail</b> assim que o
+                  ⏳ Pagou com Pix? Às vezes o banco leva alguns minutos para confirmar. Pode fechar esta página: <b>o link para receber o kit vai para o seu e-mail</b> assim que o
                   pagamento cair.
                 </p>
-                <a href={`/kit/${token}`} className="mt-3 block font-bold text-roxo underline">
-                  Guardar o link do meu kit
-                </a>
               </div>
             )}
           </div>
@@ -93,8 +90,8 @@ function NoToken({ supportEmail }: { supportEmail: string }) {
   return (
     <div className="mt-8 w-full">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-verde text-4xl text-white">✓</div>
-      <h1 className="h-display mt-5 text-3xl">Obrigado pela compra! 💛</h1>
-      <p className="mt-2 font-semibold text-cacau/70">Assim que o pagamento for confirmado, o link do kit chega no e-mail que você usou na compra.</p>
+      <h1 className="h-display mt-5 text-3xl">Obrigado pela compra!</h1>
+      <p className="mt-2 font-semibold text-cacau/70">Assim que o pagamento for confirmado, chega no e-mail da compra o link para conferir os dados e receber o kit.</p>
       <form
         className="card mt-6 p-4 text-left"
         onSubmit={async (e) => {
@@ -103,7 +100,7 @@ function NoToken({ supportEmail }: { supportEmail: string }) {
           setSent(true);
         }}
       >
-        <p className="font-extrabold">Não chegou? Reenvie o acesso</p>
+        <p className="font-extrabold">Não chegou? Reenviar o e-mail</p>
         <input className="input mt-3" type="email" required placeholder="E-mail da compra" value={email} onChange={(e) => setEmail(e.target.value.trim())} />
         <button className="btn-primary mt-3 w-full" type="submit">
           Reenviar link

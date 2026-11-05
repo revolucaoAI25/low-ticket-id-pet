@@ -31,22 +31,22 @@ export default async function Privacidade() {
       <h2>2. Para que usamos</h2>
       <ul>
         <li>Montar e entregar os documentos personalizados e a página do pet.</li>
-        <li>Liberar seu acesso depois do pagamento e enviar o link por e-mail ou WhatsApp.</li>
+        <li>Enviar o kit para o seu e-mail depois do pagamento.</li>
         <li>Prestar suporte e falar com você sobre o kit (inclusive lembrar quem começou e não terminou).</li>
         <li>Medir e melhorar nossos anúncios e páginas.</li>
       </ul>
       <p>
         A base legal é o seu consentimento (dado na tela de contato), a execução do contrato de compra e nosso legítimo interesse em medir e melhorar o serviço.
       </p>
-      <h2>3. Página pública do pet (QR Code)</h2>
+      <h2>3. Identidade do pet no QR Code</h2>
       <p>
-        A tag com QR Code abre uma página pública com a foto e os dados do pet e os contatos que você escolher mostrar. Ela existe para que quem encontrar seu pet consiga falar com
-        você. Na área do pet você decide se o telefone aparece, pode editar ou apagar os dados a qualquer momento e ativar ou desativar o Modo Perdido.
+        A tag com QR Code abre uma imagem com a identidade do pet: foto, dados, endereço e os contatos que você informou na confirmação. Ela existe para que quem encontrar seu
+        pet consiga falar com você, e qualquer pessoa com a tag em mãos consegue ver. Informe só o que quiser que apareça. Para corrigir ou apagar, fale com o suporte.
       </p>
       <h2>4. Com quem compartilhamos</h2>
       <ul>
         <li>Plataforma de pagamento (processa a compra).</li>
-        <li>Supabase (banco de dados e armazenamento das fotos) e Vercel (hospedagem do site).</li>
+        <li>Supabase (banco de dados e armazenamento das fotos e dos arquivos do kit) e Vercel (hospedagem do site).</li>
         <li>Meta (Facebook/Instagram) e Utmify, para medir anúncios.</li>
         <li>Serviço de envio de e-mail, para mandar seu link de acesso.</li>
       </ul>

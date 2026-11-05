@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDateBR, petName, PLACES, type Place } from '@/lib/pet';
+import { cityOf, formatDateBR, personalityLabel, petName, tutorNames } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { photoBox } from '../common';
 import { dashedRect, field, paw, pawPattern, rr, star, text } from '../draw';
@@ -11,7 +11,7 @@ const H = 1000;
 const NAVY = '#4E1C57';
 const GOLD = '#F2C46B';
 
-const FIRSTS: { key: Place | string; label: string; emoji: string }[] = [
+const FIRSTS: { key: string; label: string; emoji: string }[] = [
   { key: 'praia', label: 'Primeira praia', emoji: '🏖️' },
   { key: 'parque', label: 'Primeiro parque', emoji: '🌳' },
   { key: 'carro', label: 'Primeira viagem', emoji: '🚗' },
@@ -125,9 +125,9 @@ export const passaporteDoc: DocDef = {
         field(ctx, 'Espécie', getSpecies(p.species)?.label ?? '', x, 245, w, opt);
         field(ctx, 'Raça', p.breed ?? '', x, 330, w, opt);
         field(ctx, p.origin === 'adocao' ? 'Adoção' : 'Nascimento', formatDateBR(p.date), x, 415, w, opt);
-        field(ctx, 'Cidade natal', p.city ?? '', 50, 520, W - 100, opt);
-        field(ctx, 'Tutores', p.tutors ?? '', 50, 605, W - 100, opt);
-        field(ctx, 'Lugar favorito', p.place ? PLACES[p.place].label : '', 50, 690, W - 100, opt);
+        field(ctx, 'Cidade natal', cityOf(p), 50, 520, W - 100, opt);
+        field(ctx, 'Tutores', tutorNames(p), 50, 605, W - 100, opt);
+        field(ctx, 'Personalidade', personalityLabel(p) ?? '', 50, 690, W - 100, opt);
         // faixa "MRZ" divertida
         ctx.fillStyle = 'rgba(111,42,122,.08)';
         ctx.fillRect(0, 820, W, 120);
@@ -153,10 +153,8 @@ export const passaporteDoc: DocDef = {
           text(ctx, 'CARIMBOS & PRIMEIRAS VEZES', W / 2, 62, { size: 30, weight: 700, family: 'display', color: GOLD, align: 'center', letterSpacing: 2, maxWidth: W - 60 });
         }
         const cells: { label: string; emoji: string; stamp?: string }[] = [];
-        if (p.place) cells.push({ label: PLACES[p.place].label, emoji: PLACES[p.place].emoji, stamp: PLACES[p.place].stamp });
         for (const f of FIRSTS) {
           if (cells.length >= 6) break;
-          if (f.key === p.place) continue;
           cells.push({ label: f.label, emoji: f.emoji });
         }
         const cols = 2;

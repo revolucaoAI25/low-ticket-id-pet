@@ -16,6 +16,10 @@ export function db(): SupabaseClient | null {
 
 export const BUCKET_PHOTOS = 'pet-photos';
 export const BUCKET_ASSETS = 'site-assets';
+export const BUCKET_KITS = 'kits';
+
+/** Caminho fixo da identidade do pet (o QR Code aponta para ela via /q/[código]). */
+export const fichaPath = (slug: string) => `fichas/${slug}.jpg`;
 
 /** Envia um dataURL (imagem) para o Storage e devolve a URL pública. */
 export async function uploadDataUrl(bucket: string, path: string, dataUrl: string): Promise<string | null> {

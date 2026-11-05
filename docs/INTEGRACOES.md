@@ -9,7 +9,8 @@ Anúncio (Meta) ──UTMs──▶ Quiz ──▶ Oferta ──clique──▶ 
                                                          │
                        ┌──────── webhook ────────────────┼──────────── webhook ───────┐
                        ▼                                 ▼                            ▼
-          /api/webhooks/kiwify (libera o kit)   Página de obrigado → /obrigado     Utmify (atribuição)
+          /api/webhooks/kiwify (libera e manda   /obrigado → /confirmar           Utmify (atribuição)
+           o e-mail "confirme os dados")         (confere 1 vez → kit no e-mail)
 ```
 
 - **Nosso site** dispara os eventos do funil no Pixel (cada tela do quiz, Lead, oferta, InitiateCheckout).
@@ -20,8 +21,8 @@ Anúncio (Meta) ──UTMs──▶ Quiz ──▶ Oferta ──clique──▶ 
 
 ### Produtos e checkouts
 1. Crie o produto **Kit Identidade Pet** (R$ 19,90) e os **3 checkouts** (Cachorro, Gato, Outros pets), cada um com seus order bumps.
-2. O order bump **"+1 pet no kit"** precisa ter no nome uma das palavras-chave configuradas em **/admin → Checkouts** (padrão: `pet adicional`, `+1 pet`, `mais 1 pet`, `pet extra`). É assim que o site sabe que precisa liberar mais uma vaga de pet.
-3. Crie também um produto/checkout **"Pet adicional"** (R$ 9,90), com uma dessas palavras no nome, e cole o link em **/admin → Checkouts → Pet adicional**. Ele aparece na área do pet para quem tem mais de dois pets.
+2. O order bump **"+1 pet no kit"** precisa ter no nome uma das palavras-chave configuradas em **/admin → Checkouts** (padrão: `pet adicional`, `+1 pet`, `mais 1 pet`, `pet extra`). É assim que o site sabe que precisa liberar mais um pet na confirmação.
+3. (Opcional) Um produto **"Pet adicional"** separado, com uma dessas palavras no nome, também libera mais um pet: o cliente recebe o link para preencher o novo pet.
 4. Cole os 3 links em **/admin → Checkouts**.
 
 ### Página de obrigado
@@ -42,7 +43,8 @@ Em cada produto: **Configurações → Pixel** → Facebook → cole o **mesmo I
 ### ✅ Teste antes de anunciar
 Faça uma compra real de teste (Pix) e confira:
 - o checkout abriu com nome, e-mail e telefone preenchidos (se não preencher, ajuste os nomes dos parâmetros em **/admin → Checkouts**);
-- a página `/obrigado` abriu o kit sozinha;
+- a página `/obrigado` levou para a confirmação; depois de confirmar, o kit chegou no e-mail com os PDFs anexados;
+- o QR Code da tag impressa abre a identidade do pet no celular;
 - o pedido aparece no Supabase (tabela `orders`) e a tabela `webhook_logs` mostra o que a Kiwify mandou;
 - o "+1 pet" liberou a segunda vaga (se comprou o bump).
 
@@ -71,6 +73,6 @@ Cole o ID em **/admin → Pixel e UTMs**. Eventos que o site dispara:
 
 Para ver onde as pessoas saem, use **/admin → Funil** (cada etapa, pessoas únicas e a queda em %). No Gerenciador de Eventos da Meta dá para criar conversões personalizadas com `QuizEtapa` filtrando por `etapa`.
 
-## 4. E-mail de acesso (opcional, recomendado)
+## 4. E-mail (necessário)
 
-Crie uma conta na **Resend**, verifique o domínio e coloque `RESEND_API_KEY` e `EMAIL_FROM` na Vercel. Sem isso, o acesso funciona pela página de obrigado e o e-mail da própria Kiwify continua chegando.
+O kit é entregue por e-mail. Crie uma conta na **Resend**, verifique o domínio e coloque `RESEND_API_KEY` e `EMAIL_FROM` na Vercel. São dois e-mails: "confirme os dados" (logo após o pagamento) e "seu kit chegou" (com os PDFs anexados e os links das imagens). Sem a Resend, os arquivos continuam disponíveis para download na própria página de confirmação.
