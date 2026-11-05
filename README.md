@@ -85,6 +85,15 @@ Sem Supabase o quiz e a oferta funcionam (o lead só não é salvo). Com `DEMO_P
 
 ## Imagens de exemplo
 
-- `public/demo/pet-cachorro.jpg`: foto de shih-tzu de Mostafa Meraji, Wikimedia Commons, licença CC0 (domínio público).
-- `public/demo/pet-gato.jpg`, `public/bonus/*`, `public/demo/avatars/*`, `public/templates/*`: imagens fornecidas pelo dono do projeto.
+- `public/demo/pets/*.jpg`: fotos reais de pets do Wikimedia Commons, em domínio público (CC0 / Public domain), usadas nos documentos de exemplo da página de oferta:
+  - `mel.jpg`: CC0, Marcelo RosaMelo (https://commons.wikimedia.org/wiki/File:Shih_tzu_dog.jpg)
+  - `thor.jpg`: Public domain, Herwig Kavallar (https://commons.wikimedia.org/wiki/File:Labrador_Retriever_portrait.jpg)
+  - `bob.jpg`: CC0, Dktue (https://commons.wikimedia.org/wiki/File:Portrait_of_a_labrador_retriever.jpg)
+  - `pipoca.jpg`: CC0, Sciencia58 (https://commons.wikimedia.org/wiki/File:Golddust_Yorkshire_Terrier_Junghund.JPG)
+  - `fred.jpg`: CC0, Bicanski (https://commons.wikimedia.org/wiki/File:Bassotto_tedesco.jpg)
+  - `nina.jpg`: CC0, webandi (https://commons.wikimedia.org/wiki/File:Siamese-Cat_Andreas-LischkaPixabay.jpg)
+  - `luna.jpg`: CC0, Alicja Koczaska photosynteza (https://commons.wikimedia.org/wiki/File:Cat_face_in_sunlight_(Unsplash).jpg)
+  - `simba.jpg`: Public domain, Kerina yin at ms.wikipedia (https://commons.wikimedia.org/wiki/File:Kucing_belang_jingga_(orange_mackerel_tabby_cat).JPG)
+  - `cinza.jpg`: CC0, autor no Commons (https://commons.wikimedia.org/wiki/File:Domestic_shorthair_cat_portrait_in_grass.jpg)
+- `public/bonus/*`, `public/demo/avatars/*`, `public/templates/*`: imagens fornecidas pelo dono do projeto.
 - As avaliações e fotos de perfil em `src/config/demo-proof.ts` são de demonstração: só aparecem com o Modo demonstração ligado.

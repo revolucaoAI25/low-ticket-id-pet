@@ -8,8 +8,8 @@ import { buildDocContext } from '@/lib/doc-context';
 import { loadImage } from '@/lib/docs/draw';
 import { DOCS, renderPage } from '@/lib/docs/render';
 import type { DocContext } from '@/lib/docs/types';
-import { fill, g, petName, type PetData } from '@/lib/pet';
-import { examplePetFor } from '@/lib/sample';
+import { doPet, fill, hasName, type PetData } from '@/lib/pet';
+import { EXAMPLE_PETS } from '@/lib/sample';
 
 /* Imagens de exemplo de cada documento, preenchidas com um pet-modelo (nunca com o pet da pessoa). */
 
@@ -111,16 +111,19 @@ const MAKERS: Record<string, (c: DocContext) => Promise<HTMLCanvasElement>> = {
 };
 
 export function KitList({ settings, pet }: { settings: SiteSettings; pet: PetData }) {
-  const example = examplePetFor(pet.species);
   const [srcs, setSrcs] = useState<Record<string, string>>({});
+  // Carteirinha de torcedor: com o time que a pessoa escolheu (ou genérica, sem time).
+  const teamKey = pet.team?.none || !pet.team?.name ? 'none' : `${pet.team.id ?? ''}:${pet.team.name}`;
 
   useEffect(() => {
     let alive = true;
-    const ctx = buildDocContext({ pet: example, settings, seed: 'exemplo', slug: 'exemplo', phone: example.tutors?.[0]?.phone, preview: false });
     (async () => {
       for (const it of kitItems) {
         const make = MAKERS[it.id];
-        if (!make) continue;
+        const ex = EXAMPLE_PETS[it.id];
+        if (!make || !ex) continue;
+        const exPet: PetData = it.id === 'torcedor' ? { ...ex, team: teamKey === 'none' ? { id: null, name: '', none: true } : pet.team } : ex;
+        const ctx = buildDocContext({ pet: exPet, settings, seed: `exemplo-${it.id}`, slug: 'exemplo', phone: exPet.tutors?.find((t) => t.phone)?.phone, preview: false });
         const cv = await make(ctx);
         if (!alive) return;
         const url = cv.toDataURL('image/webp', 0.85);
@@ -131,7 +134,7 @@ export function KitList({ settings, pet }: { settings: SiteSettings; pet: PetDat
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [example.species]);
+  }, [teamKey]);
 
   return (
     <div>
@@ -158,7 +161,7 @@ export function KitList({ settings, pet }: { settings: SiteSettings; pet: PetDat
         ))}
       </ul>
       <p className="mt-2 text-center text-xs font-bold text-cacau/50">
-        Imagens de exemplo com {g(example, 'o', 'a')} {petName(example)}. O seu kit sai com a foto e os dados do seu pet.
+        Imagens de exemplo com pets de outros tutores (Mel, Thor, Nina, Bob…). O seu kit sai com a foto e os dados {hasName(pet) ? doPet(pet) : 'do seu pet'}.
       </p>
     </div>
   );
