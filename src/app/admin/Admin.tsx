@@ -373,7 +373,7 @@ function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
   const setReviews = (r: Review[]) => set({ proof: { ...s.proof, reviews: r } });
   return (
     <>
-      <Card title="Modo demonstração" hint="Mostra 12 avaliações de exemplo (inventadas), avatares com iniciais e '1.287 tutores' enquanto você não tem prova social real. Só preenche o que estiver vazio.">
+      <Card title="Modo demonstração" hint="Mostra 5 avaliações de exemplo (inventadas), avatares com iniciais e '1.287 tutores' enquanto você não tem prova social real. Só preenche o que estiver vazio.">
         <label className={`flex items-center gap-3 rounded-xl p-3 font-bold ${s.proof.demo ? 'bg-red-50 text-red-700' : 'bg-areia/60'}`}>
           <input type="checkbox" className="h-5 w-5" checked={s.proof.demo} onChange={(e) => set({ proof: { ...s.proof, demo: e.target.checked } })} />
           {s.proof.demo ? 'LIGADO: desligue antes de anunciar (avaliação inventada para cliente real é propaganda enganosa).' : 'Mostrar avaliações de demonstração'}

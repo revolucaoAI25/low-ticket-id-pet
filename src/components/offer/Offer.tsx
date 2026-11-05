@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight, BadgePercent, Bone, Car, Check, CreditCard, FileText, Gift, IdCard, Lock, Mail, PawPrint, Plane, Printer, ShieldCheck, Syringe, Timer, Trophy, Zap, type LucideIcon } from 'lucide-react';
-import { COVER_PAGE } from '@/lib/docs/templates/capas';
+import { ExampleDocs } from './ExampleDocs';
 import { ExitIntent } from './ExitIntent';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -35,8 +35,6 @@ export function Offer({ settings }: { settings: SiteSettings }) {
     [pet, settings, s.lead, s.contact.phone],
   );
 
-  // Capas dos bônus: genéricas (sem dados do pet).
-  const coverCtx = useMemo(() => ({ ...ctx, preview: false }), [ctx]);
   const name = hasName(pet) ? petName(pet) : 'seu pet';
   const doNome = doPet(pet);
   const discount = Math.round((1 - settings.price / settings.anchorPrice) * 100);
@@ -162,6 +160,10 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             <p className="mt-1.5 text-[13px] font-bold leading-snug text-cacau/75">O documento completo, sem marca d&apos;água, chega no seu e-mail.</p>
           </div>
         </div>
+        <p className="mt-3 text-center text-[13px] font-semibold leading-snug text-cacau/70">
+          Esta é a prévia do <b>RG {doNome}</b>, um dos {kitItems.length} documentos do kit, todos feitos com a foto e os dados {doNome}. Mais abaixo você vê como
+          ficam os outros, num exemplo.
+        </p>
       </section>
 
       {/* 4. Preço rápido */}
@@ -212,9 +214,13 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 7. O que vem no kit */}
       <Section title={`O que vem no kit ${doNome}`} subtitle={`${kitItems.length} documentos personalizados, prontos pra imprimir.`}>
-        {settings.images.kitExample && (
+        {settings.images.kitExample ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={settings.images.kitExample} alt="Exemplo do kit impresso" loading="lazy" className="mb-3 w-full rounded-3xl shadow-card" />
+        ) : (
+          <div className="mb-4">
+            <ExampleDocs settings={settings} species={pet.species} />
+          </div>
         )}
         <ul className="card divide-y divide-linha overflow-hidden">
           {kitItems.map((it) => {
@@ -242,16 +248,10 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             const cover = settings.images[b.imageKey];
             return (
               <div key={b.id} className="card overflow-hidden">
-                <div className="relative aspect-[4/5] bg-gradient-to-br from-[#F7EEF8] to-[#FFF1E0]">
-                  {cover ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cover} alt={b.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center p-2">
-                      <DocImage doc="capas" page={COVER_PAGE[b.id] ?? 0} ctx={coverCtx} scale={0.36} format="png" className="w-full" alt={b.title} />
-                    </div>
-                  )}
-                  {b.personalized && <span className="absolute left-2 top-2 rounded-full bg-roxo px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">Personalizado</span>}
+                <div className="relative aspect-[575/520] bg-areia">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cover || `/bonus/${b.id}.webp`} alt={b.title} loading="lazy" className="h-full w-full object-cover" />
+                  {b.personalized && <span className="absolute bottom-2 left-2 rounded-full bg-roxo px-2 py-0.5 text-[10px] font-extrabold uppercase text-white shadow">Personalizado</span>}
                 </div>
                 <div className="p-3">
                   <p className="font-display text-[15px] font-semibold leading-tight">{fill(b.title, pet)}</p>

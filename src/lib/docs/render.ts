@@ -6,7 +6,6 @@ import { watermark } from './common';
 import { ensureFonts, loadImage } from './draw';
 import { drawSlots } from './layout';
 import { aniversarioDoc } from './templates/aniversario';
-import { capasDoc } from './templates/capas';
 import { certidaoDoc } from './templates/certidao';
 import { cnhDoc } from './templates/cnh';
 import { fichaDoc } from './templates/ficha';
@@ -32,7 +31,6 @@ export const DOCS: Record<string, DocDef> = {
   ficha: fichaDoc,
   aniversario: aniversarioDoc,
   guia: guiaDoc,
-  capas: capasDoc,
   quemcuida: quemCuidaDoc,
 };
 
