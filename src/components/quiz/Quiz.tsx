@@ -1,11 +1,11 @@
 'use client';
 
 import { ArrowLeft, ArrowRight, Baby, Check, Clock, Eye, House, Mail, MapPin, Plus, Printer, ShieldCheck, X } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SiteSettings } from '@/config/site';
 import { IconBubble, PERSONALITY_ICON, SPECIES_ICON } from '@/components/icons';
-import { KitFan } from '@/components/KitFan';
 import { Logo, Stars, formatInt } from '@/components/ui';
 import { PERSONALITIES, doPet, g, hasName, oPet, petName, type Origin, type Personality, type Sex, type TeamChoice, type Tutor } from '@/lib/pet';
 import { useHydrated, useQuiz, quizStore } from '@/lib/quiz-store';
@@ -373,9 +373,10 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
       <div className="mt-5 w-full">
         {settings.images.heroMockup ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto w-full max-w-[380px]" />
+          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto w-full max-w-[380px]" fetchPriority="high" />
         ) : (
-          <KitFan settings={settings} />
+          // Mockup estático (leve e instantâneo). Para trocar, suba uma imagem em /admin → Imagens.
+          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão e tag do Kit Identidade Pet" width={1000} height={710} priority sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto w-full max-w-[400px]" />
         )}
       </div>
       <div className="mt-7 w-full">

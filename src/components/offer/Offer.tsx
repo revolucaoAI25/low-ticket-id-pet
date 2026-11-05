@@ -1,6 +1,8 @@
 'use client';
 
-import { ArrowRight, BadgePercent, Check, CreditCard, Gift, Lock, Mail, PawPrint, Printer, ShieldCheck, Timer, Zap } from 'lucide-react';
+import { ArrowRight, BadgePercent, Bone, Car, Check, CreditCard, FileText, Gift, IdCard, Lock, Mail, PawPrint, Plane, Printer, ShieldCheck, Syringe, Timer, Trophy, Zap, type LucideIcon } from 'lucide-react';
+import { COVER_PAGE } from '@/lib/docs/templates/capas';
+import { ExitIntent } from './ExitIntent';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bonusItems, fullTotal, kitItems } from '@/config/offer';
@@ -17,6 +19,8 @@ import { buildCheckoutUrl, track } from '@/lib/tracking';
 import { useCountdown } from './useCountdown';
 
 
+const ITEM_ICON: Record<string, LucideIcon> = { rg: IdCard, cnh: Car, certidao: FileText, passaporte: Plane, tag: Bone, vacina: Syringe, torcedor: Trophy };
+
 export function Offer({ settings }: { settings: SiteSettings }) {
   const hydrated = useHydrated();
   const s = useQuiz();
@@ -31,6 +35,8 @@ export function Offer({ settings }: { settings: SiteSettings }) {
     [pet, settings, s.lead, s.contact.phone],
   );
 
+  // Capas dos bônus: genéricas (sem dados do pet).
+  const coverCtx = useMemo(() => ({ ...ctx, preview: false }), [ctx]);
   const name = hasName(pet) ? petName(pet) : 'seu pet';
   const doNome = doPet(pet);
   const discount = Math.round((1 - settings.price / settings.anchorPrice) * 100);
@@ -53,10 +59,13 @@ export function Offer({ settings }: { settings: SiteSettings }) {
   }, [hydrated]);
 
   const buy = useCallback(
-    (from: string) => {
+    (from: string, exit = false) => {
       const group = checkoutGroup(pet.species);
-      const base = settings.checkout[group];
-      track('InitiateCheckout', { value: settings.price, currency: 'BRL', content_name: 'Kit Identidade Pet', content_category: group, num_items: 1 });
+      // Oferta de saída: usa o checkout com o preço extra, se configurado no painel.
+      const exitUrl = exit ? settings.exitOffer.checkout[group] : '';
+      const base = exitUrl || settings.checkout[group];
+      const value = exitUrl ? settings.exitOffer.price : settings.price;
+      track('InitiateCheckout', { value, currency: 'BRL', content_name: 'Kit Identidade Pet', content_category: group, num_items: 1 });
       track('CliqueComprar', { origem: from, checkout: group }, { pixel: false });
       const firstTutor = pet.tutors?.[0]?.name?.trim();
       const url = buildCheckoutUrl({
@@ -153,17 +162,6 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             <p className="mt-1.5 text-[13px] font-bold leading-snug text-cacau/75">O documento completo, sem marca d&apos;água, chega no seu e-mail.</p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {kitItems
-            .filter((it) => it.id !== 'rg' && it.id !== 'torcedor')
-            .map((it) => (
-              <LockedThumb key={it.id} title={it.short} doc={it.doc!} ctx={ctx} />
-            ))}
-          <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-roxo p-2 text-center text-white">
-            <Gift size={26} strokeWidth={2} />
-            <span className="text-[11px] font-extrabold leading-tight">+ 4 bônus</span>
-          </div>
-        </div>
       </section>
 
       {/* 4. Preço rápido */}
@@ -201,37 +199,41 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 6. Kit na vida real */}
       <Section title="O kit na vida real" subtitle="É só imprimir em casa ou na papelaria.">
-        <Carousel>
+        <Marquee seconds={38}>
           {proofSlots.realLife.map((label, i) => {
             const img = settings.proof.realLife[i];
             return (
-              <div key={i} className="w-[68%] shrink-0 snap-center">
+              <div key={i} className="w-[240px] shrink-0">
                 {img?.url ? <ProofImg src={img.url} caption={img.caption} ratio="4 / 5" /> : <Slot label={label} ratio="4 / 5" />}
               </div>
             );
           })}
-        </Carousel>
+        </Marquee>
       </Section>
 
       {/* 7. O que vem no kit */}
       <Section title={`O que vem no kit ${doNome}`} subtitle={`${kitItems.length} documentos personalizados, prontos pra imprimir.`}>
-        <div className="space-y-3">
-          {kitItems.map((it, i) => (
-            <div key={it.id} className="card flex items-center gap-3 p-3">
-              <div className="w-[38%] shrink-0">
-                <DocImage doc={it.doc!} ctx={ctx} scale={0.3} className="overflow-hidden rounded-lg" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-coral">Documento {i + 1}</p>
-                <p className="font-display text-[17px] font-semibold leading-tight">{fill(it.title, pet)}</p>
-                <p className="mt-1 text-[13px] font-semibold leading-snug text-cacau/70">{fill(it.lines[0], pet)}</p>
-                <p className="mt-1 text-[13px] font-bold">
-                  <span className="text-cacau/40 line-through">{formatBRL(it.value)}</span> <span className="text-verde">incluso</span>
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {settings.images.kitExample && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={settings.images.kitExample} alt="Exemplo do kit impresso" loading="lazy" className="mb-3 w-full rounded-3xl shadow-card" />
+        )}
+        <ul className="card divide-y divide-linha overflow-hidden">
+          {kitItems.map((it) => {
+            const Icon = ITEM_ICON[it.id] ?? FileText;
+            return (
+              <li key={it.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F7EEF8] text-roxo">
+                  <Icon size={20} strokeWidth={2.2} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-extrabold leading-tight">{fill(it.title, pet)}</span>
+                  <span className="block text-[13px] font-semibold leading-snug text-cacau/65">{fill(it.lines[0], pet)}</span>
+                </span>
+                <span className="shrink-0 text-[13px] font-bold text-cacau/40 line-through">{formatBRL(it.value)}</span>
+              </li>
+            );
+          })}
+        </ul>
       </Section>
 
       {/* 8. Bônus */}
@@ -245,14 +247,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
                   {cover ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={cover} alt={b.title} className="h-full w-full object-cover" />
-                  ) : b.doc ? (
-                    <div className="flex h-full items-center justify-center p-3">
-                      <DocImage doc={b.doc} ctx={ctx} scale={0.22} className="w-full overflow-hidden rounded-md shadow-lg" />
-                    </div>
                   ) : (
-                    <div className="flex h-full flex-col items-center justify-center p-3 text-center text-roxo/70">
-                      <Gift size={44} strokeWidth={1.6} />
-                      <span className="mt-2 text-[11px] font-bold text-cacau/50">Capa do bônus</span>
+                    <div className="flex h-full items-center justify-center p-2">
+                      <DocImage doc="capas" page={COVER_PAGE[b.id] ?? 0} ctx={coverCtx} scale={0.36} format="png" className="w-full" alt={b.title} />
                     </div>
                   )}
                   {b.personalized && <span className="absolute left-2 top-2 rounded-full bg-roxo px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">Personalizado</span>}
@@ -278,16 +275,16 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 9. WhatsApp */}
       <Section title="O que os tutores mandam pra gente" subtitle="Mensagens reais no WhatsApp.">
-        <Carousel>
+        <Marquee seconds={34} reverse>
           {proofSlots.whatsapp.map((label, i) => {
             const img = settings.proof.whatsapp[i];
             return (
-              <div key={i} className="w-[62%] shrink-0 snap-center">
+              <div key={i} className="w-[210px] shrink-0">
                 {img?.url ? <ProofImg src={img.url} caption={img.caption} ratio="9 / 16" /> : <Slot label={label} ratio="9 / 16" />}
               </div>
             );
           })}
-        </Carousel>
+        </Marquee>
       </Section>
 
       {/* 10. Instagram */}
@@ -431,6 +428,8 @@ export function Offer({ settings }: { settings: SiteSettings }) {
         </p>
       </footer>
 
+      <ExitIntent settings={settings} pet={pet} timer={timer} onBuy={buy} />
+
       {/* Barra fixa */}
       <div
         className={`fixed inset-x-0 bottom-0 z-40 border-t border-linha bg-white/95 backdrop-blur transition-transform duration-300 ${showBar ? 'translate-y-0' : 'translate-y-full'}`}
@@ -463,8 +462,19 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   );
 }
 
-function Carousel({ children }: { children: React.ReactNode }) {
-  return <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">{children}</div>;
+/** Faixa que anda sozinha, em loop contínuo (pausa ao tocar). */
+/** Faixa que anda sozinha, em loop contínuo (pausa ao tocar). Duas cópias iguais: a animação anda exatamente uma cópia. */
+function Marquee({ children, seconds = 36, reverse }: { children: React.ReactNode; seconds?: number; reverse?: boolean }) {
+  return (
+    <div className="marquee -mx-4 overflow-hidden">
+      <div className="marquee-track flex w-max" style={{ animationDuration: `${seconds}s`, animationDirection: reverse ? 'reverse' : 'normal' }}>
+        <div className="flex gap-3 pl-3">{children}</div>
+        <div className="flex gap-3 pl-3" aria-hidden>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ProofImg({ src, caption, ratio }: { src: string; caption?: string; ratio: string }) {
@@ -474,20 +484,6 @@ function ProofImg({ src, caption, ratio }: { src: string; caption?: string; rati
       <img src={src} alt={caption ?? ''} loading="lazy" className="w-full rounded-2xl object-cover shadow-card" style={ratio === 'auto' ? undefined : { aspectRatio: ratio }} />
       {caption && <figcaption className="mt-1 text-center text-xs font-bold text-cacau/60">{caption}</figcaption>}
     </figure>
-  );
-}
-
-function LockedThumb({ title, doc, ctx }: { title: string; doc: string; ctx: Parameters<typeof DocImage>[0]['ctx'] }) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-1.5 shadow-card">
-      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-areia/60">
-        <DocImage doc={doc} ctx={ctx} scale={0.18} className="w-[86%] blur-[1.5px]" />
-      </div>
-      <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-cacau/85 text-white">
-        <Lock size={12} strokeWidth={2.6} />
-      </span>
-      <p className="mt-1 truncate text-center text-[11px] font-extrabold">{title}</p>
-    </div>
   );
 }
 

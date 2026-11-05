@@ -65,6 +65,8 @@ export interface SiteSettings {
   company: { name: string; document: string };
   images: {
     heroMockup: string;
+    /** Foto de exemplo do kit (com um pet de exemplo), mostrada em "O que vem no kit". */
+    kitExample: string;
     bonusAniversario: string;
     bonusQuemCuida: string;
     bonusCalendario: string;
@@ -87,6 +89,13 @@ export interface SiteSettings {
   };
   extraTeams: ExtraTeam[];
   bumps: Bump[];
+  /** Oferta extra quando a pessoa tenta sair da página de oferta. */
+  exitOffer: {
+    enabled: boolean;
+    price: number;
+    /** Checkouts com o preço extra (deixe vazio para usar o checkout normal). */
+    checkout: { cachorro: string; gato: string; outros: string };
+  };
 }
 
 export const defaultSettings: SiteSettings = {
@@ -108,6 +117,7 @@ export const defaultSettings: SiteSettings = {
   company: { name: 'Clube do Focinho', document: '' },
   images: {
     heroMockup: '',
+    kitExample: '',
     bonusAniversario: '',
     bonusQuemCuida: '',
     bonusCalendario: '',
@@ -117,6 +127,7 @@ export const defaultSettings: SiteSettings = {
   files: { calendarioCao: '', calendarioGato: '', calendarioOutros: '', guiaViagem: '' },
   proof: { avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
   extraTeams: [],
+  exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
     { id: 'petiscos-cao', name: 'Petiscos Fit em 3 Ingredientes', keywords: 'petiscos fit em 3, petiscos fit 3 ingredientes', file: '' },
     { id: 'xixi', name: 'Xixi no Lugar Certo em 7 Dias', keywords: 'xixi no lugar certo', file: '' },
@@ -167,6 +178,7 @@ export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): 
     proof: { ...defaultSettings.proof, ...(s.proof ?? {}) },
     extraTeams: s.extraTeams ?? [],
     bumps: s.bumps?.length ? s.bumps : defaultSettings.bumps,
+    exitOffer: { ...defaultSettings.exitOffer, ...(s.exitOffer ?? {}), checkout: { ...defaultSettings.exitOffer.checkout, ...(s.exitOffer?.checkout ?? {}) } },
     extraPetKeywords: s.extraPetKeywords?.length ? s.extraPetKeywords : defaultSettings.extraPetKeywords,
   };
 }

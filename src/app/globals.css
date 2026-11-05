@@ -154,3 +154,18 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Carrossel contínuo (anda sozinho, pausa ao tocar/passar o mouse) */
+.marquee-track {
+  animation-name: marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:active .marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; }
+  .marquee-track { animation: none !important; }
+}

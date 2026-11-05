@@ -94,6 +94,7 @@ export function Admin() {
         {tab === 'modelos' && <Modelos settings={s} />}
 
         {tab === 'oferta' && (
+          <>
           <Card title="Preço, ancoragem e números">
             <Grid>
               <Num label="Preço (R$)" value={s.price} step={0.1} onChange={(v) => set({ price: v })} />
@@ -106,16 +107,34 @@ export function Admin() {
               Desconto mostrado: <b>-{Math.round((1 - s.price / s.anchorPrice) * 100)}% aplicado</b>. Os valores de cada item do kit ficam em <code>src/config/offer.ts</code>.
             </p>
           </Card>
+          </>
+        )}
+        {tab === 'oferta' && (
+          <>
+          <Card
+            title="Pop-up de saída"
+            hint="Aparece uma vez por visita na página de oferta quando a pessoa tenta sair (mouse para fora da janela no computador, botão voltar no celular). Com os checkouts abaixo preenchidos, oferece o preço extra; sem eles, só lembra que o desconto está reservado."
+          >
+            <label className="flex items-center gap-3 font-bold">
+              <input type="checkbox" className="h-5 w-5" checked={s.exitOffer.enabled} onChange={(e) => set({ exitOffer: { ...s.exitOffer, enabled: e.target.checked } })} />
+              Mostrar o pop-up de saída
+            </label>
+            <Num label="Preço especial do pop-up (R$)" value={s.exitOffer.price} step={0.1} onChange={(v) => set({ exitOffer: { ...s.exitOffer, price: v } })} />
+            <Text label="Checkout com o preço especial — Cachorro" value={s.exitOffer.checkout.cachorro} onChange={(v) => set({ exitOffer: { ...s.exitOffer, checkout: { ...s.exitOffer.checkout, cachorro: v } } })} />
+            <Text label="Checkout com o preço especial — Gato" value={s.exitOffer.checkout.gato} onChange={(v) => set({ exitOffer: { ...s.exitOffer, checkout: { ...s.exitOffer.checkout, gato: v } } })} />
+            <Text label="Checkout com o preço especial — Outros pets" value={s.exitOffer.checkout.outros} onChange={(v) => set({ exitOffer: { ...s.exitOffer, checkout: { ...s.exitOffer.checkout, outros: v } } })} />
+          </Card>
+          </>
         )}
 
         {tab === 'checkout' && (
           <>
             <Card title="Links de checkout (Kiwify)" hint="O quiz escolhe o link pela espécie. Pássaro, peixe, roedor e outros usam o de 'Outros pets'.">
-              <Text label="🐶 Cachorro" value={s.checkout.cachorro} onChange={(v) => set({ checkout: { ...s.checkout, cachorro: v } })} placeholder="https://pay.kiwify.com.br/..." />
-              <Text label="🐱 Gato" value={s.checkout.gato} onChange={(v) => set({ checkout: { ...s.checkout, gato: v } })} placeholder="https://pay.kiwify.com.br/..." />
-              <Text label="🐾 Outros pets" value={s.checkout.outros} onChange={(v) => set({ checkout: { ...s.checkout, outros: v } })} placeholder="https://pay.kiwify.com.br/..." />
+              <Text label="Cachorro" value={s.checkout.cachorro} onChange={(v) => set({ checkout: { ...s.checkout, cachorro: v } })} placeholder="https://pay.kiwify.com.br/..." />
+              <Text label="Gato" value={s.checkout.gato} onChange={(v) => set({ checkout: { ...s.checkout, gato: v } })} placeholder="https://pay.kiwify.com.br/..." />
+              <Text label="Outros pets" value={s.checkout.outros} onChange={(v) => set({ checkout: { ...s.checkout, outros: v } })} placeholder="https://pay.kiwify.com.br/..." />
               <Text
-                label="➕ Pet adicional (R$ 9,90, vendido dentro da área do pet)"
+                label="Pet adicional (produto separado, opcional)"
                 value={s.checkout.extraPet}
                 onChange={(v) => set({ checkout: { ...s.checkout, extraPet: v } })}
                 placeholder="https://pay.kiwify.com.br/..."
@@ -160,6 +179,9 @@ export function Admin() {
           <>
             <Card title="Abertura do quiz" hint="Mockup do kit em leque. Sem imagem, o site monta um com os próprios documentos.">
               <Upload label="Imagem do kit (abertura)" value={s.images.heroMockup} folder="abertura" onChange={(v) => set({ images: { ...s.images, heroMockup: v } })} />
+            </Card>
+            <Card title="Kit de exemplo" hint="Foto do kit impresso com um pet de exemplo. Aparece na seção 'O que vem no kit' da página de oferta (opcional).">
+              <Upload label="Foto do kit de exemplo" value={s.images.kitExample} folder="exemplo" onChange={(v) => set({ images: { ...s.images, kitExample: v } })} />
             </Card>
             <Card title="Capas dos bônus">
               {bonusItems.map((b) => (

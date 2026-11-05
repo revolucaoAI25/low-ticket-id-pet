@@ -82,7 +82,7 @@ export interface DocPage {
   /** Cópias extras na folha de impressão (tamanhos em mm). Padrão: uma cópia no tamanho mm. */
   printCopies?: [number, number][];
   /** Formato recortado (não leva linha de corte retangular). */
-  shape?: 'round' | 'bone';
+  shape?: 'round' | 'bone' | 'free';
   needsQr?: boolean;
   needsCrest?: boolean;
   /** Imagem do template dentro do projeto (ex.: "/templates/rg-frente.png"). */
