@@ -248,9 +248,9 @@ export function Offer({ settings }: { settings: SiteSettings }) {
             const cover = settings.images[b.imageKey];
             return (
               <div key={b.id} className="card overflow-hidden">
-                <div className="relative aspect-[575/520] bg-areia">
+                <div className="relative aspect-[387/615] bg-gradient-to-b from-[#FBF4EC] to-[#F4E8DA] p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={cover || `/bonus/${b.id}.webp`} alt={b.title} loading="lazy" className="h-full w-full object-cover" />
+                  <img src={cover || `/bonus/${b.id}.webp`} alt={b.title} loading="lazy" className="h-full w-full object-contain drop-shadow-lg" />
                   {b.personalized && <span className="absolute bottom-2 left-2 rounded-full bg-roxo px-2 py-0.5 text-[10px] font-extrabold uppercase text-white shadow">Personalizado</span>}
                 </div>
                 <div className="p-3">
