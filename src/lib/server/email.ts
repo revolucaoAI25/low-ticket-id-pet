@@ -64,12 +64,22 @@ function bumpsBlock(bumps: { label: string; url: string }[]): string {
     .join('')}</td></tr>`;
 }
 
-/** Order bump comprado em pedido separado: entrega na hora. */
-export async function sendBumpsEmail(to: string, bumps: { label: string; url: string }[]): Promise<boolean> {
-  if (!bumps.length) return false;
-  const title = 'Seu extra chegou! 🐾';
-  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Obrigado pela compra! O material está anexado a este e-mail.</td></tr>${bumpsBlock(bumps)}`;
-  return send(to, title, layout(title, body), bumps.map((b) => ({ filename: pdfName(b.label), path: b.url })));
+/** Um e-mail por order bump de conteúdo, assim que o pagamento dele é aprovado (o PDF vai anexado). */
+export async function sendBumpEmail(to: string, bump: { label: string; url: string }): Promise<boolean> {
+  const title = `Seu material chegou: ${bump.label} 🐾`;
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Obrigado pela compra! O <b>${bump.label}</b> está anexado a este e-mail, em PDF. Ele também entra no final do PDF do seu kit.</td></tr>
+  <tr><td align="center" style="padding-top:22px">${button(bump.url, 'Baixar o PDF')}</td></tr>`;
+  return send(to, title, layout(title, body), [{ filename: pdfName(bump.label), path: bump.url }]);
+}
+
+/** +1 pet aprovado depois do kit: convida a montar o kit do novo pet (mesmo formulário de confirmação). */
+export async function sendExtraPetEmail(to: string, token: string): Promise<boolean> {
+  const link = `${siteUrl()}/confirmar/${token}`;
+  const title = 'Bora montar o kit do seu outro pet? 🐶🐱';
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Pagamento do pet adicional confirmado! Preencha os dados e a foto do seu outro pet (leva 2 minutinhos) e o kit completo dele chega aqui no e-mail, igualzinho ao primeiro.</td></tr>
+  <tr><td align="center" style="padding-top:24px">${button(link, 'Montar o kit do novo pet')}</td></tr>
+  <tr><td style="padding-top:24px;font-size:12px;color:#8a7566;text-align:center">Se o botão não abrir, copie este link:<br>${link}</td></tr>`;
+  return send(to, title, layout(title, body));
 }
 
 export interface KitFile {

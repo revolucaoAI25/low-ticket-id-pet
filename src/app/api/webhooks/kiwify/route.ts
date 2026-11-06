@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
 import { bumpFiles, bumpsInPayload, productIsBump } from '@/lib/server/bumps';
-import { sendBumpsEmail, sendConfirmEmail } from '@/lib/server/email';
+import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail } from '@/lib/server/email';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail, normPhone, token } from '@/lib/server/util';
@@ -166,12 +166,15 @@ export async function POST(req: Request) {
   await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderId);
 
   const doNome = cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined;
-  if (!addOn && !wasPaid && email) {
-    // Kit liberado: e-mail para conferir os dados (com os bumps comprados já anexados).
-    await sendConfirmEmail(email, cust.access_token, doNome, bumpFiles(patch.bumps as string[], settings));
-  } else if (newBumps.length && email) {
-    // Bump chegou num pedido separado: manda só ele.
-    await sendBumpsEmail(email, bumpFiles(newBumps, settings));
+  const kitPaidNow = !addOn && !wasPaid;
+  const kitIsPaid = wasPaid || kitPaidNow;
+  if (email) {
+    // 1) Kit aprovado: e-mail para conferir os dados (se comprou +1 pet junto, o formulário já abre os dois).
+    if (kitPaidNow) await sendConfirmEmail(email, cust.access_token, doNome);
+    // 2) +1 pet aprovado depois do kit (outro Pix, por exemplo): convite para montar o kit do novo pet.
+    else if (extraPets && kitIsPaid) await sendExtraPetEmail(email, cust.access_token);
+    // 3) Cada order bump de conteúdo: um e-mail próprio com o PDF, na hora em que for aprovado.
+    for (const f of bumpFiles(newBumps, settings)) await sendBumpEmail(email, f);
   }
   return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps });
 }

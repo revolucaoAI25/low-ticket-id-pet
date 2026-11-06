@@ -1,6 +1,6 @@
 import 'server-only';
 import { doPet, type PetData } from '@/lib/pet';
-import { sendConfirmEmail, sendKitEmail, type KitFile } from './email';
+import { sendBumpEmail, sendConfirmEmail, sendKitEmail, type KitFile } from './email';
 import { bumpFiles } from './bumps';
 import { getSettings } from './settings';
 
@@ -31,6 +31,8 @@ export async function resendCustomer(c: CustomerWithPets): Promise<boolean> {
   let ok = false;
   for (const p of done) ok = (await sendKitEmail(c.email, doPet(p.data), p.files!, await fixedBonusLinks(p.data))) || ok;
   if (!pets.length || pets.some((p) => !p.submitted_at))
-    ok = (await sendConfirmEmail(c.email, c.access_token, pets[0] ? doPet(pets[0].data) : undefined, bumpFiles(c.bumps, await getSettings()))) || ok;
+    ok = (await sendConfirmEmail(c.email, c.access_token, pets[0] ? doPet(pets[0].data) : undefined)) || ok;
+  // Bumps de conteúdo: reenvia cada um no seu e-mail.
+  for (const f of bumpFiles(c.bumps, await getSettings())) ok = (await sendBumpEmail(c.email, f)) || ok;
   return ok;
 }
