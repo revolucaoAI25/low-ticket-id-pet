@@ -45,7 +45,16 @@ export function Tracking({ metaPixelId, utmifyUtms, utmifyPixelId }: Props) {
           </noscript>
         </>
       )}
-      {utmifyUtms && <Script id="utmify-utms" src="https://cdn.utmify.com.br/scripts/utms/latest.js" strategy="afterInteractive" />}
+      {utmifyUtms && (
+        // Mesmo script que a Utmify gera no painel dela (o código embaralhado só carrega este arquivo com estes atributos).
+        <Script
+          id="utmify-utms"
+          src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+          strategy="afterInteractive"
+          data-utmify-prevent-xcod-sck=""
+          data-utmify-prevent-subids=""
+        />
+      )}
       {utmifyId && (
         <Script id="utmify-pixel" strategy="afterInteractive">
           {`window.pixelId="${utmifyId}";var a=document.createElement("script");a.setAttribute("async","");a.setAttribute("defer","");a.setAttribute("src","https://cdn.utmify.com.br/scripts/pixel/pixel.js");document.head.appendChild(a);`}
