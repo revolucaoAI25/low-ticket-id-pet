@@ -119,14 +119,19 @@ export async function POST(req: Request) {
     return Object.values(l).some(Boolean) ? l : kiwifyUtms;
   };
 
-  const { data: existing } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle();
+  // Chave do pedido: id do pedido + produto (kit e bump nunca se confundem, mesmo se a Kiwify usar o mesmo id).
+  const productId = pickStr(product, 'product_id', 'id');
+  const orderKey = productId ? `${orderId}:${productId}` : orderId;
+  const { data: existingNew } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderKey).maybeSingle();
+  // Pedidos gravados antes desta mudança usavam só o id do pedido.
+  const existing = existingNew ?? (await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle()).data;
 
   // Trava contra aviso repetido: a Kiwify pode mandar o mesmo pedido mais de uma vez, ao mesmo tempo
   // (por exemplo, dois webhooks marcando o mesmo produto). Só um deles "pega" o pedido; os outros param aqui.
   const newStatus = isPaid ? 'paid' : isRefund ? 'refunded' : status || event;
   const orderRow = {
     provider: 'kiwify',
-    provider_order_id: orderId,
+    provider_order_id: orderKey,
     status: newStatus,
     event,
     email: email || null,
@@ -140,7 +145,7 @@ export async function POST(req: Request) {
   const inserted = await sb.from('orders').insert(orderRow).select('id').maybeSingle();
   let claimed = !inserted.error && !!inserted.data;
   if (!claimed) {
-    const { data: upd } = await sb.from('orders').update(orderRow).eq('provider', 'kiwify').eq('provider_order_id', orderId).neq('status', newStatus).select('id');
+    const { data: upd } = await sb.from('orders').update(orderRow).eq('provider', 'kiwify').eq('provider_order_id', orderKey).neq('status', newStatus).select('id');
     claimed = !!upd?.length;
   }
   if (!claimed) {
@@ -184,20 +189,22 @@ export async function POST(req: Request) {
       if (candidates.length) matchedBy = 'quiz';
     }
   }
-  if (!candidates.length && email) {
-    const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
-    candidates = (data as unknown as Cust[]) ?? [];
-    if (candidates.length) matchedBy = 'e-mail';
-  }
-  if (!candidates.length && phone.length >= 10) {
-    const { data } = await sb
-      .from('customers')
-      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)')
-      .like('phone', `%${phone.slice(-8)}`)
-      .order('created_at', { ascending: false })
-      .limit(10);
-    candidates = (data as unknown as Cust[]) ?? [];
-    if (candidates.length) matchedBy = 'telefone';
+  // 2º: e-mail E telefone. A pessoa pode trocar um dos dois no checkout, então busca pelos dois
+  // e prefere o cadastro que bate nos dois; depois o que bate só no telefone; por último só no e-mail.
+  if (!candidates.length) {
+    const found = new Map<string, Cust & { score: number }>();
+    const add = (rows: unknown, pts: number) => {
+      for (const r of (rows as Cust[] | null) ?? []) {
+        const prev = found.get(r.id);
+        found.set(r.id, { ...r, score: (prev?.score ?? 0) + pts });
+      }
+    };
+    if (email) add((await sb.from('customers').select(CUST_COLS).eq('email', email).order('created_at', { ascending: false }).limit(10)).data, 1);
+    if (phone.length >= 10) add((await sb.from('customers').select(CUST_COLS).like('phone', `%${phone.slice(-8)}`).order('created_at', { ascending: false }).limit(10)).data, 2);
+    const list = [...found.values()].sort((x, y) => y.score - x.score || y.created_at.localeCompare(x.created_at));
+    candidates = list;
+    const how = (c?: { score: number }) => (!c ? '' : c.score === 3 ? 'e-mail e telefone' : c.score === 2 ? 'telefone' : 'e-mail');
+    matchedBy = how(list[0]);
   }
 
   let cust: Cust | undefined;
@@ -240,7 +247,7 @@ export async function POST(req: Request) {
       .select('id');
     kitPaidNow = !!freed?.length;
   }
-  await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderId);
+  await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderKey);
 
   const doNome = cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined;
   const kitIsPaid = wasPaid || kitPaidNow;
