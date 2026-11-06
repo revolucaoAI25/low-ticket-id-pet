@@ -72,8 +72,12 @@ export async function POST(req: Request) {
   // Botão "Testar" da Kiwify: cliente fictício (domínio de exemplo ou sem e-mail e sem pedido).
   // Só registra, sem criar pedido, mandar e-mail ou repassar para a Utmify.
   const isTest = /@example\.(com|org|net)$/.test(email) || (!email && !orderId);
-  await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: o, note: isTest ? 'teste (não processado)' : 'recebido' });
+  const { data: logRow } = await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: o, note: isTest ? 'teste (não processado)' : 'recebido' }).select('id').maybeSingle();
   if (isTest) return json({ ok: true, test: true });
+  /** Anota no log o que foi feito com o aviso (aparece no /admin → Webhooks). */
+  const note = async (s: string) => {
+    if (logRow?.id) await sb.from('webhook_logs').update({ note: s }).eq('id', logRow.id);
+  };
   const amount = Number(pickStr(commissions, 'charge_amount', 'product_base_price')) || null;
 
   if (!orderId) return json({ ok: true, ignored: 'no order id' });
@@ -116,24 +120,33 @@ export async function POST(req: Request) {
   };
 
   const { data: existing } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle();
-  const alreadyPaid = existing?.status === 'paid';
 
-  await sb.from('orders').upsert(
-    {
-      provider: 'kiwify',
-      provider_order_id: orderId,
-      status: isPaid ? 'paid' : isRefund ? 'refunded' : status || event,
-      event,
-      email: email || null,
-      phone: phone || null,
-      product_name: productName || null,
-      amount,
-      extra_pets: extraPets,
-      payload: o,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'provider,provider_order_id' },
-  );
+  // Trava contra aviso repetido: a Kiwify pode mandar o mesmo pedido mais de uma vez, ao mesmo tempo
+  // (por exemplo, dois webhooks marcando o mesmo produto). Só um deles "pega" o pedido; os outros param aqui.
+  const newStatus = isPaid ? 'paid' : isRefund ? 'refunded' : status || event;
+  const orderRow = {
+    provider: 'kiwify',
+    provider_order_id: orderId,
+    status: newStatus,
+    event,
+    email: email || null,
+    phone: phone || null,
+    product_name: productName || null,
+    amount,
+    extra_pets: extraPets,
+    payload: o,
+    updated_at: new Date().toISOString(),
+  };
+  const inserted = await sb.from('orders').insert(orderRow).select('id').maybeSingle();
+  let claimed = !inserted.error && !!inserted.data;
+  if (!claimed) {
+    const { data: upd } = await sb.from('orders').update(orderRow).eq('provider', 'kiwify').eq('provider_order_id', orderId).neq('status', newStatus).select('id');
+    claimed = !!upd?.length;
+  }
+  if (!claimed) {
+    await note('repetido (já processado)');
+    return json({ ok: true, skipped: 'duplicate' });
+  }
 
   if (isRefund) {
     const custId = existing?.customer_id;
@@ -146,17 +159,35 @@ export async function POST(req: Request) {
       const { data: c } = custId ? await sb.from('customers').select('utms').eq('id', custId).maybeSingle() : { data: null };
       await sendUtmifyOrder({ ...utmifyBase, status: status.includes('charge') || event.includes('charge') ? 'chargedback' : 'refunded', utms: utmsFor(c?.utms as Obj) });
     }
+    await note(addOn ? 'reembolso de bump/+1 pet' : 'reembolso do kit');
     return json({ ok: true, refunded: true });
   }
 
-  if (!isPaid || alreadyPaid) return json({ ok: true, skipped: !isPaid ? 'not paid' : 'duplicate' });
+  if (!isPaid) {
+    await note(`ignorado (${newStatus})`);
+    return json({ ok: true, skipped: 'not paid' });
+  }
 
   // ---------- encontra o lead ----------
   type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; utms: Obj | null; pets: { data: Obj }[] };
+  const CUST_COLS = 'id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)';
   let candidates: Cust[] = [];
-  if (email) {
+  let matchedBy = '';
+  // 1º: o código do quiz que vai no link do checkout (s3 = id do pet). É o jeito mais seguro:
+  // funciona mesmo se a pessoa trocar o e-mail no checkout ou tiver feito o quiz mais de uma vez.
+  const ref = pickStr(pickObj(o, 'TrackingParameters', 'tracking_parameters'), 's3');
+  if (/^[0-9a-f-]{36}$/i.test(ref)) {
+    const { data: pet } = await sb.from('pets').select('customer_id').eq('id', ref).maybeSingle();
+    if (pet?.customer_id) {
+      const { data } = await sb.from('customers').select(CUST_COLS).eq('id', pet.customer_id).limit(1);
+      candidates = (data as unknown as Cust[]) ?? [];
+      if (candidates.length) matchedBy = 'quiz';
+    }
+  }
+  if (!candidates.length && email) {
     const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
     candidates = (data as unknown as Cust[]) ?? [];
+    if (candidates.length) matchedBy = 'e-mail';
   }
   if (!candidates.length && phone.length >= 10) {
     const { data } = await sb
@@ -166,6 +197,7 @@ export async function POST(req: Request) {
       .order('created_at', { ascending: false })
       .limit(10);
     candidates = (data as unknown as Cust[]) ?? [];
+    if (candidates.length) matchedBy = 'telefone';
   }
 
   let cust: Cust | undefined;
@@ -184,6 +216,7 @@ export async function POST(req: Request) {
       .single();
     if (!data) return json({ error: 'customer' }, 500);
     cust = { ...(data as Omit<Cust, 'pets'>), pets: [] };
+    matchedBy = 'novo cliente (não achou o quiz)';
   }
 
   const wasPaid = !!cust.paid_at;
@@ -195,15 +228,21 @@ export async function POST(req: Request) {
     bumps: [...had, ...newBumps],
     updated_at: new Date().toISOString(),
   };
-  if (!addOn && !wasPaid) {
-    patch.paid_at = new Date().toISOString();
-    patch.refunded_at = null;
-  }
   await sb.from('customers').update(patch).eq('id', cust.id);
+  // Libera o kit uma vez só (condicional: dois avisos ao mesmo tempo não mandam dois e-mails).
+  let kitPaidNow = false;
+  if (!addOn && !wasPaid) {
+    const { data: freed } = await sb
+      .from('customers')
+      .update({ paid_at: new Date().toISOString(), refunded_at: null })
+      .eq('id', cust.id)
+      .is('paid_at', null)
+      .select('id');
+    kitPaidNow = !!freed?.length;
+  }
   await sb.from('orders').update({ customer_id: cust.id }).eq('provider', 'kiwify').eq('provider_order_id', orderId);
 
   const doNome = cust.pets?.[0] ? doPet(cust.pets[0].data) : undefined;
-  const kitPaidNow = !addOn && !wasPaid;
   const kitIsPaid = wasPaid || kitPaidNow;
   if (email) {
     // 1) Kit aprovado: e-mail para conferir os dados (se comprou +1 pet junto, o formulário já abre os dois).
@@ -231,5 +270,6 @@ export async function POST(req: Request) {
       meta: (cust.utms?._meta as never) ?? null,
     });
   }
+  await note(`${addOn ? (productIsExtraPet ? '+1 pet' : 'order bump') : 'kit'} pago · achou por: ${matchedBy}${kitPaidNow ? ' · e-mail de confirmação enviado' : ''}`);
   return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify });
 }

@@ -75,6 +75,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
         name: firstTutor && firstTutor.length > 1 ? firstTutor : undefined,
         email: s.contact.email,
         phone: s.contact.phone,
+        ref: s.lead?.petId,
       });
       if (!url) {
         setNotice(`Checkout de "${group}" ainda não configurado no painel /admin.`);
@@ -82,7 +83,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
       }
       window.location.href = url;
     },
-    [pet.species, pet.tutors, settings, s.contact.email, s.contact.phone],
+    [pet.species, pet.tutors, settings, s.contact.email, s.contact.phone, s.lead?.petId],
   );
 
   if (!hydrated) return <div className="min-h-dvh" />;

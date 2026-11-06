@@ -126,6 +126,8 @@ export interface CheckoutInput {
   name?: string;
   email?: string;
   phone?: string;
+  /** Código do quiz (id do pet): vai no s3 para o webhook achar o cadastro certo. */
+  ref?: string;
 }
 
 /** Monta o link do checkout com os dados do quiz e as UTMs. */
@@ -140,6 +142,7 @@ export function buildCheckoutUrl(input: CheckoutInput): string {
   if (input.name) url.searchParams.set(input.params.name, input.name);
   if (input.email) url.searchParams.set(input.params.email, input.email.trim());
   if (input.phone) url.searchParams.set(input.params.phone, input.phone.replace(/\D/g, ''));
+  if (input.ref) url.searchParams.set('s3', input.ref);
   const utms = { ...getUtms() };
   // Também repassa o que estiver na URL atual (caso o script da Utmify tenha acrescentado algo).
   try {

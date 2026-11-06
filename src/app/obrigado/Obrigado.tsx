@@ -13,6 +13,7 @@ export function Obrigado({ supportEmail }: { supportEmail: string }) {
   const router = useRouter();
   const token = s.lead?.token;
   const [paid, setPaid] = useState(false);
+  const [goTo, setGoTo] = useState('');
   const [slow, setSlow] = useState(false);
 
   useEffect(() => {
@@ -30,8 +31,10 @@ export function Obrigado({ supportEmail }: { supportEmail: string }) {
         const r = await fetch(`/api/status?token=${encodeURIComponent(token)}`, { cache: 'no-store' });
         const d = await r.json();
         if (d.paid) {
+          const target = `/confirmar/${d.token || token}`;
           setPaid(true);
-          setTimeout(() => router.push(`/confirmar/${token}`), 1400);
+          setGoTo(target);
+          setTimeout(() => router.push(target), 1400);
           return;
         }
       } catch {
@@ -58,7 +61,7 @@ export function Obrigado({ supportEmail }: { supportEmail: string }) {
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-verde text-4xl text-white">✓</div>
             <h1 className="h-display mt-5 text-3xl">Pagamento confirmado!</h1>
             <p className="mt-2 font-semibold text-cacau/70">Agora é só conferir os dados {doNome} e receber o kit.</p>
-            <a href={`/confirmar/${token}`} className="btn-primary mt-6 w-full">
+            <a href={goTo || `/confirmar/${token}`} className="btn-primary mt-6 w-full">
               Continuar
             </a>
           </div>
