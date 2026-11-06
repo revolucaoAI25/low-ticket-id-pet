@@ -46,18 +46,18 @@ Ordem recomendada. Troque `SEU-DOMINIO` pelo domínio final (ex.: `clubedofocinh
 
 ## 4. Kiwify
 
-Para cada um dos 3 produtos/checkouts (Cachorro, Gato, Outros pets):
+No produto do kit:
 
 1. **Página de obrigado personalizada**: `https://SEU-DOMINIO/obrigado`
-2. **Pixel**: Facebook → ID do Pixel + token da API de Conversões (é a Kiwify que dispara a compra).
+2. **Pixel**: **não** cadastre na Kiwify. A compra vai para a Meta por um lugar só: a Utmify (pixel da Utmify com a API de Conversões). Pixel nos dois lugares conta a compra em dobro.
 3. **Order bumps**: o nome de cada bump precisa conter a palavra-chave cadastrada no `/admin → Order bumps`
    (ex.: "Xixi no Lugar Certo em 7 Dias" contém `xixi no lugar certo`). O "+1 pet" precisa conter `pet adicional` ou `+1 pet`.
 
-Webhook (uma vez só):
+Webhooks (a Kiwify pede um por produto: um para o kit, um para cada bump e um para o +1 pet, todos com a mesma URL):
 
 1. **Apps → Webhooks → Criar webhook**
 2. URL: `https://SEU-DOMINIO/api/webhooks/kiwify`
-3. Produtos: o kit, os 3 bumps e o +1 pet (dá para marcar todos num webhook só; se fizer um por produto, a URL é a mesma).
+3. Produto: o daquele webhook. Repita para cada produto.
 4. Eventos: **Compra aprovada**, **Reembolso**, **Chargeback**.
 5. Copie o token → coloque em `KIWIFY_WEBHOOK_TOKEN` na Vercel → Redeploy. Com vários webhooks, junte os tokens com vírgula: `token1,token2,token3`.
 
