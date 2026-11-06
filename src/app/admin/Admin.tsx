@@ -9,10 +9,11 @@ import { TEAMS } from '@/lib/teams';
 import { Modelos } from './Modelos';
 import { DEMO_AVATARS, DEMO_INSTAGRAM, DEMO_REAL_LIFE, DEMO_REVIEWS, DEMO_WHATSAPP } from '@/config/demo-proof';
 
-type Tab = 'funil' | 'pedidos' | 'modelos' | 'bumps' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
+type Tab = 'funil' | 'pedidos' | 'webhooks' | 'modelos' | 'bumps' | 'oferta' | 'checkout' | 'rastreamento' | 'prova' | 'imagens' | 'bonus' | 'times' | 'contato';
 const TABS: [Tab, string][] = [
   ['funil', 'Funil'],
   ['pedidos', 'Pedidos'],
+  ['webhooks', 'Webhooks'],
   ['oferta', 'Oferta'],
   ['checkout', 'Checkouts'],
   ['rastreamento', 'Pixel e UTMs'],
@@ -110,6 +111,7 @@ export function Admin() {
       <div className="mt-4 space-y-4">
         {tab === 'funil' && <Funnel />}
         {tab === 'pedidos' && <Orders />}
+        {tab === 'webhooks' && <Webhooks />}
         {tab === 'modelos' && <Modelos settings={s} />}
 
         {tab === 'oferta' && (
@@ -273,7 +275,7 @@ export function Admin() {
         )}
       </div>
 
-      {!['funil', 'pedidos', 'modelos'].includes(tab) && (
+      {!['funil', 'pedidos', 'webhooks', 'modelos'].includes(tab) && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-linha bg-white/95 p-3 backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <p className="flex-1 text-sm font-bold text-cacau/70">
@@ -476,6 +478,66 @@ interface OrderRow {
   extra_pet_slots: number;
   access_token: string;
   pets: { id: string; data: { name?: string }; submitted_at: string | null; files: { url: string; kind: string }[] | null }[];
+}
+
+interface HookRow {
+  id: number;
+  at: string;
+  note: string;
+  event: string;
+  status: string;
+  orderId: string;
+  product: string;
+  email: string;
+  payload: unknown;
+}
+
+function Webhooks() {
+  const [rows, setRows] = useState<HookRow[] | null>(null);
+  const [msg, setMsg] = useState('');
+  const [open, setOpen] = useState<number | null>(null);
+  const load = useCallback(async () => {
+    setMsg('');
+    const r = await fetch('/api/admin/webhooks', { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) setRows(d.rows);
+    else setMsg(d.error || 'Erro');
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  return (
+    <Card title="Webhooks recebidos" hint="Os últimos avisos que a Kiwify mandou para o site. Depois de clicar em 'Testar' na Kiwify, clique em Atualizar. 'Recusado: token' = o token desse webhook não está no KIWIFY_WEBHOOK_TOKEN da Vercel (ou faltou o Redeploy).">
+      <button type="button" className="btn-primary !min-h-[44px] !px-4 !text-base" onClick={load}>
+        Atualizar
+      </button>
+      {msg && <p className="rounded-xl bg-areia p-2 text-sm font-bold">{msg}</p>}
+      {!rows ? (
+        <p>Carregando…</p>
+      ) : !rows.length ? (
+        <p className="text-sm text-cacau/60">Nenhum aviso recebido ainda.</p>
+      ) : (
+        <ul className="divide-y divide-linha">
+          {rows.map((w) => {
+            const bad = w.note.startsWith('recusado') || w.note.startsWith('corpo');
+            return (
+              <li key={w.id} className="py-2 text-sm">
+                <button type="button" className="flex w-full flex-wrap items-center gap-2 text-left" onClick={() => setOpen(open === w.id ? null : w.id)}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-extrabold ${bad ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`}>{bad ? w.note : 'ok'}</span>
+                  <span className="font-bold">{new Date(w.at).toLocaleString('pt-BR')}</span>
+                  <span>{w.product || 'produto ?'}</span>
+                  <span className="text-cacau/60">
+                    {[w.event, w.status, w.email].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+                {open === w.id && <pre className="mt-2 max-h-80 overflow-auto rounded-xl bg-areia p-2 text-xs">{JSON.stringify(w.payload, null, 2)}</pre>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
 }
 
 function Orders() {

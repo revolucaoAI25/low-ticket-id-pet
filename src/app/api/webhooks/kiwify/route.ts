@@ -43,20 +43,21 @@ function validSignature(raw: string, sig: string | null): boolean {
 export async function POST(req: Request) {
   const raw = await req.text();
   const url = new URL(req.url);
-  if (!validSignature(raw, url.searchParams.get('signature'))) return json({ error: 'signature' }, 401);
-
+  const sb = db();
   let body: Obj;
   try {
     body = JSON.parse(raw);
   } catch {
+    if (sb) await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: { raw: raw.slice(0, 2000) }, note: 'corpo inválido (não é JSON)' });
     return json({ error: 'json' }, 400);
   }
-  const sb = db();
-  if (!sb) return json({ error: 'db' }, 503);
-
   const o: Obj = body.order && typeof body.order === 'object' ? (body.order as Obj) : body;
-  await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: o });
-
+  if (!validSignature(raw, url.searchParams.get('signature'))) {
+    // Fica registrado para aparecer no /admin → Webhooks (token errado ou faltando na Vercel).
+    if (sb) await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: o, note: 'recusado: token não confere' });
+    return json({ error: 'signature' }, 401);
+  }
+  if (!sb) return json({ error: 'db' }, 503);
   const status = pickStr(o, 'order_status', 'status').toLowerCase();
   const event = pickStr(o, 'webhook_event_type', 'event').toLowerCase();
   const orderId = pickStr(o, 'order_id', 'id', 'order_ref');
@@ -67,6 +68,12 @@ export async function POST(req: Request) {
   const fullName = pickStr(customer, 'full_name', 'name');
   const productName = pickStr(product, 'product_name', 'name') || pickStr(o, 'product_name');
   const commissions = pickObj(o, 'Commissions', 'commissions');
+
+  // Botão "Testar" da Kiwify: cliente fictício (domínio de exemplo ou sem e-mail e sem pedido).
+  // Só registra, sem criar pedido, mandar e-mail ou repassar para a Utmify.
+  const isTest = /@example\.(com|org|net)$/.test(email) || (!email && !orderId);
+  await sb.from('webhook_logs').insert({ provider: 'kiwify', payload: o, note: isTest ? 'teste (não processado)' : 'recebido' });
+  if (isTest) return json({ ok: true, test: true });
   const amount = Number(pickStr(commissions, 'charge_amount', 'product_base_price')) || null;
 
   if (!orderId) return json({ ok: true, ignored: 'no order id' });
