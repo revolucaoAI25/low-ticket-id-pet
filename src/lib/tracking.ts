@@ -15,6 +15,7 @@ declare global {
 
 const UTM_KEY = 'cdf:utms';
 const SESSION_KEY = 'cdf:sid';
+const FBC_KEY = 'cdf:fbc';
 const TRACK_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_id', 'src', 'sck', 'xcod', 'fbclid'];
 
 function safeGet(key: string): string | null {
@@ -51,6 +52,7 @@ export function captureUtms(): Record<string, string> {
       const v = params.get(k);
       if (v) found[k] = v;
     }
+    if (found.fbclid) safeSet(FBC_KEY, `fb.1.${Date.now()}.${found.fbclid}`);
     if (Object.keys(found).length) {
       safeSet(UTM_KEY, JSON.stringify(found));
       return found;
@@ -151,4 +153,22 @@ export function buildCheckoutUrl(input: CheckoutInput): string {
     if (v && !url.searchParams.has(k)) url.searchParams.set(k, v);
   }
   return url.toString();
+}
+
+function cookie(name: string): string {
+  try {
+    return document.cookie.split('; ').find((c) => c.startsWith(name + '='))?.split('=')[1] ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Identificadores do clique no anúncio (cookies do Pixel da Meta).
+ * Guardados com o lead para o servidor enviar compras pela API de Conversões atribuídas à campanha certa.
+ */
+export function getMetaIds(): { fbp?: string; fbc?: string; ua?: string } {
+  const fbp = cookie('_fbp');
+  const fbc = cookie('_fbc') || safeGet(FBC_KEY) || '';
+  return { fbp: fbp || undefined, fbc: fbc || undefined, ua: typeof navigator !== 'undefined' ? navigator.userAgent : undefined };
 }

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
 import { bumpFiles, bumpsInPayload, productIsBump } from '@/lib/server/bumps';
 import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail } from '@/lib/server/email';
+import { kiwifyValue, sendCapiPurchase } from '@/lib/server/meta-capi';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail, normPhone, token } from '@/lib/server/util';
@@ -115,16 +116,16 @@ export async function POST(req: Request) {
   if (!isPaid || alreadyPaid) return json({ ok: true, skipped: !isPaid ? 'not paid' : 'duplicate' });
 
   // ---------- encontra o lead ----------
-  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; pets: { data: Obj }[] };
+  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; utms: Obj | null; pets: { data: Obj }[] };
   let candidates: Cust[] = [];
   if (email) {
-    const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
+    const { data } = await sb.from('customers').select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)').eq('email', email).order('created_at', { ascending: false }).limit(10);
     candidates = (data as unknown as Cust[]) ?? [];
   }
   if (!candidates.length && phone.length >= 10) {
     const { data } = await sb
       .from('customers')
-      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, pets(data)')
+      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)')
       .like('phone', `%${phone.slice(-8)}`)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -143,7 +144,7 @@ export async function POST(req: Request) {
     const { data } = await sb
       .from('customers')
       .insert({ email: email || null, phone: phone || null, name: fullName || null, access_token: token() })
-      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at')
+      .select('id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms')
       .single();
     if (!data) return json({ error: 'customer' }, 500);
     cust = { ...(data as Omit<Cust, 'pets'>), pets: [] };
@@ -176,5 +177,21 @@ export async function POST(req: Request) {
     // 3) Cada order bump de conteúdo: um e-mail próprio com o PDF, na hora em que for aprovado.
     for (const f of bumpFiles(newBumps, settings)) await sendBumpEmail(email, f);
   }
-  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps });
+  // Pedidos à parte (order bump ou +1 pet): a Utmify só recebe o webhook da oferta principal,
+  // então a compra vai para a Meta daqui, pela API de Conversões, atribuída ao clique do anúncio.
+  // A compra principal continua sendo enviada pela Utmify (não duplica).
+  let capi = false;
+  if (addOn) {
+    capi = await sendCapiPurchase({
+      pixelId: settings.tracking.metaPixelId,
+      orderId,
+      value: kiwifyValue(amount),
+      contentName: productName || 'Order bump',
+      email,
+      phone,
+      externalId: cust.id,
+      meta: (cust.utms?._meta as never) ?? null,
+    });
+  }
+  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi });
 }

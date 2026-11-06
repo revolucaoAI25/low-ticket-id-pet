@@ -22,7 +22,14 @@ export async function POST(req: Request) {
 
   const rawPet = (body.pet ?? {}) as Record<string, unknown>;
   const pet = sanitizePet(rawPet);
-  const utms = typeof body.utms === 'object' && body.utms ? body.utms : null;
+  // UTMs + identificadores do clique (fbp/fbc), IP e navegador: usados para atribuir compras à campanha (API de Conversões).
+  const m = (body.meta && typeof body.meta === 'object' ? body.meta : {}) as Record<string, unknown>;
+  const str = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : undefined);
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || undefined;
+  const utms = {
+    ...(typeof body.utms === 'object' && body.utms ? body.utms : {}),
+    _meta: { fbp: str(m.fbp, 120), fbc: str(m.fbc, 300), ua: str(m.ua, 400) ?? str(req.headers.get('user-agent'), 400), ip },
+  };
   const lead = (body.lead ?? null) as { token?: string; petId?: string } | null;
 
   // Mesmo navegador refazendo o quiz antes de pagar: atualiza o mesmo registro.

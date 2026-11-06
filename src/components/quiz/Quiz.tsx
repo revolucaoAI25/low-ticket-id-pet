@@ -11,7 +11,7 @@ import { PERSONALITIES, doPet, g, hasName, oPet, petName, type Origin, type Pers
 import { useHydrated, useQuiz, quizStore } from '@/lib/quiz-store';
 import { SPECIES, getSpecies, type Species } from '@/lib/species';
 import { allTeams } from '@/lib/teams';
-import { setPixelUserData, track, getUtms, sessionId } from '@/lib/tracking';
+import { getMetaIds, setPixelUserData, track, getUtms, sessionId } from '@/lib/tracking';
 import { BreedPicker } from './BreedPicker';
 import { PhotoPicker } from './PhotoPicker';
 import { TeamPicker } from './TeamPicker';
@@ -112,7 +112,7 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
     leadPromise.current = fetch('/api/lead', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pet: st.pet, contact: st.contact, utms: getUtms(), sessionId: sessionId(), lead: st.lead }),
+      body: JSON.stringify({ pet: st.pet, contact: st.contact, utms: getUtms(), meta: getMetaIds(), sessionId: sessionId(), lead: st.lead }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {

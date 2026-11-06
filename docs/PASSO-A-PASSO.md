@@ -33,6 +33,8 @@ Ordem recomendada. Troque `SEU-DOMINIO` pelo domínio final (ex.: `clubedofocinh
 | `KIWIFY_WEBHOOK_TOKEN` | o token do webhook da Kiwify (passo 4). Pode cadastrar depois. |
 | `RESEND_API_KEY` | chave da Resend |
 | `EMAIL_FROM` | ex.: `Clube do Focinho <kit@SEU-DOMINIO>` |
+| `META_CAPI_TOKEN` | token da API de Conversões da Meta (Gerenciador de Eventos → pixel → Configurações). Envia a compra dos order bumps. |
+| `META_TEST_EVENT_CODE` | opcional, só durante o teste (aba Testar eventos). Apague depois. |
 
 3. **Deploy**.
 4. **Settings → Domains** → adicione o domínio. Se ainda não comprou, compre por ali mesmo.
