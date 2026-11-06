@@ -520,10 +520,11 @@ function Webhooks() {
         <ul className="divide-y divide-linha">
           {rows.map((w) => {
             const bad = w.note.startsWith('recusado') || w.note.startsWith('corpo');
+            const test = w.note.startsWith('teste');
             return (
               <li key={w.id} className="py-2 text-sm">
                 <button type="button" className="flex w-full flex-wrap items-center gap-2 text-left" onClick={() => setOpen(open === w.id ? null : w.id)}>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-extrabold ${bad ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`}>{bad ? w.note : 'ok'}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-extrabold ${bad ? 'bg-red-100 text-red-700' : test ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>{bad ? w.note : test ? 'ok · teste' : 'ok'}</span>
                   <span className="font-bold">{new Date(w.at).toLocaleString('pt-BR')}</span>
                   <span>{w.product || 'produto ?'}</span>
                   <span className="text-cacau/60">

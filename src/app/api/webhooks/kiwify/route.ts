@@ -100,10 +100,19 @@ export async function POST(req: Request) {
     createdAt: pickStr(o, 'created_at') || null,
     approvedAt: pickStr(o, 'approved_date') || null,
     refundedAt: pickStr(o, 'refunded_at') || null,
-    customer: { name: fullName, email, phone, document: pickStr(customer, 'CPF', 'cpf', 'cnpj') || null },
+    customer: { name: fullName, email, phone, document: pickStr(customer, 'CPF', 'cpf', 'cnpj') || null, ip: pickStr(customer, 'ip') || null },
     product: { id: pickStr(product, 'product_id', 'id') || orderId, name: productName || 'Order bump', priceInCents: cents },
-    feeInCents: Math.round(kiwifyValue(Number(pickStr(commissions, 'kiwify_fee')) || 0) * 100) || undefined,
-    netInCents: Math.round(kiwifyValue(Number(pickStr(commissions, 'my_commission')) || 0) * 100) || undefined,
+    // Commissions da Kiwify já vêm em centavos (ex.: kiwify_fee 789 = R$ 7,89).
+    feeInCents: Math.round(Number(pickStr(commissions, 'kiwify_fee')) || 0) || undefined,
+    netInCents: Math.round(Number(pickStr(commissions, 'my_commission')) || 0) || undefined,
+  };
+  /** UTMs que a própria Kiwify registrou no pedido (TrackingParameters): reserva quando o lead não tem. */
+  const kiwifyUtms: Obj = {};
+  for (const [k, v] of Object.entries(pickObj(o, 'TrackingParameters', 'tracking_parameters'))) if (v) kiwifyUtms[k] = v;
+  const utmsFor = (lead: Obj | null | undefined): Obj => {
+    const l = { ...(lead ?? {}) };
+    delete l._meta;
+    return Object.values(l).some(Boolean) ? l : kiwifyUtms;
   };
 
   const { data: existing } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle();
@@ -135,7 +144,7 @@ export async function POST(req: Request) {
     }
     if (addOn) {
       const { data: c } = custId ? await sb.from('customers').select('utms').eq('id', custId).maybeSingle() : { data: null };
-      await sendUtmifyOrder({ ...utmifyBase, status: status.includes('charge') || event.includes('charge') ? 'chargedback' : 'refunded', utms: (c?.utms as Obj) ?? null });
+      await sendUtmifyOrder({ ...utmifyBase, status: status.includes('charge') || event.includes('charge') ? 'chargedback' : 'refunded', utms: utmsFor(c?.utms as Obj) });
     }
     return json({ ok: true, refunded: true });
   }
@@ -210,7 +219,7 @@ export async function POST(req: Request) {
   let capi = false;
   let utmify = false;
   if (addOn) {
-    utmify = await sendUtmifyOrder({ ...utmifyBase, status: 'paid', utms: cust.utms, customer: { ...utmifyBase.customer, ip: ((cust.utms?._meta as Obj | undefined)?.ip as string) ?? null } });
+    utmify = await sendUtmifyOrder({ ...utmifyBase, status: 'paid', utms: utmsFor(cust.utms), customer: { ...utmifyBase.customer, ip: ((cust.utms?._meta as Obj | undefined)?.ip as string) || utmifyBase.customer.ip } });
     capi = await sendCapiPurchase({
       pixelId: settings.tracking.metaPixelId,
       orderId,
