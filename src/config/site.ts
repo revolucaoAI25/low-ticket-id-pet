@@ -155,6 +155,16 @@ export const proofSlots = {
   reviews: 6,
 } as const;
 
+/** Bumps antigos (por espécie) que saíram da oferta: são removidos mesmo se estiverem salvos no painel. */
+const RETIRED_BUMPS = new Set(['petiscos-cao', 'xixi', 'latidos', 'petiscos-gato', 'areia', 'arranhar', 'album', 'cuidados']);
+
+function currentBumps(saved?: Bump[]): Bump[] {
+  const kept = (saved ?? []).filter((b) => !RETIRED_BUMPS.has(b.id));
+  // Garante os 3 bumps atuais (mantém nome/arquivo se já foram editados no painel).
+  const ids = new Set(kept.map((b) => b.id));
+  return [...kept, ...defaultSettings.bumps.filter((b) => !ids.has(b.id))];
+}
+
 /** Mescla o que veio do banco com o padrão (campos novos sempre têm valor). */
 export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): SiteSettings {
   const s = saved ?? {};
@@ -174,7 +184,7 @@ export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): 
     files: { ...defaultSettings.files, ...(s.files ?? {}) },
     proof: { ...defaultSettings.proof, ...(s.proof ?? {}) },
     extraTeams: s.extraTeams ?? [],
-    bumps: s.bumps?.length ? s.bumps : defaultSettings.bumps,
+    bumps: currentBumps(s.bumps),
     exitOffer: { ...defaultSettings.exitOffer, ...(s.exitOffer ?? {}), checkout: { ...defaultSettings.exitOffer.checkout, ...(s.exitOffer?.checkout ?? {}) } },
     extraPetKeywords: s.extraPetKeywords?.length ? s.extraPetKeywords : defaultSettings.extraPetKeywords,
   };
