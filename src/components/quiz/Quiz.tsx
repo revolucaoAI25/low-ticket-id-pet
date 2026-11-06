@@ -217,15 +217,18 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
 
         {id === 'raca' && (
           <Screen title={name ? `Qual é a raça ${doPet(pet)}?` : 'Qual é a raça?'} subtitle="Vai no RG e na certidão.">
+            <Label>Digite ou escolha a raça</Label>
+            <BreedPicker breeds={(species?.breeds ?? SPECIES[0].breeds).filter((b) => b !== SRD)} value={pet.breed === SRD ? '' : pet.breed ?? ''} onChange={(v) => quizStore.setPet({ breed: v })} />
+            <div className="my-5 flex items-center gap-3 text-xs font-extrabold uppercase tracking-wider text-cacau/40">
+              <span className="h-px flex-1 bg-linha" /> não tem raça definida? <span className="h-px flex-1 bg-linha" />
+            </div>
             <Option selected={pet.breed === SRD} onClick={() => pick({ breed: SRD })}>
-              <IconBubble icon={SPECIES_ICON[pet.species ?? 'outro']} selected={pet.breed === SRD} />
+              <IconBubble icon={SPECIES_ICON[pet.species ?? 'outro']} selected={pet.breed === SRD} size="sm" />
               <span className="flex flex-col">
-                <span className="text-lg">Sem raça definida</span>
-                <span className="text-sm font-semibold text-cacau/60">Vira-lata, com muito orgulho</span>
+                <span>Sem raça definida (vira-lata)</span>
+                <span className="text-sm font-semibold text-cacau/60">Com muito orgulho</span>
               </span>
             </Option>
-            <p className="my-4 text-center text-xs font-extrabold uppercase tracking-wider text-cacau/40">ou escolha a raça</p>
-            <BreedPicker breeds={(species?.breeds ?? SPECIES[0].breeds).filter((b) => b !== SRD)} value={pet.breed === SRD ? '' : pet.breed ?? ''} onChange={(v) => quizStore.setPet({ breed: v })} />
             <Continue onClick={next} />
           </Screen>
         )}
@@ -362,8 +365,8 @@ function Continue({ onClick, label = 'Continuar' }: { onClick: () => void; label
 
 function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () => void }) {
   return (
-    <section className="flex flex-1 flex-col items-center pt-4 text-center">
-      <Logo size={110} priority />
+    <section className="flex flex-1 flex-col items-center pt-2 text-center">
+      <Logo size={96} priority />
       <h1 className="h-display mt-3 text-[36px] leading-[1.02]">
         <span className="text-roxo">Kit Identidade Pet</span>
       </h1>
@@ -371,17 +374,17 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
       <p className="mt-2 text-[15px] font-semibold leading-snug text-cacau/70">
         E mais: CNH Pet, certidão, passaporte, carteira de vacinação e tag com QR Code. Tudo personalizado e pronto pra imprimir.
       </p>
-      <div className="mt-5 w-full">
+      <div className="mt-4 w-full">
         {settings.images.heroMockup ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto w-full max-w-[380px]" fetchPriority="high" />
+          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" fetchPriority="high" />
         ) : (
           // Mockup estático (leve e instantâneo). Para trocar, suba uma imagem em /admin → Imagens.
-          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão, carteira de vacinação e tag do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto w-full max-w-[400px]" />
+          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão, carteira de vacinação e tag do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" />
         )}
       </div>
-      <div className="mt-7 w-full">
-        <button type="button" onClick={onStart} className="btn-cta shine anim-pulse text-xl">
+      <div className="mt-5 w-full">
+        <button type="button" onClick={onStart} className="btn-cta shine anim-pulse whitespace-nowrap text-[18px] min-[380px]:text-xl">
           Montar o kit do meu pet <ArrowRight size={22} strokeWidth={2.6} />
         </button>
         <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-cacau/65">

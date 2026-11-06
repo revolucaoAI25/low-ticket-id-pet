@@ -49,7 +49,7 @@ export function TeamPicker({ teams, value, onPick }: Props) {
         <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-cacau/40" size={20} />
         <input
           className="input !pl-12"
-          placeholder="Busque o time (ex.: Galo, Timão, Mengão)"
+          placeholder="Busque seu time"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoComplete="off"
