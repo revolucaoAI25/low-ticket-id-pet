@@ -131,9 +131,9 @@ export const defaultSettings: SiteSettings = {
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
-    { id: 'pet-calmo', name: 'Método Pet Calmo Sozinho', keywords: 'pet calmo', file: '' },
-    { id: 'comida-que-cuida', name: 'Guia Comida que Cuida', keywords: 'comida que cuida', file: '' },
-    { id: 'sos-pet', name: 'Manual SOS Pet', keywords: 'sos pet', file: '' },
+    { id: 'pet-calmo', name: 'Método Pet Calmo: Fim do Choro Quando Você Sai', keywords: 'pet calmo', file: '' },
+    { id: 'comida-que-cuida', name: 'Guia Comida que Cuida: o que Pode Envenenar seu Pet', keywords: 'comida que cuida', file: '' },
+    { id: 'sos-pet', name: 'Manual SOS Pet: Primeiros Socorros que Salvam Vidas', keywords: 'sos pet', file: '' },
   ],
 };
 
