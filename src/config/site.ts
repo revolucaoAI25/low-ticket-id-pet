@@ -131,14 +131,9 @@ export const defaultSettings: SiteSettings = {
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
-    { id: 'petiscos-cao', name: 'Petiscos Fit em 3 Ingredientes', keywords: 'petiscos fit em 3, petiscos fit 3 ingredientes', file: '' },
-    { id: 'xixi', name: 'Xixi no Lugar Certo em 7 Dias', keywords: 'xixi no lugar certo', file: '' },
-    { id: 'latidos', name: 'Fim dos Latidos Sem Gritar', keywords: 'fim dos latidos', file: '' },
-    { id: 'petiscos-gato', name: 'Petiscos Fit para Gatos', keywords: 'petiscos fit para gatos', file: '' },
-    { id: 'areia', name: 'Caixa de Areia Sem Cheiro', keywords: 'caixa de areia', file: '' },
-    { id: 'arranhar', name: 'Gato Sem Arranhar o Sofá', keywords: 'arranhar o sofa', file: '' },
-    { id: 'album', name: 'Álbum do Primeiro Ano do Pet', keywords: 'album do primeiro ano', file: '' },
-    { id: 'cuidados', name: 'Guia de Cuidados Básicos por Espécie', keywords: 'cuidados basicos', file: '' },
+    { id: 'pet-calmo', name: 'Pet Calmo Sozinho', keywords: 'pet calmo, calmo sozinho, ansiedade de separacao', file: '' },
+    { id: 'comida-que-cuida', name: 'Comida que Cuida', keywords: 'comida que cuida, alimentos proibidos', file: '' },
+    { id: 'sos-pet', name: 'SOS Pet: Primeiros Socorros', keywords: 'sos pet, primeiros socorros', file: '' },
   ],
 };
 
