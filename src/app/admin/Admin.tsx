@@ -186,7 +186,7 @@ export function Admin() {
             />
             {s.tracking.metaPixelId && s.tracking.utmifyPixelId && (
               <p className="rounded-xl bg-[#FFF1E0] p-3 text-sm font-bold text-[#9A3412]">
-                Atenção: com o Pixel da Meta e o Pixel da Utmify ligados juntos, os eventos podem contar em dobro. Use um dos dois.
+                Com os dois pixels: na Utmify, deixe desabilitados Lead, Add To Cart e Initiate Checkout (o site já envia) e só a Purchase habilitada. Na Kiwify, tire o pixel dos produtos. Assim nada conta em dobro.
               </p>
             )}
           </Card>
