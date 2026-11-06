@@ -2,7 +2,7 @@
 
 import { FONT_BODY, FONT_DISPLAY, rr } from './draw';
 import type { Ctx } from './draw';
-import { PRINT_PLAN, pageOf, type Sheet } from './plan';
+import { BONUS_PLAN, KIT_PLAN, pageOf, type Sheet } from './plan';
 import type { DocPage } from './types';
 
 /** Resolução das folhas montadas: 300 dpi (1 mm = 11,81 px). */
@@ -147,9 +147,9 @@ export interface SheetImage {
  * Monta as folhas do PDF na ordem do plano.
  * pages: todas as páginas já desenhadas (A4 inteiras e peças pequenas), por id.
  */
-export function composeSheets(pages: Map<string, RenderedPage>, onSheet?: () => void): SheetImage[] {
+export function composeSheets(plan: Sheet[], pages: Map<string, RenderedPage>, onSheet?: () => void): SheetImage[] {
   const out: SheetImage[] = [];
-  for (const sheet of PRINT_PLAN) {
+  for (const sheet of plan) {
     if (sheet.kind === 'page') {
       const r = pages.get(sheet.page);
       const data = r?.data ?? r?.canvas?.toDataURL('image/jpeg', 0.92);
@@ -179,7 +179,7 @@ export async function sheetsToPdf(sheets: SheetImage[]): Promise<Blob> {
 /** Ids de todas as páginas que o plano usa (para conferir que nenhuma ficou de fora). */
 export function plannedPageIds(): Set<string> {
   const ids = new Set<string>();
-  for (const s of PRINT_PLAN) {
+  for (const s of [...KIT_PLAN, ...BONUS_PLAN]) {
     if (s.kind === 'page') ids.add(s.page);
     else s.places.forEach((p) => ids.add(p.page));
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import { DOCS, BONUS_DOC_IDS, KIT_DOC_IDS, exportScale, fileName, isA4, renderPage } from './render';
+import { BONUS_PLAN, KIT_PLAN } from './plan';
 import { composeSheets, plannedPageIds, sheetsToPdf, type RenderedPage } from './print';
 import type { DocContext, DocDef } from './types';
 
@@ -9,7 +10,7 @@ export interface PackageFile {
   name: string;
   /** Nome amigável para o e-mail/download. */
   label: string;
-  kind: 'kit-pdf' | 'zip' | 'ficha';
+  kind: 'kit-pdf' | 'bonus-pdf' | 'zip' | 'ficha';
   blob: Blob;
   type: string;
 }
@@ -24,35 +25,16 @@ const slug = (s: string) =>
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-/** Junta PDFs prontos (bônus fixos e order bumps) no fim do PDF do kit. */
-async function appendPdfs(main: Blob, urls: string[]): Promise<Blob> {
-  if (!urls.length) return main;
-  const { PDFDocument } = await import('pdf-lib');
-  const out = await PDFDocument.load(await main.arrayBuffer());
-  for (const url of urls) {
-    try {
-      const r = await fetch(url);
-      if (!r.ok) continue;
-      const src = await PDFDocument.load(await r.arrayBuffer(), { ignoreEncryption: true });
-      const pages = await out.copyPages(src, src.getPageIndices());
-      pages.forEach((pg) => out.addPage(pg));
-    } catch (e) {
-      console.warn('não consegui juntar', url, e);
-    }
-  }
-  const bytes = await out.save();
-  return new Blob([bytes as BlobPart], { type: 'application/pdf' });
-}
-
 /**
  * Gera o pacote final de um pet, desenhando cada página uma única vez:
- * - UM PDF com tudo, na ordem do plano de impressão (src/lib/docs/plan.ts): capa, sumário,
- *   instruções, documentos (peças pequenas em tamanho real, organizadas por documento),
- *   bônus e, no fim, os PDFs prontos (bônus fixos e order bumps comprados)
+ * - PDF do kit, na ordem do plano de impressão (src/lib/docs/plan.ts): capa, sumário,
+ *   instruções e documentos (peças pequenas em tamanho real, organizadas por documento)
+ * - PDF de bônus personalizados (Kit Aniversário e Kit Quem Cuida), com o passo a passo na capa
+ *   (Calendário, Guia de Viagem e order bumps são PDFs prontos à parte, enviados por link/anexo)
  * - ZIP com todas as imagens em alta resolução (para quem quiser as imagens soltas)
  * - Imagem da identidade (é o que abre ao escanear o QR Code)
  */
-export async function buildPackage(c: DocContext, extraPdfUrls: string[] = [], onProgress?: (done: number, total: number) => void): Promise<PackageFile[]> {
+export async function buildPackage(c: DocContext, onProgress?: (done: number, total: number) => void): Promise<PackageFile[]> {
   const ctx = { ...c, preview: false };
   const { zipSync } = await import('fflate');
   const groups: [string, DocDef[]][] = [
@@ -94,12 +76,12 @@ export async function buildPackage(c: DocContext, extraPdfUrls: string[] = [], o
     }
   }
 
-  const sheets = composeSheets(rendered, tick);
+  const name = fileName({ ...DOCS.rg, file: '{nome}' }, ctx);
+  const pdf = await sheetsToPdf(composeSheets(KIT_PLAN, rendered, tick));
+  const bonusPdf = await sheetsToPdf(composeSheets(BONUS_PLAN, rendered, tick));
   rendered.forEach((r) => {
     if (r.canvas) r.canvas.width = 0;
   });
-  const name = fileName({ ...DOCS.rg, file: '{nome}' }, ctx);
-  const pdf = await appendPdfs(await sheetsToPdf(sheets), extraPdfUrls);
   tick();
   const zip = zipSync(zipFiles);
   tick();
@@ -107,6 +89,7 @@ export async function buildPackage(c: DocContext, extraPdfUrls: string[] = [], o
 
   const files: PackageFile[] = [
     { name: 'kit.pdf', label: `Kit-Identidade-Pet-${name}.pdf`, kind: 'kit-pdf', blob: pdf, type: 'application/pdf' },
+    { name: 'bonus.pdf', label: `Bonus-${name}.pdf`, kind: 'bonus-pdf', blob: bonusPdf, type: 'application/pdf' },
     { name: 'imagens.zip', label: `Imagens-${name}.zip`, kind: 'zip', blob: new Blob([zip as BlobPart], { type: 'application/zip' }), type: 'application/zip' },
   ];
   if (ficha) files.push({ name: 'ficha.jpg', label: `Identidade-${name}.jpg`, kind: 'ficha', blob: ficha, type: 'image/jpeg' });

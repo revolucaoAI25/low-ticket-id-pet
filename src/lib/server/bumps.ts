@@ -1,6 +1,12 @@
 import 'server-only';
 import type { Bump, SiteSettings } from '@/config/site';
+import { siteUrl } from '@/lib/site-url';
 import { normalize } from '@/lib/teams';
+
+/** Arquivos que vêm no site ("/arquivos/...") viram link completo (e-mail e anexo precisam). */
+export function absUrl(u: string): string {
+  return u.startsWith('/') ? `${siteUrl()}${u}` : u;
+}
 
 const kw = (b: Bump) => b.keywords.split(',').map(normalize).filter(Boolean);
 
@@ -18,5 +24,5 @@ export function productIsBump(productName: string, settings: SiteSettings): bool
 
 export function bumpFiles(ids: string[] | null | undefined, settings: SiteSettings): { label: string; url: string }[] {
   const set = new Set(ids ?? []);
-  return settings.bumps.filter((b) => set.has(b.id) && b.file).map((b) => ({ label: b.name, url: b.file }));
+  return settings.bumps.filter((b) => set.has(b.id) && b.file).map((b) => ({ label: b.name, url: absUrl(b.file) }));
 }

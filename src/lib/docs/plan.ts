@@ -1,5 +1,5 @@
 /**
- * Plano de impressão do PDF único: a ordem das folhas e onde cada peça pequena fica na folha A4.
+ * Plano de impressão: a ordem das folhas de cada PDF (kit e bônus) e onde cada peça pequena fica na folha A4.
  * Medidas em mm (A4 = 210 × 297). Mudou a ordem? O sumário e as instruções se atualizam sozinhos
  * (os números de página saem daqui).
  */
@@ -39,8 +39,8 @@ export type Sheet =
 const RG_X = [15, 109];
 const RG_Y = [41, 122, 203];
 
-/** Folhas do PDF, na ordem. Os PDFs prontos (bônus fixos e order bumps) entram depois da última. */
-export const PRINT_PLAN: Sheet[] = [
+/** Folhas do PDF do kit (documentos), na ordem. */
+export const KIT_PLAN: Sheet[] = [
   { kind: 'page', key: 'capa', page: 'guia-capa' },
   { kind: 'page', key: 'sumario', page: 'guia-sumario' },
   { kind: 'page', key: 'antes', page: 'guia-antes' },
@@ -112,6 +112,11 @@ export const PRINT_PLAN: Sheet[] = [
   { kind: 'page', key: 'passaporte-miolo-2', page: 'passaporte-miolo-2' },
   { kind: 'page', key: 'vacina-fora', page: 'vacina-fora' },
   { kind: 'page', key: 'vacina-dentro', page: 'vacina-dentro' },
+];
+
+/** Folhas do PDF de bônus personalizados (Kit Aniversário e Kit Quem Cuida). */
+export const BONUS_PLAN: Sheet[] = [
+  { kind: 'page', key: 'bonus-capa', page: 'guia-bonus-capa' },
 
   {
     kind: 'pieces',
@@ -126,9 +131,10 @@ export const PRINT_PLAN: Sheet[] = [
   { kind: 'page', key: 'quemcuida', page: 'quemcuida' },
 ];
 
-/** Número da página (1 = capa) de uma folha do plano. */
+/** Número da página (1 = capa) de uma folha, dentro do arquivo dela (kit ou bônus). */
 export function pageOf(key: string): number {
-  return PRINT_PLAN.findIndex((s) => s.key === key) + 1;
+  const k = KIT_PLAN.findIndex((s) => s.key === key);
+  return k >= 0 ? k + 1 : BONUS_PLAN.findIndex((s) => s.key === key) + 1;
 }
 
 /** "pág. 7" ou "págs. 10 a 12". */
@@ -138,6 +144,3 @@ export function pagesLabel(from: string, to?: string): string {
   if (b === a) return `pág. ${a}`;
   return b === a + 1 ? `págs. ${a} e ${b}` : `págs. ${a} a ${b}`;
 }
-
-/** Primeira página depois do plano (onde começam os PDFs prontos). */
-export const EXTRAS_START = PRINT_PLAN.length + 1;

@@ -1,7 +1,7 @@
 import 'server-only';
 import { doPet, type PetData } from '@/lib/pet';
 import { sendBumpEmail, sendConfirmEmail, sendKitEmail, type KitFile } from './email';
-import { bumpFiles } from './bumps';
+import { absUrl, bumpFiles } from './bumps';
 import { getSettings } from './settings';
 
 interface CustomerWithPets {
@@ -18,8 +18,8 @@ export async function fixedBonusLinks(pet: PetData): Promise<{ label: string; ur
   const old = pet.species === 'gato' ? f.calendarioGato : pet.species === 'cachorro' ? f.calendarioCao : f.calendarioOutros || f.calendarioCao;
   const cal = f.calendario || old;
   return [
-    ...(cal ? [{ label: 'Bônus: Calendário de Saúde por Idade (PDF)', url: cal }] : []),
-    ...(f.guiaViagem ? [{ label: 'Bônus: Guia Como Viajar com seu Pet (PDF)', url: f.guiaViagem }] : []),
+    ...(cal ? [{ label: 'Bônus: Calendário de Saúde por Idade (PDF)', url: absUrl(cal) }] : []),
+    ...(f.guiaViagem ? [{ label: 'Bônus: Guia Como Viajar com seu Pet (PDF)', url: absUrl(f.guiaViagem) }] : []),
   ];
 }
 

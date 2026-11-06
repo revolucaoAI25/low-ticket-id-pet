@@ -126,7 +126,7 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
         const { pet } = (await call({ action: 'save', pet: d })) as { pet: PetView };
         const phone = pet.data.tutors?.find((t) => t.phone)?.phone || order?.customer?.phone || '';
         const ctx = buildDocContext({ pet: pet.data, settings, seed: pet.id, slug: pet.slug, phone });
-        const files = await buildPackage(ctx, (order?.bonusLinks ?? []).map((b) => b.url), (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * 70) }));
+        const files = await buildPackage(ctx, (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * 70) }));
         setPhase({ step: `Enviando os arquivos${label}…`, pct: 78 });
         const { urls } = (await call({ action: 'upload-urls', petId: pet.id, files: files.map((f) => f.name) })) as { urls: Record<string, { signedUrl: string; path: string }> };
         let sent = 0;
@@ -294,8 +294,8 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | null; bonusLinks: { label: string; url: string }[] }) {
   const icon: Record<string, LucideIcon> = { 'kit-pdf': FileText, 'bonus-pdf': FileText, zip: ImagePlus, ficha: QrCode };
   const label: Record<string, string> = {
-    'kit-pdf': 'Kit completo para imprimir (PDF)',
-    'bonus-pdf': 'Bônus personalizados (PDF)',
+    'kit-pdf': 'Documentos para imprimir (PDF)',
+    'bonus-pdf': 'Bônus: Kit Aniversário e Quem Cuida (PDF)',
     zip: 'Imagens soltas (.zip, opcional)',
     ficha: 'Identidade do QR Code',
   };
@@ -326,18 +326,25 @@ function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | n
                 </a>
               );
             })}
+          </div>
+        </div>
+      ))}
+      {bonusLinks.length > 0 && (
+        <div className="card mt-5 p-4">
+          <p className="font-display text-lg font-semibold">Guias em PDF</p>
+          <div className="mt-3 space-y-2">
             {bonusLinks.map((b) => (
-              <a key={b.url} href={b.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl bg-areia/60 p-3 font-bold">
+              <a key={b.url} href={b.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl bg-areia/60 p-3 font-bold active:bg-areia">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
                   <FileText size={20} />
                 </span>
-                <span className="flex-1">{b.label}</span>
+                <span className="flex-1">{b.label.replace(/^Bônus: /, '')}</span>
                 <Download size={18} className="text-cacau/50" />
               </a>
             ))}
           </div>
         </div>
-      ))}
+      )}
       <p className="mt-4 text-center text-sm font-semibold text-cacau/65">
         Dica: para o RG, a CNH e as carteirinhas, use papel fotográfico ou couchê e plastifique. A tag ossinho fica ótima num porta-tag de pet shop.
       </p>

@@ -67,7 +67,7 @@ function bumpsBlock(bumps: { label: string; url: string }[]): string {
 /** Um e-mail por order bump de conteúdo, assim que o pagamento dele é aprovado (o PDF vai anexado). */
 export async function sendBumpEmail(to: string, bump: { label: string; url: string }): Promise<boolean> {
   const title = `Seu material chegou: ${bump.label} 🐾`;
-  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Obrigado pela compra! O <b>${bump.label}</b> está anexado a este e-mail, em PDF. Ele também entra no final do PDF do seu kit.</td></tr>
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Obrigado pela compra! O <b>${bump.label}</b> está anexado a este e-mail, em PDF. Dá para ler no celular ou imprimir.</td></tr>
   <tr><td align="center" style="padding-top:22px">${button(bump.url, 'Baixar o PDF')}</td></tr>`;
   return send(to, title, layout(title, body), [{ filename: pdfName(bump.label), path: bump.url }]);
 }
@@ -96,21 +96,23 @@ export async function sendKitEmail(to: string, doNome: string, files: KitFile[],
   const zip = files.find((f) => f.kind === 'zip');
   const ficha = files.find((f) => f.kind === 'ficha');
   const links = [
-    ...pdfs.map((f) => ({ label: f.kind === 'kit-pdf' ? 'Kit completo para imprimir (PDF)' : 'Bônus personalizados (PDF)', url: f.url })),
+    ...pdfs.map((f) => ({ label: f.kind === 'kit-pdf' ? 'Documentos para imprimir (PDF)' : 'Bônus: Kit Aniversário e Kit Quem Cuida (PDF)', url: f.url })),
     ...(zip ? [{ label: 'Imagens soltas em alta resolução (.zip, opcional)', url: zip.url }] : []),
     ...(ficha ? [{ label: 'Identidade que abre no QR Code da tag', url: ficha.url }] : []),
     ...extraLinks,
   ];
   const body = `
-  <tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Está tudo num PDF só, anexado a este e-mail: capa, instruções de montagem, documentos e bônus. É só imprimir em A4 (tamanho real), recortar na linha pontilhada e plastificar. Guarde este e-mail: os links abaixo ficam sempre disponíveis.</td></tr>
+  <tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Os arquivos estão anexados a este e-mail: <b>o PDF dos documentos</b> (comece por ele: as páginas 2 a 5 explicam como imprimir e montar), <b>o PDF de bônus</b> personalizados e os guias em PDF. Imprima em A4, em tamanho real. Guarde este e-mail: os links abaixo ficam sempre disponíveis.</td></tr>
   <tr><td style="padding-top:20px">${links
     .map((l) => `<p style="margin:0 0 10px"><a href="${l.url}" style="color:#6F2A7A;font-weight:bold;font-size:15px">⬇ ${l.label}</a></p>`)
     .join('')}</td></tr>
   <tr><td style="padding-top:16px;font-size:14px;line-height:1.5;color:#6b5a4e"><b>Dica de impressão:</b> para o RG, a CNH e as carteirinhas, use papel fotográfico ou couchê (180 g ou mais) e plastifique. A tag ossinho fica ótima plastificada num porta-tag de pet shop.</td></tr>`;
+  // Anexos: os PDFs gerados + os guias fixos (Calendário e Viagem). Os order bumps vão em e-mails próprios.
+  const guides = extraLinks.filter((l) => l.label.startsWith('Bônus:'));
   return send(
     to,
     title,
     layout(title, body),
-    pdfs.map((f) => ({ filename: f.name, path: f.url })),
+    [...pdfs.map((f) => ({ filename: f.name, path: f.url })), ...guides.map((g) => ({ filename: pdfName(g.label.replace(/^Bônus: /, '')), path: g.url }))],
   );
 }

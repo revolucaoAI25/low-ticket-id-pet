@@ -129,14 +129,14 @@ export const defaultSettings: SiteSettings = {
     bonusViagem: '',
     templates: {},
   },
-  files: { calendario: '', guiaViagem: '' },
+  files: { calendario: '/arquivos/87a545c86b7b38d3/Calendario-de-Saude-por-Idade.pdf', guiaViagem: '/arquivos/87a545c86b7b38d3/Guia-Como-Viajar-com-seu-Pet.pdf' },
   proof: { demo: false, avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
-    { id: 'pet-calmo', name: 'Método Pet Calmo: Fim do Choro Quando Você Sai', keywords: 'pet calmo', file: '' },
-    { id: 'comida-que-cuida', name: 'Guia Comida que Cuida: o que Pode Envenenar seu Pet', keywords: 'comida que cuida', file: '' },
-    { id: 'sos-pet', name: 'Manual SOS Pet: Primeiros Socorros que Salvam Vidas', keywords: 'sos pet', file: '' },
+    { id: 'pet-calmo', name: 'Método Pet Calmo: Fim do Choro Quando Você Sai', keywords: 'pet calmo', file: '/arquivos/87a545c86b7b38d3/Metodo-Pet-Calmo.pdf' },
+    { id: 'comida-que-cuida', name: 'Guia Comida que Cuida: o que Pode Envenenar seu Pet', keywords: 'comida que cuida', file: '/arquivos/87a545c86b7b38d3/Guia-Comida-que-Cuida.pdf' },
+    { id: 'sos-pet', name: 'Manual SOS Pet: Primeiros Socorros que Salvam Vidas', keywords: 'sos pet', file: '/arquivos/87a545c86b7b38d3/Manual-SOS-Pet.pdf' },
   ],
 };
 
@@ -162,7 +162,8 @@ export const proofSlots = {
 const RETIRED_BUMPS = new Set(['petiscos-cao', 'xixi', 'latidos', 'petiscos-gato', 'areia', 'arranhar', 'album', 'cuidados']);
 
 function currentBumps(saved?: Bump[]): Bump[] {
-  const kept = (saved ?? []).filter((b) => !RETIRED_BUMPS.has(b.id));
+  // Bump sem PDF enviado no painel usa o PDF que já vem no site (public/arquivos).
+  const kept = (saved ?? []).filter((b) => !RETIRED_BUMPS.has(b.id)).map((b) => (b.file ? b : { ...b, file: defaultSettings.bumps.find((d) => d.id === b.id)?.file ?? '' }));
   // Garante os 3 bumps atuais (mantém nome/arquivo se já foram editados no painel).
   const ids = new Set(kept.map((b) => b.id));
   return [...kept, ...defaultSettings.bumps.filter((b) => !ids.has(b.id))];
@@ -184,7 +185,13 @@ export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): 
       ...(s.images ?? {}),
       templates: { ...(s.images?.templates ?? {}) },
     },
-    files: { ...defaultSettings.files, ...(s.files ?? {}) },
+    files: {
+      ...defaultSettings.files,
+      ...(s.files ?? {}),
+      // Vazio no painel = usa o PDF que já vem no site.
+      calendario: s.files?.calendario || defaultSettings.files.calendario,
+      guiaViagem: s.files?.guiaViagem || defaultSettings.files.guiaViagem,
+    },
     proof: { ...defaultSettings.proof, ...(s.proof ?? {}) },
     extraTeams: s.extraTeams ?? [],
     bumps: currentBumps(s.bumps),

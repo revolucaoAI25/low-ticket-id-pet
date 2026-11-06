@@ -5,7 +5,7 @@ import type { DocContext } from '../types';
 import { photoCircle } from '../common';
 import { FONT_BODY, FONT_DISPLAY, drawContain, heart, line, paw, rr, text } from '../draw';
 import type { Ctx } from '../draw';
-import { EXTRAS_START, pageOf, pagesLabel } from '../plan';
+import { pageOf, pagesLabel } from '../plan';
 import type { DocDef } from '../types';
 
 /**
@@ -228,11 +228,11 @@ function drawSumario(ctx: Ctx, c: DocContext) {
       ],
     },
     {
-      title: 'Bônus',
+      title: 'Bônus (em arquivos separados, no mesmo e-mail)',
       items: [
-        ['Kit Aniversário', 'Convite, topo de bolo, plaquinhas e certificado', pagesLabel('convite', 'aniv-certificado')],
-        ['Kit Quem Cuida', 'Ficha de rotina para quem cuida', pagesLabel('quemcuida')],
-        ['Calendário de Saúde e Guia de Viagem', 'E os conteúdos extras que você comprou', `a partir da pág. ${EXTRAS_START}`],
+        ['Kit Aniversário e Kit Quem Cuida', 'Convite, topo de bolo, plaquinhas, certificado e ficha de rotina', 'PDF de Bônus'],
+        ['Calendário de Saúde por Idade', 'Para cão, gato e outros pets', 'PDF à parte'],
+        ['Guia: Como Viajar com seu Pet', 'Carro, avião, ônibus e hotel', 'PDF à parte'],
       ],
     },
   ];
@@ -298,11 +298,11 @@ function drawAntes(ctx: Ctx) {
   // 2. papel
   const rows: [string, string, string][] = [
     ['RG, CNH, Torcedor, Ficha e Tags', pagesLabel('rg', 'tag'), 'Fotográfico ou couchê 180 a 250 g'],
-    [`Certidão e Certificado`, `págs. ${pageOf('certidao')} e ${pageOf('aniv-certificado')}`, 'Couchê ou offset 180 g'],
-    ['Capa do passaporte', pagesLabel('passaporte-capa'), 'Couchê ou offset 180 g'],
+    ['Certidão e capa do passaporte', `págs. ${pageOf('certidao')} e ${pageOf('passaporte-capa')}`, 'Couchê ou offset 180 g'],
     ['Miolo do passaporte e Vacinação', pagesLabel('passaporte-miolo-1', 'vacina-dentro'), 'Sulfite 90 g ou offset 120 g'],
-    ['Convite, topo de bolo e plaquinhas', pagesLabel('convite', 'aniv-plaquinhas'), 'Couchê 180 g'],
-    ['Quem Cuida e PDFs de bônus', `pág. ${pageOf('quemcuida')} em diante`, 'Sulfite comum'],
+    ['Festa e certificado (Bônus)', 'PDF de Bônus', 'Couchê 180 g'],
+    ['Quem Cuida (Bônus)', 'PDF de Bônus', 'Sulfite comum'],
+    ['Calendário, Guia de Viagem e extras', 'PDFs à parte', 'Sulfite (ou só no celular)'],
   ];
   const rowH = 50;
   const th = 88 + rows.length * rowH + 18;
@@ -409,7 +409,7 @@ function drawMontarDocs(ctx: Ctx, c: DocContext) {
 
 function drawMontarMais(ctx: Ctx) {
   bg(ctx);
-  const y = header(ctx, 'Passo a passo', 'Passaporte, vacinação e bônus');
+  const y = header(ctx, 'Passo a passo', 'Passaporte e Vacinação', 'Os dois são impressos frente e verso.');
   const end = cards(
     ctx,
     [
@@ -434,18 +434,12 @@ function drawMontarMais(ctx: Ctx) {
         tip: 'Frente e verso sem impressora duplex: imprima a 1ª página, coloque a folha de volta na bandeja virada e imprima a 2ª. Teste antes com uma folha comum marcada com um X.',
       },
       {
-        title: 'Kit Aniversário',
-        pages: pagesLabel('convite', 'aniv-certificado'),
+        title: 'E os bônus?',
         steps: [
-          'Convite: recorte e entregue. Ou tire uma foto e mande pelo WhatsApp.',
-          'Topo de bolo e plaquinhas: recorte, cole um palito de churrasco atrás com fita e espete no bolo ou use nas fotos.',
-          'Certificado: imprima em papel 180 g e emoldure.',
+          '**PDF de Bônus:** Kit Aniversário e Kit Quem Cuida, personalizados, com o passo a passo na primeira página.',
+          '**Calendário de Saúde** e **Guia de Viagem:** PDFs à parte. Dá para ler no celular ou imprimir.',
+          'Comprou algum conteúdo extra? Ele chega num e-mail só dele, também em PDF.',
         ],
-      },
-      {
-        title: 'Kit Quem Cuida',
-        pages: pagesLabel('quemcuida'),
-        steps: ['Preencha à caneta e deixe com quem fica com o pet: avós, pet sitter, creche ou hotel.'],
       },
     ],
     y,
@@ -465,6 +459,47 @@ function drawMontarMais(ctx: Ctx) {
   footer(ctx, pageOf('montar-mais'));
 }
 
+/** Primeira página do PDF de Bônus: capa e passo a passo do Kit Aniversário e do Kit Quem Cuida. */
+function drawBonusCapa(ctx: Ctx, c: DocContext, a: { photo: HTMLImageElement | null }) {
+  bg(ctx);
+  text(ctx, 'BÔNUS DO KIT IDENTIDADE PET', W / 2, 104, { size: 22, weight: 900, color: AMARELO, align: 'center', letterSpacing: 5 });
+  const name = petName(c.pet) === 'seu pet' ? '' : petName(c.pet);
+  text(ctx, name ? `Os bônus ${doPet(c.pet)}` : 'Os bônus do seu pet', W / 2, 190, { size: 72, weight: 700, family: 'display', color: ROXO, align: 'center', maxWidth: CW });
+  photoCircle(ctx, a.photo, c.pet, W / 2, 370, 120, { ring: 12, ringColor: AMARELO });
+  const y = cards(
+    ctx,
+    [
+      {
+        title: 'Convite de aniversário',
+        pages: pagesLabel('convite'),
+        steps: ['Recorte na linha pontilhada e entregue. Ou tire uma foto do convite pronto e mande pelo WhatsApp.'],
+      },
+      {
+        title: 'Topo de bolo e plaquinhas',
+        pages: pagesLabel('aniv-topo', 'aniv-plaquinhas'),
+        steps: [
+          'Imprima em papel 180 g e recorte em volta da borda branca.',
+          'Cole um palito de churrasco atrás com fita e espete no bolo. Os redondinhos viram toppers de docinho.',
+          'As plaquinhas são para as fotos da festa: segure perto do pet e capriche no clique.',
+        ],
+      },
+      {
+        title: 'Certificado de Melhor Pet do Mundo',
+        pages: pagesLabel('aniv-certificado'),
+        steps: ['Imprima em papel 180 g (folha deitada) e emoldure. Assine com a família.'],
+      },
+      {
+        title: 'Kit Quem Cuida',
+        pages: pagesLabel('quemcuida'),
+        steps: ['Preencha à caneta: comida, passeios, remédios, manias e contatos.', 'Deixe com quem fica com o pet: avós, pet sitter, creche ou hotel.'],
+      },
+    ],
+    530,
+  );
+  void y;
+  footer(ctx, pageOf('bonus-capa'));
+}
+
 const A4 = { w: W, h: H, mm: [210, 297] as [number, number] };
 
 export const guiaDoc: DocDef = {
@@ -476,6 +511,7 @@ export const guiaDoc: DocDef = {
     { id: 'guia-sumario', label: 'O que tem no kit', ...A4, draw: (ctx, c) => drawSumario(ctx, c) },
     { id: 'guia-antes', label: 'Antes de imprimir', ...A4, draw: (ctx) => drawAntes(ctx) },
     { id: 'guia-montar-docs', label: 'Como montar: documentos', ...A4, draw: (ctx, c) => drawMontarDocs(ctx, c) },
-    { id: 'guia-montar-mais', label: 'Como montar: passaporte, vacinação e bônus', ...A4, draw: (ctx) => drawMontarMais(ctx) },
+    { id: 'guia-montar-mais', label: 'Como montar: passaporte e vacinação', ...A4, draw: (ctx) => drawMontarMais(ctx) },
+    { id: 'guia-bonus-capa', label: 'Capa dos bônus', ...A4, draw: (ctx, c, a) => drawBonusCapa(ctx, c, a) },
   ],
 };

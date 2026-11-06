@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       .filter((f) => typeof f.path === 'string' && (f.path.startsWith(`${pet.id}/`) || f.path === fichaPath(pet.slug)))
       .map((f) => ({ name: String(f.name).slice(0, 80), kind: f.kind, url: sb.storage.from(BUCKET_KITS).getPublicUrl(f.path).data.publicUrl }));
     await sb.from('pets').update({ files, submitted_at: new Date().toISOString() }).eq('id', pet.id);
-    // Os bônus fixos e bumps já vão dentro do PDF; os links ficam no e-mail como reserva.
+    // Guias fixos (anexados) e order bumps (link; o PDF de cada um já foi num e-mail próprio).
     const extras = [...(await fixedBonusLinks(pet.data)), ...bumpFiles(cust.bumps, await getSettings())];
     const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, extras) : false;
     return json({ ok: true, files, emailed });
