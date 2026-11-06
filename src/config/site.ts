@@ -131,9 +131,9 @@ export const defaultSettings: SiteSettings = {
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
-    { id: 'pet-calmo', name: 'Fim do Choro Quando Você Sai', keywords: 'fim do choro, choro quando voce sai', file: '' },
-    { id: 'comida-que-cuida', name: 'Comidas Proibidas para Pets', keywords: 'comidas proibidas, alimentos proibidos', file: '' },
-    { id: 'sos-pet', name: 'Primeiros Socorros Pet', keywords: 'primeiros socorros', file: '' },
+    { id: 'pet-calmo', name: 'Fim do Choro e da Bagunça Quando Você Sai', keywords: 'fim do choro', file: '' },
+    { id: 'comida-que-cuida', name: 'Comidas Proibidas: o que Pode Envenenar seu Pet', keywords: 'comidas proibidas, alimentos proibidos', file: '' },
+    { id: 'sos-pet', name: 'Primeiros Socorros: Salve seu Pet em 5 Minutos', keywords: 'primeiros socorros', file: '' },
   ],
 };
 
