@@ -106,7 +106,7 @@ export const bonusItems: BonusItem[] = [
   {
     id: 'calendario',
     title: 'Calendário de Saúde por Idade',
-    lines: ['O que fazer em cada fase da vida, de filhote a idoso.', 'Versões para cão e para gato.'],
+    lines: ['O que fazer em cada fase da vida, de filhote a idoso.', 'Para cão, gato e outros pets, tudo num só guia.'],
     value: 9,
     personalized: false,
     imageKey: 'bonusCalendario',

@@ -228,9 +228,7 @@ export function Admin() {
 
         {tab === 'bonus' && (
           <Card title="PDFs fixos dos bônus" hint="Aparecem para download na área do pet.">
-            <Upload pdf label="Calendário de Saúde — Cão" value={s.files.calendarioCao} folder="pdfs" onChange={(v) => set({ files: { ...s.files, calendarioCao: v } })} />
-            <Upload pdf label="Calendário de Saúde — Gato" value={s.files.calendarioGato} folder="pdfs" onChange={(v) => set({ files: { ...s.files, calendarioGato: v } })} />
-            <Upload pdf label="Calendário de Saúde — Outros pets (opcional)" value={s.files.calendarioOutros} folder="pdfs" onChange={(v) => set({ files: { ...s.files, calendarioOutros: v } })} />
+            <Upload pdf label="Calendário de Saúde por Idade (cão, gato e outros pets, num arquivo só)" value={s.files.calendario} folder="pdfs" onChange={(v) => set({ files: { ...s.files, calendario: v } })} />
             <Upload pdf label="Guia: Como Viajar com seu Pet" value={s.files.guiaViagem} folder="pdfs" onChange={(v) => set({ files: { ...s.files, guiaViagem: v } })} />
           </Card>
         )}

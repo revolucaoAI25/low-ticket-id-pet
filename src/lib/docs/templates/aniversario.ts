@@ -365,7 +365,7 @@ export const aniversarioDoc: DocDef = {
           760,
           680,
           54,
-          { size: 36, weight: 600, color: '#49382F', maxLines: 3 },
+          { size: 36, weight: 600, color: '#49382F', maxLines: 4 },
         );
 
         const tut = tutorNames(p);

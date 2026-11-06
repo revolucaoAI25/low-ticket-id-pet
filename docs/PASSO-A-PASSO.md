@@ -69,7 +69,7 @@ Webhook (uma vez só):
 | **Pixel e UTMs** | ID do Pixel da Meta. Deixe ligado o script de UTMs da Utmify. Deixe vazio o "Pixel da Utmify". |
 | **Oferta** | Preço, preço "De", timer, nota e nº de tutores (0 = esconde). Pop-up de saída: preço especial e os checkouts com esse preço (sem eles, o pop-up só lembra que o desconto está reservado). |
 | **Order bumps** | Suba o PDF de cada bump. Confira as palavras-chave. |
-| **PDFs dos bônus** | Calendário de Saúde (cão, gato e outros) e Guia de Viagem. |
+| **PDFs dos bônus** | Calendário de Saúde (um arquivo só, com cão, gato e outros) e Guia de Viagem. |
 | **Imagens e templates** | Imagem da abertura (opcional), foto do kit de exemplo (opcional), capas dos bônus (opcional: sem elas o site usa capas próprias) e os templates dos documentos. |
 | **Prova social** | Avatares, fotos do kit na vida real, prints e avaliações (só reais). |
 | **Suporte** | E-mail, WhatsApp, horário, nome da empresa e CNPJ. |

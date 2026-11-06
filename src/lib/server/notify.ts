@@ -11,10 +11,12 @@ interface CustomerWithPets {
   pets?: { data: PetData; files: KitFile[] | null; submitted_at: string | null }[];
 }
 
-/** Links dos bônus em PDF fixo (Calendário e Guia), conforme a espécie. */
+/** Links dos bônus em PDF fixo (Calendário e Guia). */
 export async function fixedBonusLinks(pet: PetData): Promise<{ label: string; url: string }[]> {
   const f = (await getSettings()).files;
-  const cal = pet.species === 'gato' ? f.calendarioGato : pet.species === 'cachorro' ? f.calendarioCao : f.calendarioOutros || f.calendarioCao;
+  // Um calendário só (cão, gato e outros). Os antigos por espécie ficam de reserva.
+  const old = pet.species === 'gato' ? f.calendarioGato : pet.species === 'cachorro' ? f.calendarioCao : f.calendarioOutros || f.calendarioCao;
+  const cal = f.calendario || old;
   return [
     ...(cal ? [{ label: 'Bônus: Calendário de Saúde por Idade (PDF)', url: cal }] : []),
     ...(f.guiaViagem ? [{ label: 'Bônus: Guia Como Viajar com seu Pet (PDF)', url: f.guiaViagem }] : []),

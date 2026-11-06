@@ -75,10 +75,13 @@ export interface SiteSettings {
     templates: Record<string, string>;
   };
   files: {
-    calendarioCao: string;
-    calendarioGato: string;
-    calendarioOutros: string;
+    /** Calendário de Saúde: um PDF só, com cão, gato e outros pets. */
+    calendario: string;
     guiaViagem: string;
+    /** Antigos (um por espécie): ainda valem se o único não foi enviado. */
+    calendarioCao?: string;
+    calendarioGato?: string;
+    calendarioOutros?: string;
   };
   proof: {
     /** Modo demonstração: mostra avaliações de exemplo enquanto não há reais. DESLIGAR antes de anunciar. */
@@ -126,7 +129,7 @@ export const defaultSettings: SiteSettings = {
     bonusViagem: '',
     templates: {},
   },
-  files: { calendarioCao: '', calendarioGato: '', calendarioOutros: '', guiaViagem: '' },
+  files: { calendario: '', guiaViagem: '' },
   proof: { demo: false, avatars: [], realLife: [], whatsapp: [], instagram: [], reviews: [] },
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },

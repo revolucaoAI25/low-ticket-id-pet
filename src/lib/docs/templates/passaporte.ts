@@ -438,11 +438,11 @@ export const passaporteDoc: DocDef = {
         line(ctx, cx + cw / 2, ROW1 + BH + 6, cx + cw / 2, ROW1 + BH + 22, 'rgba(0,0,0,.45)', 1.5);
         // instruções de montagem
         const steps = [
-          'Imprima esta folha só de um lado, em papel mais grosso (180 g ou mais). É a capa.',
-          'Imprima as 2 folhas seguintes (miolo) em frente e verso, virando pela borda longa.',
-          'Recorte a capa e as 4 lâminas do miolo na linha pontilhada.',
+          'Imprima esta página só de um lado, em papel mais grosso (180 g ou mais). É a capa.',
+          'Imprima as 2 páginas seguintes (o miolo) numa folha só, frente e verso, virando pela borda longa.',
+          'Recorte a capa e as 2 lâminas do miolo na linha pontilhada. Use as marquinhas para achar o meio.',
           'Dobre cada lâmina ao meio. Encaixe a lâmina com as páginas 3 a 6 dentro da que tem 1, 2, 7 e 8.',
-          'Coloque o miolo dentro da capa dobrada e grampeie 2 vezes na dobra (ou costure). Pronto!',
+          'Dobre a capa, coloque o miolo dentro e grampeie 2 vezes na dobra (ou costure). Pronto!',
         ];
         text(ctx, 'Como montar o passaporte', PW / 2, ROW1 + BH + 110, { size: 40, weight: 700, family: 'display', color: NAVY, align: 'center' });
         steps.forEach((s, i) => {
@@ -467,7 +467,7 @@ export const passaporteDoc: DocDef = {
         ctx.fillRect(0, 0, PW, PH);
         spread(ctx, 8, 1, ROW1, c, a);
         spread(ctx, 6, 3, ROW2, c, a);
-        sheetNote(ctx, 'Passaporte · miolo, folha 1 (frente). No verso, imprima a folha seguinte.');
+        sheetNote(ctx, 'Passaporte · miolo (frente). No verso desta folha, imprima a página seguinte.');
       },
     },
     {
@@ -481,7 +481,7 @@ export const passaporteDoc: DocDef = {
         ctx.fillRect(0, 0, PW, PH);
         spread(ctx, 2, 7, ROW1, c, a);
         spread(ctx, 4, 5, ROW2, c, a);
-        sheetNote(ctx, 'Passaporte · miolo, folha 1 (verso).');
+        sheetNote(ctx, 'Passaporte · miolo (verso desta mesma folha).');
       },
     },
   ],
