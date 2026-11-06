@@ -18,7 +18,7 @@ export const kitItems: OfferItem[] = [
     doc: 'rg',
     short: 'RG do Pet',
     title: 'RG do Pet',
-    lines: ['Em 2 versões (estilo identidade brasileira e colorida), frente e verso, com foto e QR Code.', 'Nome, raça, pelagem, tutores, microchip e contato.'],
+    lines: ['Em versão verde e colorida (azul ou rosa), frente e verso, com foto e QR Code.', 'Nome, raça, pelagem, tutores, microchip e contato.'],
     value: 12,
   },
   {

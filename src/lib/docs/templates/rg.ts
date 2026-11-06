@@ -15,7 +15,9 @@ const TW = 1000;
 const TH = 782;
 
 /** Cor do RG colorido: azul (macho), rosa (fêmea), verde (não informado). */
-const COR = (c: DocContext) => (c.pet.sex === 'femea' ? { k: 'rosa', pill: '#fdf8f9' } : c.pet.sex === 'macho' ? { k: 'azul', pill: '#f9fbfd' } : { k: 'verde', pill: '#fafcf3' });
+/** Versão colorida: rosa para fêmea, azul para macho ou sexo não informado. (A verde vai para todo mundo.) */
+const COR = (c: DocContext) => (c.pet.sex === 'femea' ? { k: 'rosa', pill: '#fdf8f9' } : { k: 'azul', pill: '#f9fbfd' });
+const VERDE_PILL = '#fafcf3';
 export const RG_GREEN = { paper: '#DFEBD3', paper2: '#EEF4E4', ink: '#2C5A36', line: 'rgba(44,90,54,.35)', guilloche: 'rgba(60,120,75,.13)' };
 
 /** Fundo com guilhochê (as ondinhas finas do papel de documento). */
@@ -94,12 +96,12 @@ export const rgDoc: DocDef = {
   pages: [
     {
       id: 'rg-frente',
-      label: 'Frente',
+      label: 'Verde · frente',
       w: TW,
       h: TH,
       mm: [86, 67],
       needsQr: true,
-      layout: () => ({ template: '/templates/rg-frente.webp', slots: RG_FRENTE }),
+      layout: () => ({ template: '/templates/rg-verde-frente.webp', slots: rgCorFrente(VERDE_PILL) }),
       draw(ctx, c, a) {
         const ink = RG_GREEN.ink;
         frame(ctx, a.background, 1);
@@ -132,11 +134,11 @@ export const rgDoc: DocDef = {
     },
     {
       id: 'rg-verso',
-      label: 'Verso',
+      label: 'Verde · verso',
       w: TW,
       h: TH,
       mm: [86, 67],
-      layout: () => ({ template: '/templates/rg-verso.webp', slots: RG_VERSO }),
+      layout: () => ({ template: '/templates/rg-verde-verso.webp', slots: RG_COR_VERSO }),
       draw(ctx, c, a) {
         const ink = RG_GREEN.ink;
         const p = c.pet;
@@ -198,6 +200,25 @@ export const rgDoc: DocDef = {
       h: TH,
       mm: [86, 67],
       layout: (c) => ({ template: `/templates/rg-${COR(c).k}-verso.webp`, slots: RG_COR_VERSO }),
+      draw: () => undefined,
+    },
+    {
+      id: 'rg-br-frente',
+      label: 'Brasil · frente',
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      needsQr: true,
+      layout: () => ({ template: '/templates/rg-frente.webp', slots: RG_FRENTE }),
+      draw: () => undefined,
+    },
+    {
+      id: 'rg-br-verso',
+      label: 'Brasil · verso',
+      w: TW,
+      h: TH,
+      mm: [86, 67],
+      layout: () => ({ template: '/templates/rg-verso.webp', slots: RG_VERSO }),
       draw: () => undefined,
     },
   ],
