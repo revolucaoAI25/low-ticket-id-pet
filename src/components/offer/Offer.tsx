@@ -203,7 +203,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 6. Kit na vida real */}
       <Section title="O kit na vida real" subtitle="É só imprimir em casa ou na papelaria.">
-        <Marquee seconds={38}>
+        <Marquee seconds={52}>
           {(realLife.length ? realLife : proofSlots.realLife.map((label) => ({ url: '', caption: label }))).map((img, i) => (
             <div key={i} className="h-[230px] shrink-0">
               {img.url ? (
@@ -259,7 +259,7 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 9. WhatsApp */}
       <Section title="O que os tutores mandam pra gente" subtitle="Mensagens reais no WhatsApp.">
-        <Marquee seconds={34} reverse>
+        <Marquee seconds={48} reverse>
           {(whatsapp.length ? whatsapp : proofSlots.whatsapp.map((label) => ({ url: '', caption: label }))).map((img, i) => (
             <div key={i} className="h-[300px] shrink-0">
               {img.url ? (
@@ -275,11 +275,11 @@ export function Offer({ settings }: { settings: SiteSettings }) {
 
       {/* 10. Instagram */}
       <Section title="E no Instagram…">
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {instagram.length
             ? instagram.map((img, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={img.url} alt={img.caption ?? 'Comentário no Instagram'} loading="lazy" decoding="async" className="mx-auto w-full max-w-[340px] rounded-2xl border border-linha bg-white shadow-card" />
+                <img key={i} src={img.url} alt={img.caption ?? 'Comentário no Instagram'} loading="lazy" decoding="async" className="mx-auto w-full max-w-[360px] rounded-2xl border border-linha bg-white shadow-card" />
               ))
             : proofSlots.instagram.map((label, i) => <Slot key={i} label={label} ratio="3 / 1" />)}
         </div>
@@ -449,8 +449,8 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   );
 }
 
-/** Faixa que anda sozinha, em loop contínuo (pausa ao tocar). */
-/** Faixa que anda sozinha, em loop contínuo (pausa ao tocar). Duas cópias iguais: a animação anda exatamente uma cópia. */
+/** Faixa que anda sozinha, em loop contínuo. */
+/** Faixa que anda sozinha, em loop contínuo. Duas cópias iguais: a animação anda exatamente uma cópia. */
 function Marquee({ children, seconds = 36, reverse }: { children: React.ReactNode; seconds?: number; reverse?: boolean }) {
   return (
     <div className="marquee -mx-4 overflow-hidden">

@@ -22,7 +22,7 @@ const P = '/demo/proof/';
 /** Fotos do kit com pets, prints de WhatsApp e comentários (demonstração, imagens fornecidas pelo dono do projeto). */
 export const DEMO_REAL_LIFE = Array.from({ length: 14 }, (_, i) => ({ url: `${P}foto-${String(i + 1).padStart(2, '0')}.webp` }));
 export const DEMO_WHATSAPP = Array.from({ length: 8 }, (_, i) => ({ url: `${P}whatsapp-${i + 1}.webp` }));
-export const DEMO_INSTAGRAM = Array.from({ length: 3 }, (_, i) => ({ url: `${P}instagram-${i + 1}.webp` }));
+export const DEMO_INSTAGRAM = Array.from({ length: 6 }, (_, i) => ({ url: `${P}instagram-${i + 1}.webp` }));
 
 const filled = (l: { url: string }[]) => l.filter((x) => x.url).length > 0;
 

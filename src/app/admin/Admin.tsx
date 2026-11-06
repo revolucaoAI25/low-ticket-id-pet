@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { proofSlots, type ProofImage, type Review, type SiteSettings, type ExtraTeam } from '@/config/site';
+import { type ProofImage, type Review, type SiteSettings, type ExtraTeam } from '@/config/site';
 import { bonusItems } from '@/config/offer';
 import { Logo } from '@/components/ui';
 import { allPages } from '@/lib/docs/render';
@@ -36,7 +36,20 @@ export function Admin() {
     const r = await fetch('/api/admin/settings', { cache: 'no-store' });
     if (r.status === 401) return setAuthed(false);
     const d = await r.json();
-    setS(d.settings);
+    // Listas de prova social vazias: já mostram as imagens de exemplo para você ordenar ou remover (salve para manter).
+    const st = d.settings as SiteSettings;
+    const fill = (l: ProofImage[], demo: ProofImage[]) => (l.some((x) => x.url) ? l : demo);
+    setS({
+      ...st,
+      proof: {
+        ...st.proof,
+        realLife: fill(st.proof.realLife, DEMO_REAL_LIFE),
+        whatsapp: fill(st.proof.whatsapp, DEMO_WHATSAPP),
+        instagram: fill(st.proof.instagram, DEMO_INSTAGRAM),
+        reviews: st.proof.reviews.length ? st.proof.reviews : DEMO_REVIEWS,
+        avatars: st.proof.avatars.length ? st.proof.avatars : DEMO_AVATARS,
+      },
+    });
     setDbOk(d.db);
     setAuthed(true);
   }, []);
@@ -354,29 +367,9 @@ function Funnel() {
 }
 
 function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>) => void }) {
-  const listEditor = (key: 'realLife' | 'whatsapp' | 'instagram', labels: readonly string[]) => {
-    const list = s.proof[key];
-    const setList = (next: ProofImage[]) => set({ proof: { ...s.proof, [key]: next } });
-    const rows: ProofImage[] = list.length ? list : labels.map(() => ({ url: '' }));
-    return (
-      <>
-        {rows.map((item, i) => (
-          <div key={i} className="rounded-2xl bg-areia/50 p-3">
-            <Upload label={labels[i] ?? `Imagem ${i + 1}`} value={item.url} folder={`prova-${key}`} onChange={(url) => setList(rows.map((x, j) => (j === i ? { ...x, url } : x)))} />
-            <div className="mt-2 flex gap-2">
-              <input className="input !min-h-[40px] !text-sm" placeholder="Legenda (opcional)" value={item.caption ?? ''} onChange={(e) => setList(rows.map((x, j) => (j === i ? { ...x, caption: e.target.value } : x)))} />
-              <button type="button" className="shrink-0 text-sm font-bold text-red-600" onClick={() => setList(rows.filter((_, j) => j !== i))}>
-                Remover
-              </button>
-            </div>
-          </div>
-        ))}
-        <button type="button" className="btn-ghost w-full !min-h-[44px] !text-base" onClick={() => setList([...rows, { url: '' }])}>
-          + Adicionar imagem
-        </button>
-      </>
-    );
-  };
+  const listEditor = (key: 'realLife' | 'whatsapp' | 'instagram') => (
+    <ImageList items={s.proof[key]} folder={`prova-${key}`} onChange={(next) => set({ proof: { ...s.proof, [key]: next } })} tall={key === 'whatsapp'} />
+  );
   const reviews = s.proof.reviews;
   const setReviews = (r: Review[]) => set({ proof: { ...s.proof, reviews: r } });
   return (
@@ -386,26 +379,6 @@ function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
           <input type="checkbox" className="h-5 w-5" checked={s.proof.demo} onChange={(e) => set({ proof: { ...s.proof, demo: e.target.checked } })} />
           {s.proof.demo ? 'LIGADO: desligue antes de anunciar (avaliação inventada para cliente real é propaganda enganosa).' : 'Mostrar avaliações de demonstração'}
         </label>
-      </Card>
-      <Card title="Imagens de exemplo" hint="Coloca no painel as fotos do kit, os prints de WhatsApp e Instagram, as avaliações e os avatares de exemplo. Depois é só remover o que não quiser e clicar em Salvar. Substitua por material real antes de anunciar.">
-        <button
-          type="button"
-          className="btn-ghost w-full !min-h-[44px] !text-base"
-          onClick={() =>
-            set({
-              proof: {
-                ...s.proof,
-                realLife: DEMO_REAL_LIFE,
-                whatsapp: DEMO_WHATSAPP,
-                instagram: DEMO_INSTAGRAM,
-                reviews: s.proof.reviews.length ? s.proof.reviews : DEMO_REVIEWS,
-                avatars: s.proof.avatars.length ? s.proof.avatars : DEMO_AVATARS,
-              },
-            })
-          }
-        >
-          Carregar imagens de exemplo no painel
-        </button>
       </Card>
       <Card title="Avatares de clientes (ao lado da nota)" hint="Até 5 fotos pequenas.">
         {Array.from({ length: 5 }, (_, i) => (
@@ -422,9 +395,9 @@ function ProofTab({ s, set }: { s: SiteSettings; set: (p: Partial<SiteSettings>)
           />
         ))}
       </Card>
-      <Card title="Kit na vida real">{listEditor('realLife', proofSlots.realLife)}</Card>
-      <Card title="Prints de WhatsApp">{listEditor('whatsapp', proofSlots.whatsapp)}</Card>
-      <Card title="Prints do Instagram">{listEditor('instagram', proofSlots.instagram)}</Card>
+      <Card title="Kit na vida real">{listEditor('realLife')}</Card>
+      <Card title="Prints de WhatsApp">{listEditor('whatsapp')}</Card>
+      <Card title="Prints do Instagram">{listEditor('instagram')}</Card>
       <Card title="Avaliações" hint="Só avaliações reais. Também aparecem na tela de carregamento do quiz.">
         {reviews.map((r, i) => (
           <div key={i} className="space-y-2 rounded-2xl bg-areia/50 p-3">
@@ -657,6 +630,83 @@ function Num({ label, value, onChange, step = 1 }: { label: string; value: numbe
       <span className="text-xs font-extrabold uppercase text-cacau/60">{label}</span>
       <input className="input mt-1 !min-h-[44px] !text-base" type="number" step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
     </label>
+  );
+}
+
+/** Envia um arquivo direto para o Storage (URL assinada) e devolve a URL pública. */
+async function uploadAsset(f: File, folder: string): Promise<string> {
+  const r = await fetch('/api/admin/upload', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: f.name, type: f.type, folder }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Erro no envio');
+  const up = await fetch(d.signedUrl, { method: 'PUT', headers: { 'content-type': f.type }, body: f });
+  if (!up.ok) throw new Error('Erro ao enviar o arquivo');
+  return d.url;
+}
+
+/** Grade de imagens: ver todas, mudar a ordem, remover e adicionar. */
+function ImageList({ items, onChange, folder, tall }: { items: ProofImage[]; onChange: (l: ProofImage[]) => void; folder: string; tall?: boolean }) {
+  const list = items.filter((x) => x.url);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const move = (i: number, d: number) => {
+    const j = i + d;
+    if (j < 0 || j >= list.length) return;
+    const n = [...list];
+    [n[i], n[j]] = [n[j], n[i]];
+    onChange(n);
+  };
+  return (
+    <div>
+      <p className="text-sm text-cacau/65">{list.length} imagem(ns). A ordem aqui é a ordem no site. Lembre de clicar em Salvar.</p>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {list.map((it, i) => (
+          <div key={it.url + i} className="overflow-hidden rounded-2xl border border-linha bg-white">
+            <div className={`relative ${tall ? 'aspect-[1/2]' : 'aspect-[4/3]'} bg-areia/50`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={it.url} alt="" loading="lazy" className="h-full w-full object-contain" />
+              <span className="absolute left-2 top-2 rounded-full bg-cacau/80 px-2 text-xs font-extrabold text-white">{i + 1}</span>
+            </div>
+            <div className="flex items-center justify-between gap-1 p-1.5">
+              <button type="button" aria-label="Mover para trás" disabled={i === 0} onClick={() => move(i, -1)} className="h-9 w-9 rounded-lg bg-areia font-extrabold disabled:opacity-30">
+                ←
+              </button>
+              <button type="button" onClick={() => onChange(list.filter((_, j) => j !== i))} className="h-9 flex-1 rounded-lg text-sm font-bold text-red-600 active:bg-red-50">
+                Remover
+              </button>
+              <button type="button" aria-label="Mover para frente" disabled={i === list.length - 1} onClick={() => move(i, 1)} className="h-9 w-9 rounded-lg bg-areia font-extrabold disabled:opacity-30">
+                →
+              </button>
+            </div>
+          </div>
+        ))}
+        <label className={`flex ${tall ? 'aspect-[1/2]' : 'aspect-[4/3]'} cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-linha bg-white text-center text-sm font-bold text-roxo`}>
+          {busy ? 'Enviando…' : '+ Adicionar imagens'}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={async (e) => {
+              const files = [...(e.target.files ?? [])];
+              if (!files.length) return;
+              setBusy(true);
+              setErr('');
+              const added: ProofImage[] = [];
+              for (const f of files) {
+                try {
+                  added.push({ url: await uploadAsset(f, folder) });
+                } catch (x) {
+                  setErr((x as Error).message);
+                }
+              }
+              setBusy(false);
+              onChange([...list, ...added]);
+            }}
+          />
+        </label>
+      </div>
+      {err && <p className="mt-2 text-sm font-bold text-red-600">{err}</p>}
+    </div>
   );
 }
 

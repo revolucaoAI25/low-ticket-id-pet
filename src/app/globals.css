@@ -155,15 +155,13 @@ body {
   }
 }
 
-/* Carrossel contínuo (anda sozinho, pausa ao tocar/passar o mouse) */
+/* Carrossel contínuo (anda sozinho, sem parar ao tocar) */
 .marquee-track {
   animation-name: marquee;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-}
-.marquee:hover .marquee-track,
-.marquee:active .marquee-track {
-  animation-play-state: paused;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 @media (prefers-reduced-motion: reduce) {
   .marquee { overflow-x: auto; }
