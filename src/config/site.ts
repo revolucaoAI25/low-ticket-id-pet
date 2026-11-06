@@ -131,9 +131,9 @@ export const defaultSettings: SiteSettings = {
   extraTeams: [],
   exitOffer: { enabled: true, price: 14.9, checkout: { cachorro: '', gato: '', outros: '' } },
   bumps: [
-    { id: 'pet-calmo', name: 'Pet Calmo Sozinho', keywords: 'pet calmo, calmo sozinho, ansiedade de separacao', file: '' },
-    { id: 'comida-que-cuida', name: 'Comida que Cuida', keywords: 'comida que cuida, alimentos proibidos', file: '' },
-    { id: 'sos-pet', name: 'SOS Pet: Primeiros Socorros', keywords: 'sos pet, primeiros socorros', file: '' },
+    { id: 'pet-calmo', name: 'Fim do Choro Quando Você Sai', keywords: 'fim do choro, choro quando voce sai', file: '' },
+    { id: 'comida-que-cuida', name: 'Comidas Proibidas para Pets', keywords: 'comidas proibidas, alimentos proibidos', file: '' },
+    { id: 'sos-pet', name: 'Primeiros Socorros Pet', keywords: 'primeiros socorros', file: '' },
   ],
 };
 
