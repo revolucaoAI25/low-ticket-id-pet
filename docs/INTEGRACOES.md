@@ -56,7 +56,8 @@ Depois, reembolse.
 1. **Integrações → Kiwify** na Utmify: ela gera uma URL de webhook. Cole essa URL na Kiwify (**Apps → Webhooks**, um webhook separado do nosso), com os eventos de venda (aprovada, recusada, reembolso, chargeback, Pix gerado). Os dois webhooks convivem.
 2. **Script de UTMs**: já vem no site (ligado em **/admin → Pixel e UTMs**). Além dele, o próprio site guarda as UTMs da primeira visita e repassa para o link da Kiwify, porque o link é montado só no fim do quiz.
 3. **Parâmetros nos anúncios**: no Gerenciador de Anúncios, em *Parâmetros de URL*, use o modelo que a Utmify fornece no painel dela (utm_source, utm_campaign, utm_medium, utm_content e utm_term com nome e ID de campanha, conjunto e anúncio).
-4. **Pixel da Utmify** (opcional): se preferir que a Utmify cuide do pixel, coloque o ID dela em **/admin → Pixel e UTMs** e **deixe o Pixel da Meta vazio** (os dois juntos contam em dobro).
+4. **Order bumps e +1 pet** (pedidos à parte na Kiwify, que o webhook da Utmify não recebe): crie em **Integrações → Credenciais de API** uma credencial e coloque em `UTMIFY_API_TOKEN` na Vercel. O nosso webhook manda cada um para a Utmify (aprovado, reembolso e chargeback) com as UTMs guardadas do quiz. Para testar sem salvar, `UTMIFY_TEST=1`.
+5. **Pixel da Utmify** (opcional): se preferir que a Utmify cuide do pixel, coloque o ID dela em **/admin → Pixel e UTMs** e **deixe o Pixel da Meta vazio** (os dois juntos contam em dobro).
 
 ## 3. Pixel da Meta
 

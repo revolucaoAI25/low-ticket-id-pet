@@ -33,7 +33,9 @@ Ordem recomendada. Troque `SEU-DOMINIO` pelo domínio final (ex.: `clubedofocinh
 | `KIWIFY_WEBHOOK_TOKEN` | o token do webhook da Kiwify (passo 4). Pode cadastrar depois. |
 | `RESEND_API_KEY` | chave da Resend |
 | `EMAIL_FROM` | ex.: `Clube do Focinho <kit@SEU-DOMINIO>` |
-| `META_CAPI_TOKEN` | token da API de Conversões da Meta (Gerenciador de Eventos → pixel → Configurações). Envia a compra dos order bumps. |
+| `UTMIFY_API_TOKEN` | Utmify → Integrações → Credenciais de API → criar credencial. Manda os order bumps e o +1 pet para a Utmify, com as UTMs. |
+| `UTMIFY_TEST` | opcional: `1` faz a Utmify só validar, sem salvar. Apague depois do teste. |
+| `META_CAPI_TOKEN` | opcional: token da API de Conversões da Meta. Só use se a Utmify não repassar à Meta a compra dos bumps (senão conta em dobro). |
 | `META_TEST_EVENT_CODE` | opcional, só durante o teste (aba Testar eventos). Apague depois. |
 
 3. **Deploy**.
@@ -82,6 +84,8 @@ Lembre de clicar em **Salvar** no rodapé.
 1. Na Utmify: **Integrações → Kiwify** → copie a URL de webhook que ela gera.
 2. Na Kiwify: **Apps → Webhooks → Criar webhook** (outro, separado do nosso) → cole a URL da Utmify → eventos de venda.
 3. Nos anúncios da Meta, em **Parâmetros de URL**, cole o modelo de UTMs que a Utmify mostra no painel dela.
+4. **Integrações → Credenciais de API → criar credencial** → copie o token → `UTMIFY_API_TOKEN` na Vercel → Redeploy.
+   Os order bumps e o +1 pet são pedidos à parte na Kiwify; o nosso webhook repassa cada um (e seus reembolsos) para a Utmify por essa API.
 
 ## 7. Teste antes de anunciar
 

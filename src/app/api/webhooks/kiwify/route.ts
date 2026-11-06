@@ -3,6 +3,7 @@ import { doPet } from '@/lib/pet';
 import { bumpFiles, bumpsInPayload, productIsBump } from '@/lib/server/bumps';
 import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail } from '@/lib/server/email';
 import { kiwifyValue, sendCapiPurchase } from '@/lib/server/meta-capi';
+import { sendUtmifyOrder } from '@/lib/server/utmify';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json, normEmail, normPhone, token } from '@/lib/server/util';
@@ -82,6 +83,18 @@ export async function POST(req: Request) {
   const onlyBump = !productIsExtraPet && productIsBump(productName, settings);
   /** Pedido que não é o kit em si (só "+1 pet" ou só um bump): não libera o kit sozinho. */
   const addOn = productIsExtraPet || onlyBump;
+  const cents = Math.round(kiwifyValue(amount) * 100);
+  const utmifyBase = {
+    orderId,
+    paymentMethod: pickStr(o, 'payment_method'),
+    createdAt: pickStr(o, 'created_at') || null,
+    approvedAt: pickStr(o, 'approved_date') || null,
+    refundedAt: pickStr(o, 'refunded_at') || null,
+    customer: { name: fullName, email, phone, document: pickStr(customer, 'CPF', 'cpf', 'cnpj') || null },
+    product: { id: pickStr(product, 'product_id', 'id') || orderId, name: productName || 'Order bump', priceInCents: cents },
+    feeInCents: Math.round(kiwifyValue(Number(pickStr(commissions, 'kiwify_fee')) || 0) * 100) || undefined,
+    netInCents: Math.round(kiwifyValue(Number(pickStr(commissions, 'my_commission')) || 0) * 100) || undefined,
+  };
 
   const { data: existing } = await sb.from('orders').select('id, status, customer_id').eq('provider', 'kiwify').eq('provider_order_id', orderId).maybeSingle();
   const alreadyPaid = existing?.status === 'paid';
@@ -109,6 +122,10 @@ export async function POST(req: Request) {
     else if (custId && productIsExtraPet) {
       const { data: c } = await sb.from('customers').select('extra_pet_slots').eq('id', custId).maybeSingle();
       if (c) await sb.from('customers').update({ extra_pet_slots: Math.max(0, (c.extra_pet_slots ?? 0) - 1) }).eq('id', custId);
+    }
+    if (addOn) {
+      const { data: c } = custId ? await sb.from('customers').select('utms').eq('id', custId).maybeSingle() : { data: null };
+      await sendUtmifyOrder({ ...utmifyBase, status: status.includes('charge') || event.includes('charge') ? 'chargedback' : 'refunded', utms: (c?.utms as Obj) ?? null });
     }
     return json({ ok: true, refunded: true });
   }
@@ -181,7 +198,9 @@ export async function POST(req: Request) {
   // então a compra vai para a Meta daqui, pela API de Conversões, atribuída ao clique do anúncio.
   // A compra principal continua sendo enviada pela Utmify (não duplica).
   let capi = false;
+  let utmify = false;
   if (addOn) {
+    utmify = await sendUtmifyOrder({ ...utmifyBase, status: 'paid', utms: cust.utms, customer: { ...utmifyBase.customer, ip: ((cust.utms?._meta as Obj | undefined)?.ip as string) ?? null } });
     capi = await sendCapiPurchase({
       pixelId: settings.tracking.metaPixelId,
       orderId,
@@ -193,5 +212,5 @@ export async function POST(req: Request) {
       meta: (cust.utms?._meta as never) ?? null,
     });
   }
-  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi });
+  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify });
 }
