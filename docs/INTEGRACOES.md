@@ -32,9 +32,9 @@ Em cada produto: **Configurações → Página de obrigado personalizada** → `
 ### Webhook (libera o kit)
 1. **Apps → Webhooks → Criar webhook**.
 2. URL: `https://SEU-DOMINIO/api/webhooks/kiwify`
-3. Produtos: o Kit e o Pet adicional.
+3. Produtos: o Kit, os order bumps e o Pet adicional.
 4. Eventos: **Compra aprovada**, **Reembolso** e **Chargeback**.
-5. Copie o **token** que a Kiwify mostra e coloque na Vercel como `KIWIFY_WEBHOOK_TOKEN` (depois faça *Redeploy*).
+5. Copie o **token** que a Kiwify mostra e coloque na Vercel como `KIWIFY_WEBHOOK_TOKEN` (depois faça *Redeploy*). Com vários webhooks (um por produto), junte os tokens com vírgula: `token1,token2,token3`.
 
 Como a compra é ligada ao quiz: pelo **e-mail** da compra (e, se não achar, pelo **telefone**). Por isso o checkout já abre com o e-mail e o telefone do quiz preenchidos. Quem comprar com outro e-mail recebe o acesso mesmo assim e cadastra o pet na área.
 

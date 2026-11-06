@@ -30,7 +30,7 @@ Ordem recomendada. Troque `SEU-DOMINIO` pelo domínio final (ex.: `clubedofocinh
 | `SUPABASE_URL` | Project URL do Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role / secret key do Supabase |
 | `ADMIN_PASSWORD` | uma senha forte, criada por você, para entrar em `/admin` |
-| `KIWIFY_WEBHOOK_TOKEN` | o token do webhook da Kiwify (passo 4). Pode cadastrar depois. |
+| `KIWIFY_WEBHOOK_TOKEN` | o token do webhook da Kiwify (passo 4). Mais de um webhook: todos separados por vírgula. |
 | `RESEND_API_KEY` | chave da Resend |
 | `EMAIL_FROM` | ex.: `Clube do Focinho <kit@SEU-DOMINIO>` |
 | `UTMIFY_API_TOKEN` | Utmify → Integrações → Credenciais de API → criar credencial. Manda os order bumps e o +1 pet para a Utmify, com as UTMs. |
@@ -57,9 +57,9 @@ Webhook (uma vez só):
 
 1. **Apps → Webhooks → Criar webhook**
 2. URL: `https://SEU-DOMINIO/api/webhooks/kiwify`
-3. Produtos: todos os do kit (e os de bump, se forem produtos separados).
+3. Produtos: o kit, os 3 bumps e o +1 pet (dá para marcar todos num webhook só; se fizer um por produto, a URL é a mesma).
 4. Eventos: **Compra aprovada**, **Reembolso**, **Chargeback**.
-5. Copie o token → coloque em `KIWIFY_WEBHOOK_TOKEN` na Vercel → Redeploy.
+5. Copie o token → coloque em `KIWIFY_WEBHOOK_TOKEN` na Vercel → Redeploy. Com vários webhooks, junte os tokens com vírgula: `token1,token2,token3`.
 
 ## 5. Painel `/admin` (entre com a `ADMIN_PASSWORD`)
 

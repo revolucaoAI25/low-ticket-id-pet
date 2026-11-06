@@ -22,15 +22,18 @@ const pickStr = (o: Obj, ...keys: string[]): string => {
 };
 
 function validSignature(raw: string, sig: string | null): boolean {
-  const secret = process.env.KIWIFY_WEBHOOK_TOKEN;
-  if (!secret) return true; // sem token configurado, aceita (configure em produção)
+  // Um token por webhook da Kiwify: vários separados por vírgula, espaço ou quebra de linha.
+  const secrets = (process.env.KIWIFY_WEBHOOK_TOKEN ?? '').split(/[\s,;]+/).filter(Boolean);
+  if (!secrets.length) return true; // sem token configurado, aceita (configure em produção)
   if (!sig) return false;
-  const expected = createHmac('sha1', secret).update(raw).digest('hex');
-  try {
-    return timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
-  } catch {
-    return false;
-  }
+  return secrets.some((secret) => {
+    const expected = createHmac('sha1', secret).update(raw).digest('hex');
+    try {
+      return timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**
