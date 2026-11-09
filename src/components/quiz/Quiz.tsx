@@ -372,7 +372,7 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
       </h1>
       <p className="mt-2 font-display text-[21px] font-semibold leading-tight text-cacau">O RG do seu pet, com foto e nome</p>
       <p className="mt-2 text-[15px] font-semibold leading-snug text-cacau/70">
-        E mais: CNH Pet, certidão, passaporte, carteira de vacinação e tag com QR Code. Tudo personalizado e pronto pra imprimir.
+        E mais: CNH Pet, certidão, passaporte, carteira de vacinação, carteirinha de torcedor e tag com QR Code. Tudo personalizado e pronto pra imprimir.
       </p>
       <div className="mt-4 w-full">
         {settings.images.heroMockup ? (
@@ -380,7 +380,7 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
           <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" fetchPriority="high" />
         ) : (
           // Mockup estático (leve e instantâneo). Para trocar, suba uma imagem em /admin → Imagens.
-          <Image src="/brand/kit-mockup.webp" alt="RG, CNH, certidão, carteira de vacinação e tag do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" />
+          <Image src="/brand/kit-mockup-v2.webp" alt="RG, CNH, certidão, carteira de vacinação e tag com QR Code do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" />
         )}
       </div>
       <div className="mt-5 w-full">
