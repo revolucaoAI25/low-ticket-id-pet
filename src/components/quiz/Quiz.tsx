@@ -43,12 +43,15 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
   const step = s.step;
   const pet = s.pet;
   const [dir, setDir] = useState<'fwd' | 'back'>('fwd');
+  const firstStep = useRef<number | null>(null);
+  const moved = useRef(false);
   const teams = useMemo(() => allTeams(settings.extraTeams), [settings.extraTeams]);
   const leadPromise = useRef<Promise<unknown> | null>(null);
 
   // ---------- navegação (com botão voltar do celular) ----------
   const go = useCallback((n: number, opts: { replace?: boolean } = {}) => {
     const cur = quizStore.get().step;
+    moved.current = true;
     setDir(n >= cur ? 'fwd' : 'back');
     quizStore.set((st) => ({ step: n, maxStep: Math.max(st.maxStep, n) }));
     try {
@@ -73,6 +76,7 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
     }
     const onPop = (e: PopStateEvent) => {
       const n = typeof e.state?.quizStep === 'number' ? e.state.quizStep : 0;
+      moved.current = true;
       setDir('back');
       quizStore.set({ step: n });
     };
@@ -130,12 +134,24 @@ export function Quiz({ settings }: { settings: SiteSettings }) {
     router.push('/resultado');
   }, [router, settings.timerMinutes]);
 
-  if (!hydrated) return <div className="min-h-dvh" />;
+  // Antes de ler o progresso salvo, a abertura já vem pronta do servidor: aparece na hora,
+  // sem esperar o JavaScript (quem chega pelo anúncio não vê tela em branco).
+  if (!hydrated) {
+    return (
+      <div className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col">
+        <main className="flex flex-1 flex-col px-4 pb-8">
+          <Opening settings={settings} onStart={() => undefined} />
+        </main>
+      </div>
+    );
+  }
 
   const species = getSpecies(pet.species);
   const isQuestion = step >= 1 && step <= LAST_QUESTION;
   const progress = Math.min(1, step / LAST_QUESTION);
-  const anim = dir === 'fwd' ? 'anim-screen' : 'anim-screen-back';
+  // A tela que já estava aberta ao carregar não anima de novo (evita a abertura "piscar").
+  if (firstStep.current === null) firstStep.current = step;
+  const anim = step === firstStep.current && !moved.current ? '' : dir === 'fwd' ? 'anim-screen' : 'anim-screen-back';
   const name = hasName(pet) ? petName(pet) : '';
   const id = STEPS[step];
 
@@ -355,8 +371,9 @@ function Label({ children, className = '' }: { children: React.ReactNode; classN
 
 function Continue({ onClick, label = 'Continuar' }: { onClick: () => void; label?: string }) {
   return (
-    <div className="mt-auto pt-8">
-      <button type="button" onClick={onClick} className="btn-primary w-full">
+    // Fixo no rodapé: em celular pequeno o botão fica sempre à vista, sem precisar rolar.
+    <div className="pointer-events-none sticky bottom-0 z-10 -mx-4 mt-auto bg-gradient-to-t from-creme from-70% to-creme/0 px-4 pb-4 pt-8">
+      <button type="button" onClick={onClick} className="btn-primary pointer-events-auto w-full">
         {label} <ArrowRight size={20} strokeWidth={2.6} />
       </button>
     </div>
@@ -377,10 +394,10 @@ function Opening({ settings, onStart }: { settings: SiteSettings; onStart: () =>
       <div className="mt-4 w-full">
         {settings.images.heroMockup ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" fetchPriority="high" />
+          <img src={settings.images.heroMockup} alt="Kit Identidade Pet" className="mx-auto h-[29svh] w-auto max-w-full object-contain" fetchPriority="high" />
         ) : (
           // Mockup estático (leve e instantâneo). Para trocar, suba uma imagem em /admin → Imagens.
-          <Image src="/brand/kit-mockup-v6.webp" alt="RG, CNH, certidão, carteira de vacinação, carteirinha de torcedor e tag com QR Code do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-auto max-h-[29svh] w-auto max-w-full object-contain" />
+          <Image src="/brand/kit-mockup-v6.webp" alt="RG, CNH, certidão, carteira de vacinação, carteirinha de torcedor e tag com QR Code do Kit Identidade Pet" width={900} height={684} priority quality={65} sizes="(max-width: 480px) 92vw, 420px" className="mx-auto h-[29svh] w-auto max-w-full object-contain" />
         )}
       </div>
       <div className="mt-5 w-full">
