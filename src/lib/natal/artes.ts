@@ -139,7 +139,7 @@ function natal1(ctx: Ctx, p: NatalPet, t: Tiles, e: Els) {
   ctx.shadowColor = 'transparent';
   photo(ctx, pick(p, 0), 'rounded', -278, -293, 556, 556, { r: 0.02 });
   title(ctx, p.name, 0, 350, { font: SCRIPT, size: 90, color: COR.verde, maxWidth: 540 });
-  put(ctx, e['gorro.png'], -250, -282, 250, -28);
+  put(ctx, e['gorro.png'], -282, -318, 205, -30);
   ctx.restore();
 
   put(ctx, e['azevinho.png'], 185, 1165, 210, -18);
@@ -192,7 +192,7 @@ function natal2(ctx: Ctx, p: NatalPet, t: Tiles, e: Els) {
   put(ctx, e['azevinho.png'], cx - 250, cy + 270, 190, -40);
   put(ctx, e['azevinho.png'], cx + 250, cy + 270, 190, 220);
   put(ctx, e['bell'], cx, cy + r - 30, 96, 0);
-  put(ctx, e['gorro.png'], cx - 215, cy - 255, 250, -30);
+  put(ctx, e['gorro.png'], cx - 262, cy - 292, 205, -34);
   put(ctx, e['floco-dourado.png'], 130, 360, 90, 10);
   put(ctx, e['floco-dourado.png'], 960, 420, 70, -12);
   put(ctx, e['floco-dourado.png'], 940, 980, 90, 18);
@@ -306,7 +306,7 @@ function cartaoNatal(ctx: Ctx, p: NatalPet, t: Tiles, e: Els) {
   ctx.shadowColor = 'transparent';
   photo(ctx, pick(p, 0), 'rounded', -272, -352, 544, 600, { r: 0.02 });
   title(ctx, p.name, 0, 330, { font: SCRIPT, size: 84, color: COR.verde, maxWidth: 520 });
-  put(ctx, e['gorro.png'], -210, -380, 300, -24);
+  put(ctx, e['gorro.png'], -282, -398, 230, -30);
   ctx.restore();
 
   const cx = 1280;
@@ -360,7 +360,7 @@ function papelDeParede(ctx: Ctx, p: NatalPet, t: Tiles, e: Els) {
   const w = 700;
   const h = 860;
   photo(ctx, pick(p, 0), 'arch', x, y, w, h, { border: 16, borderColor: '#fff', shadow: 46 });
-  put(ctx, e['gorro.png'], x + 150, y + 40, 360, -22);
+  put(ctx, e['gorro.png'], x + 60, y - 10, 280, -26);
   put(ctx, e['azevinho.png'], x + w - 30, y + h - 30, 220, 200);
   put(ctx, e['candy'], x - 10, y + h - 20, 130, -20);
   title(ctx, 'Feliz Natal', W / 2, 1690, { font: SCRIPT, size: 170, color: '#fff', maxWidth: 900, shadow: { color: 'rgba(0,0,0,.5)', blur: 16, y: 4 } });
@@ -378,7 +378,7 @@ function etiqueta(ctx: Ctx, p: NatalPet, t: Tiles, e: Els) {
   ctx.fillStyle = goldGradient(ctx, 396, 0, 10, H);
   ctx.fillRect(396, 0, 10, H);
   photo(ctx, pick(p, 0), 'circle', 70, 155, 260, 260, { border: 10, borderColor: '#fff', shadow: 18 });
-  put(ctx, e['gorro.png'], 140, 165, 150, -26);
+  put(ctx, e['gorro.png'], 100, 160, 120, -30);
   // furo da fita
   ctx.beginPath();
   ctx.arc(200, 70, 26, 0, Math.PI * 2);

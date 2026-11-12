@@ -125,7 +125,7 @@ export function put(ctx: Ctx, img: Img | HTMLCanvasElement | null, cx: number, c
 /**
  * Foto preenchendo a área (corte central, um pouco para cima: o rosto do pet costuma ficar no alto da foto).
  */
-export function cover(ctx: Ctx, img: Img, x: number, y: number, w: number, h: number, focusY = 0.38) {
+export function cover(ctx: Ctx, img: Img, x: number, y: number, w: number, h: number, focusY = 0.32) {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   const s = Math.max(w / iw, h / ih);
