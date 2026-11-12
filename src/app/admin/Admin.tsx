@@ -238,7 +238,7 @@ export function Admin() {
         {tab === 'bumps' && (
           <Card
             title="Order bumps de conteúdo"
-            hint="Quando o webhook da Kiwify trouxer um destes (no pedido do kit ou num pedido separado), o PDF vai por e-mail na hora. Os personalizados (Kit Natal e Figurinhas) são gerados com a foto do pet na área do cliente. As palavras-chave precisam aparecer no nome do bump na Kiwify (sem acento, separadas por vírgula). O '+1 pet' é configurado na aba Checkouts."
+            hint="Quando o webhook da Kiwify trouxer um destes (no pedido do kit ou num pedido separado), o PDF vai por e-mail na hora. Os personalizados (Kit Natal e Figurinhas) são gerados com a foto do pet na área do cliente. Para testar no celular sem compra, abra /teste-bumps (logado aqui). As palavras-chave precisam aparecer no nome do bump na Kiwify (sem acento, separadas por vírgula). O '+1 pet' é configurado na aba Checkouts."
           >
             {s.bumps.map((b, i) => (
               <div key={i} className="space-y-2 rounded-2xl bg-areia/50 p-3">

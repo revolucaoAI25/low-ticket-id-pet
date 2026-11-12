@@ -418,7 +418,8 @@ function Done({
 async function shareFile(url: string, name: string) {
   try {
     const blob = await (await fetch(url)).blob();
-    const file = new File([blob], name, { type: blob.type });
+    const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+    const file = new File([blob], `${name.replace(/\.[a-z0-9]+$/i, '')}.${ext}`, { type: blob.type });
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file] });
       return;
