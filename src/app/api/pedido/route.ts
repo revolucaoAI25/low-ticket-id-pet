@@ -120,12 +120,27 @@ export async function POST(req: Request) {
   }
 
   // 4) Order bumps personalizados de um pet que já recebeu o kit (bump aprovado depois, ou gerar de novo).
-  if (body.action === 'extra-upload-urls' || body.action === 'extra-finish') {
+  if (body.action === 'extra-upload-urls' || body.action === 'extra-finish' || body.action === 'extra-photos') {
     const owned = new Set(personalBumps(cust.bumps, await getSettings()).map((b) => (b.kind === 'natal' ? 'natal' : 'figurinha')));
     const allowed = (n: string) => [...owned].some((k) => n.startsWith(k));
     const { data: row } = await sb.from('pets').select('*').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
     if (!row) return json({ error: 'pet_not_found' }, 404);
     const pet = row as PetRow;
+    if (!owned.size) return json({ error: 'not_owned' }, 403);
+    // Fotos novas para os bumps personalizados (o kit já gerado não muda): até 6 no total.
+    if (body.action === 'extra-photos') {
+      const current = pet.data.extras?.photos ?? [];
+      const incoming: unknown[] = Array.isArray(body.photos) ? body.photos.slice(0, 5) : [];
+      const added: string[] = [];
+      for (const [i, ph] of incoming.entries()) {
+        if (current.length + added.length + (pet.photo_url ? 1 : 0) >= 6) break;
+        const url = await savePhoto(pet.id, ph, `bump${i}`);
+        if (url) added.push(url);
+      }
+      const data: PetData = { ...pet.data, extras: { ...(pet.data.extras ?? {}), photos: [...current, ...added] } };
+      const { data: saved } = await sb.from('pets').update({ data, updated_at: new Date().toISOString() }).eq('id', pet.id).select('*').single();
+      return json({ pet: petOut(saved as PetRow) });
+    }
     if (body.action === 'extra-upload-urls') {
       const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 40) : [];
       const out: Record<string, { signedUrl: string; path: string }> = {};

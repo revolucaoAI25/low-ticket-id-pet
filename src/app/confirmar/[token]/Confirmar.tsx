@@ -161,9 +161,14 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
   }
 
   /** Bump personalizado aprovado depois do kit (ou o pet já tinha o kit): gera só ele. */
-  async function generateExtras(pet: PetView, kinds: ExtraKind[]) {
+  async function generateExtras(original: PetView, kinds: ExtraKind[], newPhotos: string[] = []) {
     setFailed('');
+    let pet = original;
     try {
+      if (newPhotos.length) {
+        setPhase({ step: 'Salvando as fotos novas…', pct: 3 });
+        pet = ((await call({ action: 'extra-photos', petId: pet.id, photos: newPhotos })) as { pet: PetView }).pet;
+      }
       const what = kinds.length > 1 ? 'o Kit Natal e as figurinhas' : kinds[0] === 'natal' ? 'o Kit Natal' : 'as figurinhas';
       setPhase({ step: `Criando ${what} ${doPet(pet.data)}…`, pct: 5 });
       const { buildExtras } = await import('@/lib/natal/pacote');
@@ -345,7 +350,7 @@ function Done({
   email?: string | null;
   bonusLinks: { label: string; url: string }[];
   extras: { id: string; name: string; kind: ExtraKind }[];
-  onGenerate: (pet: PetView, kinds: ExtraKind[]) => void;
+  onGenerate: (pet: PetView, kinds: ExtraKind[], photos?: string[]) => void;
 }) {
   const icon: Record<string, LucideIcon> = { 'kit-pdf': FileText, 'bonus-pdf': FileText, zip: ImagePlus, ficha: QrCode };
   const label: Record<string, string> = {
@@ -424,8 +429,19 @@ async function shareFile(url: string, name: string) {
   window.open(url, '_blank');
 }
 
-export function Personal({ pet, extras, onGenerate }: { pet: PetView; extras: { id: string; name: string; kind: ExtraKind }[]; onGenerate: (pet: PetView, kinds: ExtraKind[]) => void }) {
+export function Personal({
+  pet,
+  extras,
+  onGenerate,
+}: {
+  pet: PetView;
+  extras: { id: string; name: string; kind: ExtraKind }[];
+  onGenerate: (pet: PetView, kinds: ExtraKind[], photos?: string[]) => void;
+}) {
   const [ios, setIos] = useState(false);
+  const [novas, setNovas] = useState<string[]>([]);
+  const atuais = [pet.data.photo, ...(pet.data.extras?.photos ?? [])].filter((u): u is string => !!u);
+  const cabe = Math.max(0, 6 - atuais.length);
   useEffect(() => setIos(/iPhone|iPad|iPod/.test(navigator.userAgent)), []);
   const arts = pet.files.filter((f) => f.kind === 'natal-arte');
   const natalPdf = pet.files.find((f) => f.kind === 'natal-pdf');
@@ -440,8 +456,41 @@ export function Personal({ pet, extras, onGenerate }: { pet: PetView; extras: { 
       {kinds.length > 0 && (
         <div className="mt-4 rounded-2xl border-2 border-dashed border-coral bg-[#FFF6F0] p-4 text-center">
           <p className="font-display text-lg font-semibold">{missing.map((x) => x.name).join(' e ')}</p>
-          <p className="mt-1 text-sm font-semibold text-cacau/70">Feito com a foto {doPet(pet.data)}. Fica pronto em segundos e também vai pro seu e-mail.</p>
-          <button type="button" onClick={() => onGenerate(pet, kinds)} className="btn-cta shine mt-3">
+          <p className="mt-1 text-sm font-semibold text-cacau/70">Feito com as fotos {doPet(pet.data)}. Fica pronto em segundos e também vai pro seu e-mail.</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {[...atuais, ...novas].map((u, i) => (
+              <div key={u.slice(-40) + i} className="relative h-16 w-16 overflow-hidden rounded-xl bg-areia">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u} alt="" className="h-full w-full object-cover" />
+                {i >= atuais.length && (
+                  <button type="button" aria-label="Remover foto" onClick={() => setNovas((n) => n.filter((_, j) => j !== i - atuais.length))} className="absolute right-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-cacau/80 text-white">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {novas.length < cabe && (
+              <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-coral bg-white text-roxo">
+                <ImagePlus size={20} />
+                <span className="text-[10px] font-bold text-cacau/60">Foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      const d = await compressImage(f);
+                      setNovas((n) => [...n, d]);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="mt-2 text-[12px] font-semibold text-cacau/55">Quer mais variedade? Adicione mais fotos (até 6 no total). Cada figurinha e cada arte usa uma delas.</p>
+          <button type="button" onClick={() => onGenerate(pet, kinds, novas.filter(Boolean))} className="btn-cta shine mt-3">
             Gerar agora
           </button>
         </div>
@@ -449,13 +498,13 @@ export function Personal({ pet, extras, onGenerate }: { pet: PetView; extras: { 
       {arts.length > 0 && (
         <div className="mt-5">
           <p className="font-display text-lg font-semibold">🎄 Kit Natal e Ano Novo</p>
-          <p className="text-[13px] font-semibold text-cacau/60">Toque numa arte para abrir. No celular, toque e segure para salvar ou compartilhar.</p>
+          <p className="text-[13px] font-semibold text-cacau/60">Toque numa arte para salvar na galeria ou mandar no WhatsApp e no Instagram.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {arts.map((f) => (
-              <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl bg-areia/60">
+            {arts.map((f, i) => (
+              <button key={f.url} type="button" onClick={() => shareFile(f.url, `${f.name.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-jpg$/, '') || `arte-${i + 1}`}.jpg`)} className="block overflow-hidden rounded-xl bg-areia/60 active:scale-[.98]" aria-label={`Salvar ou compartilhar: ${f.name}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={f.name} loading="lazy" className="aspect-[4/5] w-full object-contain" />
-              </a>
+              </button>
             ))}
           </div>
           <div className="mt-3 space-y-2">
