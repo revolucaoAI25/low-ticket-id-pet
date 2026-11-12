@@ -3,6 +3,7 @@ import { doPet, type PetData } from '@/lib/pet';
 import { sendBumpEmail, sendConfirmEmail, sendKitEmail, type KitFile } from './email';
 import { absUrl, bumpFiles } from './bumps';
 import { getSettings } from './settings';
+import { siteUrl } from '@/lib/site-url';
 
 interface CustomerWithPets {
   email: string | null;
@@ -31,7 +32,7 @@ export async function resendCustomer(c: CustomerWithPets): Promise<boolean> {
   const pets = c.pets ?? [];
   const done = pets.filter((p) => p.submitted_at && p.files?.length);
   let ok = false;
-  for (const p of done) ok = (await sendKitEmail(c.email, doPet(p.data), p.files!, await fixedBonusLinks(p.data))) || ok;
+  for (const p of done) ok = (await sendKitEmail(c.email, doPet(p.data), p.files!, await fixedBonusLinks(p.data), `${siteUrl()}/confirmar/${c.access_token}`)) || ok;
   if (!pets.length || pets.some((p) => !p.submitted_at))
     ok = (await sendConfirmEmail(c.email, c.access_token, pets[0] ? doPet(pets[0].data) : undefined)) || ok;
   // Bumps de conteúdo: reenvia cada um no seu e-mail.

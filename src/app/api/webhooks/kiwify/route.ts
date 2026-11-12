@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
-import { bumpFiles, bumpsInPayload, productIsBump } from '@/lib/server/bumps';
-import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail } from '@/lib/server/email';
+import { bumpFiles, bumpsInPayload, personalBumps, productIsBump } from '@/lib/server/bumps';
+import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail, sendPersonalBumpEmail } from '@/lib/server/email';
 import { kiwifyValue, sendCapiPurchase } from '@/lib/server/meta-capi';
 import { sendUtmifyOrder } from '@/lib/server/utmify';
 import { getSettingsFresh } from '@/lib/server/settings';
@@ -174,8 +174,8 @@ export async function POST(req: Request) {
   }
 
   // ---------- encontra o lead ----------
-  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; utms: Obj | null; pets: { data: Obj }[] };
-  const CUST_COLS = 'id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data)';
+  type Cust = { id: string; access_token: string; paid_at: string | null; extra_pet_slots: number; bumps: string[] | null; created_at: string; utms: Obj | null; pets: { data: Obj; submitted_at?: string | null }[] };
+  const CUST_COLS = 'id, access_token, paid_at, extra_pet_slots, bumps, created_at, utms, pets(data, submitted_at)';
   let candidates: Cust[] = [];
   let matchedBy = '';
   // 1º: o código do quiz que vai no link do checkout (s3 = id do pet). É o jeito mais seguro:
@@ -258,6 +258,9 @@ export async function POST(req: Request) {
     else if (extraPets && kitIsPaid) await sendExtraPetEmail(email, cust.access_token);
     // 3) Cada order bump de conteúdo: um e-mail próprio com o PDF, na hora em que for aprovado.
     for (const f of bumpFiles(newBumps, settings)) await sendBumpEmail(email, f);
+    // 4) Bump personalizado (Kit Natal, Figurinhas) aprovado quando o kit já foi gerado: chama para gerar na área.
+    //    Se o kit ainda não foi gerado, ele sai junto com o kit, sem precisar de nada.
+    if (cust.pets?.some((p) => p.submitted_at)) for (const b of personalBumps(newBumps, settings)) await sendPersonalBumpEmail(email, cust.access_token, b.name, doNome);
   }
   // Pedidos à parte (order bump ou +1 pet): a Utmify só recebe o webhook da oferta principal,
   // então a compra vai para a Meta daqui, pela API de Conversões, atribuída ao clique do anúncio.

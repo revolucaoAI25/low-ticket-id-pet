@@ -1,0 +1,8 @@
+Elementos usados nos order bumps personalizados (Kit Natal e Ano Novo, Figurinhas)
+
+- Emojis: Fluent Emoji (Microsoft), licença MIT. Pacote npm @iconify-json/fluent-emoji-flat 1.2.6.
+- Padrões e recortes (gorro, azevinho, floco dourado, bola dourada, guirlanda, xadrez, tartan, flocos, confete, árvores, neve, bolas):
+  Openclipart.org, domínio público (CC0 1.0). IDs: 288782, 221091, 11216, 189587, 308971, 292369, 239688, 241098,
+  268279, 260102, 334468, 323937, 325746.
+- Fontes: Great Vibes, Baloo 2 e Anton (Google Fonts via @fontsource), licença SIL Open Font License 1.1.
+Os padrões modernos (papel de presente) são montados no código com esses elementos.

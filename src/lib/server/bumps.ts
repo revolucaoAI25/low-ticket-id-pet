@@ -22,7 +22,15 @@ export function productIsBump(productName: string, settings: SiteSettings): bool
   return settings.bumps.some((b) => kw(b).some((k) => n.includes(k)));
 }
 
+/** Bumps personalizados (Kit Natal, Figurinhas) que o cliente comprou. */
+export function personalBumps(ids: string[] | null | undefined, settings: SiteSettings): { id: string; name: string; kind: 'natal' | 'figurinhas' }[] {
+  const set = new Set(ids ?? []);
+  return settings.bumps
+    .filter((b) => set.has(b.id) && (b.kind === 'natal' || b.kind === 'figurinhas'))
+    .map((b) => ({ id: b.id, name: b.name, kind: b.kind as 'natal' | 'figurinhas' }));
+}
+
 export function bumpFiles(ids: string[] | null | undefined, settings: SiteSettings): { label: string; url: string }[] {
   const set = new Set(ids ?? []);
-  return settings.bumps.filter((b) => set.has(b.id) && b.file).map((b) => ({ label: b.name, url: absUrl(b.file) }));
+  return settings.bumps.filter((b) => set.has(b.id) && b.file && (b.kind ?? 'pdf') === 'pdf').map((b) => ({ label: b.name, url: absUrl(b.file) }));
 }

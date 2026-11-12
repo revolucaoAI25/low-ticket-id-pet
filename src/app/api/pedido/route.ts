@@ -1,11 +1,12 @@
 import { doPet, type PetData } from '@/lib/pet';
-import { sendKitEmail, type KitFile } from '@/lib/server/email';
-import { bumpFiles } from '@/lib/server/bumps';
+import { sendExtrasEmail, sendKitEmail, type KitFile } from '@/lib/server/email';
+import { bumpFiles, personalBumps } from '@/lib/server/bumps';
 import { fixedBonusLinks } from '@/lib/server/notify';
 import { getSettings } from '@/lib/server/settings';
 import { createPet, petOut, sanitizePet, saveExtraPhotos, savePhoto, type PetRow } from '@/lib/server/pets';
 import { BUCKET_KITS, db, fichaPath } from '@/lib/server/supabase';
 import { json, normPhone } from '@/lib/server/util';
+import { siteUrl } from '@/lib/site-url';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -15,7 +16,7 @@ async function loadCustomer(tokenValue: unknown) {
   if (!sb || typeof tokenValue !== 'string' || tokenValue.length < 16) return null;
   const { data } = await sb
     .from('customers')
-    .select('id, email, phone, name, paid_at, refunded_at, extra_pet_slots, bumps')
+    .select('id, email, phone, name, paid_at, refunded_at, extra_pet_slots, bumps, access_token')
     .eq('access_token', tokenValue)
     .maybeSingle();
   return data;
@@ -32,8 +33,11 @@ export async function GET(req: Request) {
   const { data: pets } = await sb.from('pets').select('*').eq('customer_id', cust.id).order('created_at');
   const list = ((pets as PetRow[]) ?? []).map(petOut);
   // PDFs prontos que entram no fim do PDF do kit: bônus fixos + order bumps comprados.
-  const bonus = [...(await fixedBonusLinks(list[0]?.data ?? {})), ...bumpFiles(cust.bumps, await getSettings())];
+  const settings = await getSettings();
+  const bonus = [...(await fixedBonusLinks(list[0]?.data ?? {})), ...bumpFiles(cust.bumps, settings)];
   return json({
+    // Order bumps personalizados comprados (gerados no navegador com a foto do pet).
+    extras: personalBumps(cust.bumps, settings),
     paid: true,
     customer: { email: cust.email, phone: cust.phone, name: cust.name },
     petsAllowed: 1 + (cust.extra_pet_slots ?? 0),
@@ -86,7 +90,7 @@ export async function POST(req: Request) {
     const { data: pet } = await sb.from('pets').select('id, slug, submitted_at').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
     if (!pet) return json({ error: 'pet_not_found' }, 404);
     if (pet.submitted_at) return json({ error: 'locked' }, 409);
-    const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 8) : [];
+    const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 40) : [];
     const out: Record<string, { signedUrl: string; path: string }> = {};
     for (const n of names) {
       const safe = String(n).replace(/[^a-zA-Z0-9._-]/g, '');
@@ -111,7 +115,38 @@ export async function POST(req: Request) {
     await sb.from('pets').update({ files, submitted_at: new Date().toISOString() }).eq('id', pet.id);
     // Guias fixos (anexados) e order bumps (link; o PDF de cada um já foi num e-mail próprio).
     const extras = [...(await fixedBonusLinks(pet.data)), ...bumpFiles(cust.bumps, await getSettings())];
-    const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, extras) : false;
+    const emailed = cust.email ? await sendKitEmail(cust.email, doPet(pet.data), files, extras, `${siteUrl()}/confirmar/${cust.access_token}`) : false;
+    return json({ ok: true, files, emailed });
+  }
+
+  // 4) Order bumps personalizados de um pet que já recebeu o kit (bump aprovado depois, ou gerar de novo).
+  if (body.action === 'extra-upload-urls' || body.action === 'extra-finish') {
+    const owned = new Set(personalBumps(cust.bumps, await getSettings()).map((b) => (b.kind === 'natal' ? 'natal' : 'figurinha')));
+    const allowed = (n: string) => [...owned].some((k) => n.startsWith(k));
+    const { data: row } = await sb.from('pets').select('*').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
+    if (!row) return json({ error: 'pet_not_found' }, 404);
+    const pet = row as PetRow;
+    if (body.action === 'extra-upload-urls') {
+      const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 40) : [];
+      const out: Record<string, { signedUrl: string; path: string }> = {};
+      for (const n of names) {
+        const safe = String(n).replace(/[^a-zA-Z0-9._-]/g, '');
+        if (!safe || !allowed(safe)) return json({ error: 'not_owned' }, 403);
+        const path = `${pet.id}/${safe}`;
+        const { data, error } = await sb.storage.from(BUCKET_KITS).createSignedUploadUrl(path, { upsert: true });
+        if (error || !data) return json({ error: error?.message ?? 'storage' }, 500);
+        out[safe] = { signedUrl: data.signedUrl, path };
+      }
+      return json({ urls: out });
+    }
+    const incoming: { name: string; path: string; kind: KitFile['kind'] }[] = Array.isArray(body.files) ? body.files : [];
+    const fresh: KitFile[] = incoming
+      .filter((f) => typeof f.path === 'string' && f.path.startsWith(`${pet.id}/`) && allowed(f.path.slice(pet.id.length + 1)))
+      .map((f) => ({ name: String(f.name).slice(0, 80), kind: f.kind, url: sb.storage.from(BUCKET_KITS).getPublicUrl(f.path).data.publicUrl }));
+    const kinds = new Set(fresh.map((f) => f.kind));
+    const files = [...(pet.files ?? []).filter((f) => !kinds.has(f.kind as KitFile['kind'])), ...fresh];
+    await sb.from('pets').update({ files }).eq('id', pet.id);
+    const emailed = cust.email ? await sendExtrasEmail(cust.email, doPet(pet.data), fresh, `${siteUrl()}/confirmar/${cust.access_token}`) : false;
     return json({ ok: true, files, emailed });
   }
 

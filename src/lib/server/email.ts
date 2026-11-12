@@ -85,11 +85,59 @@ export async function sendExtraPetEmail(to: string, token: string): Promise<bool
 export interface KitFile {
   name: string;
   url: string;
-  kind: 'kit-pdf' | 'bonus-pdf' | 'zip' | 'ficha' | 'extra';
+  kind: 'kit-pdf' | 'bonus-pdf' | 'zip' | 'ficha' | 'extra' | 'natal-arte' | 'natal-pdf' | 'natal-zip' | 'figurinha' | 'figurinhas-zip';
+}
+
+/** Bloco dos order bumps personalizados (Kit Natal e Figurinhas) no e-mail. */
+function personalBlock(files: KitFile[], access?: string): string {
+  const natalPdf = files.find((f) => f.kind === 'natal-pdf');
+  const natalZip = files.find((f) => f.kind === 'natal-zip');
+  const hasNatal = files.some((f) => f.kind === 'natal-arte') || natalZip;
+  const figZip = files.find((f) => f.kind === 'figurinhas-zip');
+  const hasFig = files.some((f) => f.kind === 'figurinha') || figZip;
+  if (!hasNatal && !hasFig) return '';
+  const a = (href: string, label: string) => `<p style="margin:0 0 10px"><a href="${href}" style="color:#B3121F;font-weight:bold;font-size:15px">${label}</a></p>`;
+  return `<tr><td style="padding-top:22px;border-top:1px solid #f0e4d6"></td></tr>
+  ${
+    hasNatal
+      ? `<tr><td style="padding-top:6px;font-size:17px;font-weight:bold">🎄 Kit Natal e Ano Novo</td></tr>
+  <tr><td style="padding-top:8px;font-size:15px;line-height:1.5">As 7 artes com a foto do seu pet, prontas para postar e compartilhar, e o PDF com cartões e etiquetas de presente para imprimir.</td></tr>
+  <tr><td style="padding-top:12px">${access ? a(access, '👉 Ver e salvar as artes no celular') : ''}${natalZip ? a(natalZip.url, '⬇ Todas as artes (.zip)') : ''}${natalPdf ? a(natalPdf.url, '⬇ Cartões e etiquetas para imprimir (PDF)') : ''}</td></tr>`
+      : ''
+  }
+  ${
+    hasFig
+      ? `<tr><td style="padding-top:14px;font-size:17px;font-weight:bold">💬 Figurinhas para o WhatsApp</td></tr>
+  <tr><td style="padding-top:8px;font-size:15px;line-height:1.5">34 figurinhas com a carinha do seu pet (frases do dia a dia, memes e de fim de ano). Pelo celular, abra a sua área, toque em <b>Enviar</b> na figurinha, mande pelo WhatsApp e, na conversa, toque nela e escolha <b>Adicionar aos favoritos</b>.</td></tr>
+  <tr><td style="padding-top:12px">${access ? a(access, '👉 Abrir as figurinhas no celular') : ''}${figZip ? a(figZip.url, '⬇ Todas as figurinhas (.zip, com instruções)') : ''}</td></tr>`
+      : ''
+  }`;
+}
+
+/** Order bump personalizado gerado depois do kit (ou gerado de novo): e-mail só com ele. */
+export async function sendExtrasEmail(to: string, doNome: string, files: KitFile[], access: string): Promise<boolean> {
+  const quem = doNome && doNome !== 'do seu pet' ? doNome : 'do seu pet';
+  const natal = files.some((f) => f.kind.startsWith('natal'));
+  const fig = files.some((f) => f.kind.startsWith('figurinha'));
+  const title = natal && fig ? `O Kit Natal e as figurinhas ${quem} chegaram! 🎄` : natal ? `O Kit Natal ${quem} chegou! 🎄` : `As figurinhas ${quem} chegaram! 💬`;
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Prontinho! Tudo foi feito com a foto ${quem}. Guarde este e-mail: os links ficam sempre disponíveis.</td></tr>${personalBlock(files, access)}`;
+  const pdf = files.find((f) => f.kind === 'natal-pdf');
+  return send(to, title, layout(title, body), pdf ? [{ filename: pdf.name, path: pdf.url }] : undefined);
+}
+
+/** Bump personalizado aprovado depois do kit pronto: chama para gerar na área do cliente. */
+export async function sendPersonalBumpEmail(to: string, token: string, bumpName: string, doNome?: string): Promise<boolean> {
+  const link = `${siteUrl()}/confirmar/${token}`;
+  const quem = doNome && doNome !== 'do seu pet' ? doNome : 'do seu pet';
+  const title = `${bumpName}: falta só um toque! 🐾`;
+  const body = `<tr><td style="padding-top:12px;font-size:16px;line-height:1.5;text-align:center">Pagamento confirmado! O <b>${bumpName}</b> é feito com a foto ${quem}. Abra a sua área e toque em <b>Gerar agora</b>: fica pronto em segundos e chega aqui no e-mail.</td></tr>
+  <tr><td align="center" style="padding-top:24px">${button(link, 'Gerar agora')}</td></tr>
+  <tr><td style="padding-top:24px;font-size:12px;color:#8a7566;text-align:center">Se o botão não abrir, copie este link:<br>${link}</td></tr>`;
+  return send(to, title, layout(title, body));
 }
 
 /** Kit gerado: envia os PDFs anexados e os links para as imagens. */
-export async function sendKitEmail(to: string, doNome: string, files: KitFile[], extraLinks: { label: string; url: string }[] = []): Promise<boolean> {
+export async function sendKitEmail(to: string, doNome: string, files: KitFile[], extraLinks: { label: string; url: string }[] = [], access?: string): Promise<boolean> {
   const quem = doNome && doNome !== 'do seu pet' ? doNome : 'do seu pet';
   const title = `O kit ${quem} chegou! 🎉`;
   const pdfs = files.filter((f) => f.kind === 'kit-pdf' || f.kind === 'bonus-pdf');
@@ -106,7 +154,8 @@ export async function sendKitEmail(to: string, doNome: string, files: KitFile[],
   <tr><td style="padding-top:20px">${links
     .map((l) => `<p style="margin:0 0 10px"><a href="${l.url}" style="color:#6F2A7A;font-weight:bold;font-size:15px">⬇ ${l.label}</a></p>`)
     .join('')}</td></tr>
-  <tr><td style="padding-top:16px;font-size:14px;line-height:1.5;color:#6b5a4e"><b>Dica de impressão:</b> para o RG, a CNH e as carteirinhas, use papel fotográfico ou couchê (180 g ou mais) e plastifique. A tag ossinho fica ótima plastificada num porta-tag de pet shop.</td></tr>`;
+  <tr><td style="padding-top:16px;font-size:14px;line-height:1.5;color:#6b5a4e"><b>Dica de impressão:</b> para o RG, a CNH e as carteirinhas, use papel fotográfico ou couchê (180 g ou mais) e plastifique. A tag ossinho fica ótima plastificada num porta-tag de pet shop.</td></tr>
+  ${personalBlock(files, access)}`;
   // Anexos: os PDFs gerados + os guias fixos (Calendário e Viagem). Os order bumps vão em e-mails próprios.
   const guides = extraLinks.filter((l) => l.label.startsWith('Bônus:'));
   return send(

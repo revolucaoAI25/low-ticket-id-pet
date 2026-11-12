@@ -10,7 +10,7 @@ export interface PackageFile {
   name: string;
   /** Nome amigável para o e-mail/download. */
   label: string;
-  kind: 'kit-pdf' | 'bonus-pdf' | 'zip' | 'ficha';
+  kind: 'kit-pdf' | 'bonus-pdf' | 'zip' | 'ficha' | 'natal-arte' | 'natal-pdf' | 'natal-zip' | 'figurinha' | 'figurinhas-zip';
   blob: Blob;
   type: string;
 }

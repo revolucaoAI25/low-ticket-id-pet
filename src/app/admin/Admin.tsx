@@ -238,7 +238,7 @@ export function Admin() {
         {tab === 'bumps' && (
           <Card
             title="Order bumps de conteúdo"
-            hint="Quando o webhook da Kiwify trouxer um destes (no pedido do kit ou num pedido separado), o PDF vai por e-mail na hora e também entra no fim do PDF do kit. As palavras-chave precisam aparecer no nome do bump na Kiwify (sem acento, separadas por vírgula). O '+1 pet' é configurado na aba Checkouts."
+            hint="Quando o webhook da Kiwify trouxer um destes (no pedido do kit ou num pedido separado), o PDF vai por e-mail na hora. Os personalizados (Kit Natal e Figurinhas) são gerados com a foto do pet na área do cliente. As palavras-chave precisam aparecer no nome do bump na Kiwify (sem acento, separadas por vírgula). O '+1 pet' é configurado na aba Checkouts."
           >
             {s.bumps.map((b, i) => (
               <div key={i} className="space-y-2 rounded-2xl bg-areia/50 p-3">
@@ -246,7 +246,13 @@ export function Admin() {
                   <Text label="Nome (aparece no e-mail)" value={b.name} onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, name: v } : x)) })} />
                   <Text label="Palavras-chave" value={b.keywords} onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, keywords: v } : x)) })} />
                 </Grid>
-                <Upload pdf label="PDF do bump" value={b.file} folder="bumps" onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, file: v } : x)) })} />
+                {b.kind === 'natal' || b.kind === 'figurinhas' ? (
+                  <p className="text-sm font-semibold text-cacau/70">
+                    Personalizado com a foto do pet: {b.kind === 'natal' ? '7 artes de Natal e Ano Novo + PDF para imprimir' : '34 figurinhas para WhatsApp (dia a dia, memes e fim de ano)'}. É gerado na área do cliente, junto com o kit (ou depois, se este bump for aprovado depois). Não precisa de PDF.
+                  </p>
+                ) : (
+                  <Upload pdf label="PDF do bump" value={b.file} folder="bumps" onChange={(v) => set({ bumps: s.bumps.map((x, j) => (j === i ? { ...x, file: v } : x)) })} />
+                )}
                 <button type="button" className="text-sm font-bold text-red-600" onClick={() => set({ bumps: s.bumps.filter((_, j) => j !== i) })}>
                   Remover
                 </button>

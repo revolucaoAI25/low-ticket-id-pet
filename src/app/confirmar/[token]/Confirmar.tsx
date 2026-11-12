@@ -38,6 +38,8 @@ import { quizStore } from '@/lib/quiz-store';
 import { SPECIES, getSpecies } from '@/lib/species';
 import { allTeams } from '@/lib/teams';
 import { track } from '@/lib/tracking';
+import type { ExtraKind } from '@/lib/natal/pacote';
+import type { PackageFile } from '@/lib/docs/package';
 
 interface FileLink {
   name: string;
@@ -58,6 +60,8 @@ interface Order {
   petsAllowed?: number;
   pets?: PetView[];
   bonusLinks?: { label: string; url: string }[];
+  /** Order bumps personalizados comprados (Kit Natal, Figurinhas). */
+  extras?: { id: string; name: string; kind: ExtraKind }[];
 }
 interface Draft {
   id?: string;
@@ -126,7 +130,14 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
         const { pet } = (await call({ action: 'save', pet: d })) as { pet: PetView };
         const phone = pet.data.tutors?.find((t) => t.phone)?.phone || order?.customer?.phone || '';
         const ctx = buildDocContext({ pet: pet.data, settings, seed: pet.id, slug: pet.slug, phone });
-        const files = await buildPackage(ctx, (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * 70) }));
+        const kinds = [...new Set((order?.extras ?? []).map((x) => x.kind))];
+        const span = kinds.length ? 50 : 70;
+        const files: PackageFile[] = await buildPackage(ctx, (n, t) => setPhase({ step: `Gerando os documentos ${doPet(pet.data)}${label}…`, pct: 5 + Math.round((n / t) * span) }));
+        if (kinds.length) {
+          const { buildExtras } = await import('@/lib/natal/pacote');
+          const what = kinds.length > 1 ? 'o Kit Natal e as figurinhas' : kinds[0] === 'natal' ? 'o Kit Natal' : 'as figurinhas';
+          files.push(...(await buildExtras(pet.data, kinds, (n, t) => setPhase({ step: `Criando ${what} ${doPet(pet.data)}${label}…`, pct: 55 + Math.round((n / t) * 20) }))));
+        }
         setPhase({ step: `Enviando os arquivos${label}…`, pct: 78 });
         const { urls } = (await call({ action: 'upload-urls', petId: pet.id, files: files.map((f) => f.name) })) as { urls: Record<string, { signedUrl: string; path: string }> };
         let sent = 0;
@@ -146,6 +157,34 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
       console.error(e);
       setPhase(null);
       setFailed('Algo deu errado ao gerar o kit. Seus dados estão salvos: é só tentar de novo. Se continuar, fale com o suporte.');
+    }
+  }
+
+  /** Bump personalizado aprovado depois do kit (ou o pet já tinha o kit): gera só ele. */
+  async function generateExtras(pet: PetView, kinds: ExtraKind[]) {
+    setFailed('');
+    try {
+      const what = kinds.length > 1 ? 'o Kit Natal e as figurinhas' : kinds[0] === 'natal' ? 'o Kit Natal' : 'as figurinhas';
+      setPhase({ step: `Criando ${what} ${doPet(pet.data)}…`, pct: 5 });
+      const { buildExtras } = await import('@/lib/natal/pacote');
+      const files = await buildExtras(pet.data, kinds, (n, t) => setPhase({ step: `Criando ${what} ${doPet(pet.data)}…`, pct: 5 + Math.round((n / t) * 70) }));
+      setPhase({ step: 'Enviando os arquivos…', pct: 78 });
+      const { urls } = (await call({ action: 'extra-upload-urls', petId: pet.id, files: files.map((f) => f.name) })) as { urls: Record<string, { signedUrl: string; path: string }> };
+      let sent = 0;
+      for (const f of files) {
+        const r = await fetch(urls[f.name].signedUrl, { method: 'PUT', headers: { 'content-type': f.type, 'x-upsert': 'true' }, body: f.blob });
+        if (!r.ok) throw new Error(`upload ${f.name} ${r.status}`);
+        setPhase({ step: 'Enviando os arquivos…', pct: 78 + Math.round((++sent / files.length) * 17) });
+      }
+      setPhase({ step: 'Mandando pro seu e-mail…', pct: 97 });
+      await call({ action: 'extra-finish', petId: pet.id, files: files.map((f) => ({ name: f.label, path: urls[f.name].path, kind: f.kind })) });
+      track('ExtraGerado', { kinds: kinds.join(',') }, { pixel: false });
+      setPhase(null);
+      await load();
+    } catch (e) {
+      console.error(e);
+      setPhase(null);
+      setFailed('Algo deu errado ao gerar. Tente de novo. Se continuar, fale com o suporte.');
     }
   }
 
@@ -198,7 +237,8 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
 
   return (
     <Shell>
-      {done.length > 0 && <Done pets={done} email={email} bonusLinks={order.bonusLinks ?? []} />}
+      {done.length > 0 && <Done pets={done} email={email} bonusLinks={order.bonusLinks ?? []} extras={order.extras ?? []} onGenerate={generateExtras} />}
+      {done.length > 0 && !drafts.length && failed && <p className="mt-3 rounded-xl bg-red-50 p-3 text-center text-sm font-bold text-red-700">{failed}</p>}
 
       {drafts.length > 0 && (
         <>
@@ -228,6 +268,7 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
 
           <PetForm
             key={tab}
+            extras={order.extras ?? []}
             draft={drafts[Math.min(tab, drafts.length - 1)]}
             settings={settings}
             fallbackPhone={order.customer?.phone ?? ''}
@@ -291,7 +332,21 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 /* ---------------- kit enviado ---------------- */
 
-function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | null; bonusLinks: { label: string; url: string }[] }) {
+const PERSONAL_KINDS = new Set(['natal-arte', 'natal-pdf', 'natal-zip', 'figurinha', 'figurinhas-zip']);
+
+function Done({
+  pets,
+  email,
+  bonusLinks,
+  extras,
+  onGenerate,
+}: {
+  pets: PetView[];
+  email?: string | null;
+  bonusLinks: { label: string; url: string }[];
+  extras: { id: string; name: string; kind: ExtraKind }[];
+  onGenerate: (pet: PetView, kinds: ExtraKind[]) => void;
+}) {
   const icon: Record<string, LucideIcon> = { 'kit-pdf': FileText, 'bonus-pdf': FileText, zip: ImagePlus, ficha: QrCode };
   const label: Record<string, string> = {
     'kit-pdf': 'Documentos para imprimir (PDF)',
@@ -314,7 +369,7 @@ function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | n
         <div key={p.id} className="card mt-5 p-4">
           <p className="font-display text-lg font-semibold">Kit {doPet(p.data)}</p>
           <div className="mt-3 space-y-2">
-            {p.files.map((f) => {
+            {p.files.filter((f) => !PERSONAL_KINDS.has(f.kind)).map((f) => {
               const I = icon[f.kind] ?? Download;
               return (
                 <a key={f.url} href={f.url} target="_blank" rel="noreferrer" download className="flex items-center gap-3 rounded-2xl bg-areia/60 p-3 font-bold active:bg-areia">
@@ -327,6 +382,7 @@ function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | n
               );
             })}
           </div>
+          <Personal pet={p} extras={extras} onGenerate={onGenerate} />
         </div>
       ))}
       {bonusLinks.length > 0 && (
@@ -349,6 +405,115 @@ function Done({ pets, email, bonusLinks }: { pets: PetView[]; email?: string | n
         Dica: para o RG, a CNH e as carteirinhas, use papel fotográfico ou couchê e plastifique. A tag ossinho fica ótima num porta-tag de pet shop.
       </p>
     </section>
+  );
+}
+
+/* ---------------- order bumps personalizados ---------------- */
+
+async function shareFile(url: string, name: string) {
+  try {
+    const blob = await (await fetch(url)).blob();
+    const file = new File([blob], name, { type: blob.type });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      return;
+    }
+  } catch (e) {
+    if ((e as Error)?.name === 'AbortError') return;
+  }
+  window.open(url, '_blank');
+}
+
+export function Personal({ pet, extras, onGenerate }: { pet: PetView; extras: { id: string; name: string; kind: ExtraKind }[]; onGenerate: (pet: PetView, kinds: ExtraKind[]) => void }) {
+  const [ios, setIos] = useState(false);
+  useEffect(() => setIos(/iPhone|iPad|iPod/.test(navigator.userAgent)), []);
+  const arts = pet.files.filter((f) => f.kind === 'natal-arte');
+  const natalPdf = pet.files.find((f) => f.kind === 'natal-pdf');
+  const natalZip = pet.files.find((f) => f.kind === 'natal-zip');
+  const figs = pet.files.filter((f) => f.kind === 'figurinha');
+  const figZip = pet.files.find((f) => f.kind === 'figurinhas-zip');
+  const missing = extras.filter((x) => (x.kind === 'natal' ? !arts.length : !figs.length));
+  const kinds = [...new Set(missing.map((x) => x.kind))];
+  const row = 'flex items-center gap-3 rounded-2xl bg-areia/60 p-3 font-bold active:bg-areia';
+  return (
+    <>
+      {kinds.length > 0 && (
+        <div className="mt-4 rounded-2xl border-2 border-dashed border-coral bg-[#FFF6F0] p-4 text-center">
+          <p className="font-display text-lg font-semibold">{missing.map((x) => x.name).join(' e ')}</p>
+          <p className="mt-1 text-sm font-semibold text-cacau/70">Feito com a foto {doPet(pet.data)}. Fica pronto em segundos e também vai pro seu e-mail.</p>
+          <button type="button" onClick={() => onGenerate(pet, kinds)} className="btn-cta shine mt-3">
+            Gerar agora
+          </button>
+        </div>
+      )}
+      {arts.length > 0 && (
+        <div className="mt-5">
+          <p className="font-display text-lg font-semibold">🎄 Kit Natal e Ano Novo</p>
+          <p className="text-[13px] font-semibold text-cacau/60">Toque numa arte para abrir. No celular, toque e segure para salvar ou compartilhar.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {arts.map((f) => (
+              <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl bg-areia/60">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt={f.name} loading="lazy" className="aspect-[4/5] w-full object-contain" />
+              </a>
+            ))}
+          </div>
+          <div className="mt-3 space-y-2">
+            {natalPdf && (
+              <a href={natalPdf.url} target="_blank" rel="noreferrer" className={row}>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
+                  <FileText size={20} />
+                </span>
+                <span className="flex-1">Cartões e etiquetas para imprimir (PDF)</span>
+                <Download size={18} className="text-cacau/50" />
+              </a>
+            )}
+            {natalZip && (
+              <a href={natalZip.url} download className={row}>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
+                  <ImagePlus size={20} />
+                </span>
+                <span className="flex-1">Todas as artes (.zip)</span>
+                <Download size={18} className="text-cacau/50" />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+      {figs.length > 0 && (
+        <div className="mt-5">
+          <p className="font-display text-lg font-semibold">💬 Figurinhas para o WhatsApp</p>
+          <p className="text-[13px] font-semibold leading-snug text-cacau/65">
+            {ios
+              ? 'No iPhone: toque e segure a figurinha e escolha "Salvar". Depois, no WhatsApp, abra uma conversa, toque no ícone de figurinha, em "Criar figurinha" e escolha a imagem.'
+              : 'Toque na figurinha, escolha o WhatsApp e mande para você mesmo. Na conversa, toque nela e escolha "Adicionar aos favoritos". Pronto: ela fica nas suas figurinhas.'}
+          </p>
+          <div className="mt-3 grid grid-cols-4 gap-2">
+            {figs.map((f, i) => (
+              <button
+                key={f.url}
+                type="button"
+                onClick={() => shareFile(f.url, `figurinha-${i + 1}.${f.url.split('.').pop()?.split('?')[0] || 'webp'}`)}
+                className="aspect-square rounded-xl bg-[repeating-conic-gradient(#f1e7da_0_25%,#fbf6ef_0_50%)] bg-[length:16px_16px] p-1 active:scale-95"
+                aria-label={`Enviar a figurinha ${f.name}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt={f.name} loading="lazy" className="h-full w-full object-contain" />
+              </button>
+            ))}
+          </div>
+          {figZip && (
+            <a href={figZip.url} download className={`${row} mt-3`}>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
+                <ImagePlus size={20} />
+              </span>
+              <span className="flex-1">Todas as figurinhas (.zip, com instruções)</span>
+              <Download size={18} className="text-cacau/50" />
+            </a>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -385,7 +550,19 @@ function Field({ label, optional, children }: { label: string; optional?: boolea
 
 const inputCls = 'input !min-h-[50px] !text-base';
 
-function PetForm({ draft, settings, fallbackPhone, onChange }: { draft: Draft; settings: SiteSettings; fallbackPhone: string; onChange: (d: PetData) => void }) {
+function PetForm({
+  draft,
+  settings,
+  fallbackPhone,
+  onChange,
+  extras = [],
+}: {
+  draft: Draft;
+  settings: SiteSettings;
+  fallbackPhone: string;
+  onChange: (d: PetData) => void;
+  extras?: { id: string; name: string; kind: ExtraKind }[];
+}) {
   const d = draft.data;
   const ex: PetExtras = d.extras ?? {};
   const set = (patch: Partial<PetData>) => onChange({ ...d, ...patch });
@@ -628,7 +805,15 @@ function PetForm({ draft, settings, fallbackPhone, onChange }: { draft: Draft; s
         </Field>
       </Card>
 
-      <Card icon={Palette} title="Para os bônus" hint="A cor e as fotos entram no Kit Aniversário.">
+      <Card
+        icon={Palette}
+        title="Para os bônus"
+        hint={
+          extras.length
+            ? `A cor e as fotos entram no Kit Aniversário${extras.some((x) => x.kind === 'natal') ? ', no Kit Natal' : ''}${extras.some((x) => x.kind === 'figurinhas') ? ' e nas figurinhas (cada figurinha usa uma das fotos)' : ''}. Coloque fotos bem nítidas, com o rostinho dele.`
+            : 'A cor e as fotos entram no Kit Aniversário.'
+        }
+      >
         <Field label="Cor favorita">
           <div className="flex flex-wrap gap-2.5">
             {FAVORITE_COLORS.map((c) => (

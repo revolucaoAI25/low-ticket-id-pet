@@ -34,6 +34,11 @@ export interface Bump {
   keywords: string;
   /** PDF enviado pelo painel. */
   file: string;
+  /**
+   * pdf = material pronto (o PDF acima). natal / figurinhas = personalizado com a foto do pet,
+   * gerado na área do cliente junto com o kit (ou depois, se o bump for aprovado depois).
+   */
+  kind?: 'pdf' | 'natal' | 'figurinhas';
 }
 
 export interface SiteSettings {
@@ -137,6 +142,9 @@ export const defaultSettings: SiteSettings = {
     { id: 'pet-calmo', name: 'Método Pet Calmo: Fim do Choro Quando Você Sai', keywords: 'pet calmo', file: '/arquivos/87a545c86b7b38d3/Metodo-Pet-Calmo.pdf' },
     { id: 'comida-que-cuida', name: 'Guia Comida que Cuida: o que Pode Envenenar seu Pet', keywords: 'comida que cuida', file: '/arquivos/87a545c86b7b38d3/Guia-Comida-que-Cuida.pdf' },
     { id: 'sos-pet', name: 'Manual SOS Pet: Primeiros Socorros que Salvam Vidas', keywords: 'sos pet', file: '/arquivos/87a545c86b7b38d3/Manual-SOS-Pet.pdf' },
+    // Personalizados (com a foto do pet). Palavras específicas: "natal" sozinho poderia bater com a cidade de Natal no endereço do cliente.
+    { id: 'kit-natal', name: 'Kit Natal e Ano Novo do Seu Pet', keywords: 'natal e ano novo, kit natal', file: '', kind: 'natal' },
+    { id: 'figurinhas', name: 'Figurinhas Personalizadas do Seu Pet', keywords: 'figurinha', file: '', kind: 'figurinhas' },
   ],
 };
 
@@ -163,8 +171,13 @@ const RETIRED_BUMPS = new Set(['petiscos-cao', 'xixi', 'latidos', 'petiscos-gato
 
 function currentBumps(saved?: Bump[]): Bump[] {
   // Bump sem PDF enviado no painel usa o PDF que já vem no site (public/arquivos).
-  const kept = (saved ?? []).filter((b) => !RETIRED_BUMPS.has(b.id)).map((b) => (b.file ? b : { ...b, file: defaultSettings.bumps.find((d) => d.id === b.id)?.file ?? '' }));
-  // Garante os 3 bumps atuais (mantém nome/arquivo se já foram editados no painel).
+  const kept = (saved ?? [])
+    .filter((b) => !RETIRED_BUMPS.has(b.id))
+    .map((b) => {
+      const def = defaultSettings.bumps.find((d) => d.id === b.id);
+      return { ...b, file: b.file || def?.file || '', kind: b.kind ?? def?.kind ?? 'pdf' };
+    });
+  // Garante os bumps atuais (mantém nome/arquivo se já foram editados no painel).
   const ids = new Set(kept.map((b) => b.id));
   return [...kept, ...defaultSettings.bumps.filter((b) => !ids.has(b.id))];
 }
