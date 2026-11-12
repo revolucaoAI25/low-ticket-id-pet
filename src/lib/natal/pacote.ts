@@ -26,18 +26,20 @@ export async function natalPet(pet: PetData): Promise<NatalPet> {
 
 const COMO_USAR = `FIGURINHAS DO SEU PET: COMO USAR NO WHATSAPP
 
-O jeito mais fácil (Android e iPhone):
-1. Abra a sua área no site (link do e-mail) e toque em "Enviar" na figurinha.
-2. Escolha o WhatsApp e mande para você mesmo ou para alguém.
-3. No WhatsApp, toque na figurinha enviada e escolha "Adicionar aos favoritos".
-   Pronto: ela fica na aba de figurinhas (estrela) para usar quando quiser.
+As imagens já vêm sem fundo, no formato de figurinha.
 
-Pelo arquivo:
-- Android: os arquivos .webp desta pasta são figurinhas prontas. Envie pelo WhatsApp como figurinha
-  ou use um app de figurinhas (ex.: "Sticker.ly" ou "Criador de Figurinhas") para montar um pacote.
-- iPhone: no WhatsApp, abra uma conversa, toque no ícone de figurinha, depois em "Criar figurinha"
-  e escolha a imagem .png desta pasta (já vem sem fundo).
-- WhatsApp Web/computador: abra uma conversa, clique em figurinhas > "Criar" e escolha o .png.
+Android e iPhone (pelo próprio WhatsApp):
+1. Salve as figurinhas no celular (pela sua área no site, tocando nelas, ou por esta pasta).
+2. No WhatsApp, abra uma conversa, toque no ícone de figurinha e em "Criar" / "Criar figurinha".
+3. Escolha a imagem salva e envie.
+4. Toque na figurinha enviada e escolha "Adicionar aos favoritos". Pronto: ela fica na aba de figurinhas.
+
+Android (pacote completo de uma vez):
+- Instale o app gratuito "Sticker.ly", crie um pacote, importe as imagens da pasta "WEBP (Android)"
+  e toque em "Adicionar ao WhatsApp".
+
+WhatsApp Web / computador:
+- Abra uma conversa, clique no clipe > "Figurinha" (ou em figurinhas > "Criar") e escolha um .png desta pasta.
 `;
 
 /** Marcas de corte nos cantos de um retângulo (mm). */

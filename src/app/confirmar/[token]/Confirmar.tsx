@@ -430,6 +430,23 @@ async function shareFile(url: string, name: string) {
   window.open(url, '_blank');
 }
 
+/** Baixa o arquivo para o aparelho (no Android vai para Downloads e aparece na galeria). */
+async function saveFile(url: string, name: string) {
+  try {
+    const blob = await (await fetch(url)).blob();
+    const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name.replace(/\.[a-z0-9]+$/i, '')}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
 export function Personal({
   pet,
   extras,
@@ -535,17 +552,22 @@ export function Personal({
           <p className="font-display text-lg font-semibold">💬 Figurinhas para o WhatsApp</p>
           <p className="text-[13px] font-semibold leading-snug text-cacau/65">
             {ios
-              ? 'No iPhone: toque e segure a figurinha e escolha "Salvar". Depois, no WhatsApp, abra uma conversa, toque no ícone de figurinha, em "Criar figurinha" e escolha a imagem.'
-              : 'Toque na figurinha, escolha o WhatsApp e mande para você mesmo. Na conversa, toque nela e escolha "Adicionar aos favoritos". Pronto: ela fica nas suas figurinhas.'}
+              ? '1. Toque na figurinha e escolha "Salvar imagem". 2. No WhatsApp, abra uma conversa, toque no ícone de figurinha e em "Criar figurinha". 3. Escolha a imagem salva (ela já vem sem fundo) e envie. 4. Toque na figurinha enviada e escolha "Adicionar aos favoritos".'
+              : '1. Toque nas figurinhas que quiser: elas são salvas no seu celular. 2. No WhatsApp, abra uma conversa, toque no ícone de figurinha e em "Criar" (o lápis ou o +). 3. Escolha a imagem salva (ela já vem sem fundo) e envie. 4. Toque na figurinha enviada e escolha "Adicionar aos favoritos".'}
           </p>
+          {!ios && (
+            <p className="mt-1 text-[12px] font-semibold leading-snug text-cacau/55">
+              Não apareceu "Criar"? Atualize o WhatsApp ou use o app gratuito Sticker.ly: lá, crie um pacote, importe as figurinhas salvas e toque em "Adicionar ao WhatsApp".
+            </p>
+          )}
           <div className="mt-3 grid grid-cols-4 gap-2">
             {figs.map((f, i) => (
               <button
                 key={f.url}
                 type="button"
-                onClick={() => shareFile(f.url, `figurinha-${i + 1}.${f.url.split('.').pop()?.split('?')[0] || 'webp'}`)}
+                onClick={() => (ios ? shareFile(f.url, `figurinha-${i + 1}`) : saveFile(f.url, `figurinha-${i + 1}`))}
                 className="aspect-square rounded-xl bg-[repeating-conic-gradient(#f1e7da_0_25%,#fbf6ef_0_50%)] bg-[length:16px_16px] p-1 active:scale-95"
-                aria-label={`Enviar a figurinha ${f.name}`}
+                aria-label={`Salvar a figurinha ${f.name}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={f.name} loading="lazy" className="h-full w-full object-contain" />

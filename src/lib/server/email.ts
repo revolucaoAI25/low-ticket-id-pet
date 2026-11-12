@@ -108,7 +108,7 @@ function personalBlock(files: KitFile[], access?: string): string {
   ${
     hasFig
       ? `<tr><td style="padding-top:14px;font-size:17px;font-weight:bold">💬 Figurinhas para o WhatsApp</td></tr>
-  <tr><td style="padding-top:8px;font-size:15px;line-height:1.5">34 figurinhas com a carinha do seu pet (frases do dia a dia, memes e de fim de ano). Pelo celular, abra a sua área, toque em <b>Enviar</b> na figurinha, mande pelo WhatsApp e, na conversa, toque nela e escolha <b>Adicionar aos favoritos</b>.</td></tr>
+  <tr><td style="padding-top:8px;font-size:15px;line-height:1.5">34 figurinhas com a carinha do seu pet (frases do dia a dia, memes e de fim de ano). Já vêm sem fundo. Salve as que quiser pela sua área no site; no WhatsApp, toque no ícone de figurinha, em <b>Criar</b>, escolha a imagem e envie. Depois é só tocar nela e escolher <b>Adicionar aos favoritos</b>.</td></tr>
   <tr><td style="padding-top:12px">${access ? a(access, '👉 Abrir as figurinhas no celular') : ''}${figZip ? a(figZip.url, '⬇ Todas as figurinhas (.zip, com instruções)') : ''}</td></tr>`
       : ''
   }`;
