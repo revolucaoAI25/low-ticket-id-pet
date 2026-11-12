@@ -458,6 +458,12 @@ export function Personal({
 }) {
   const [ios, setIos] = useState(false);
   const [novas, setNovas] = useState<string[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const baixar = async (url: string, name: string) => {
+    setBusy(url);
+    await saveFile(url, name);
+    setBusy(null);
+  };
   const atuais = [pet.data.photo, ...(pet.data.extras?.photos ?? [])].filter((u): u is string => !!u);
   const cabe = Math.max(0, 6 - atuais.length);
   useEffect(() => setIos(/iPhone|iPad|iPod/.test(navigator.userAgent)), []);
@@ -516,10 +522,15 @@ export function Personal({
       {arts.length > 0 && (
         <div className="mt-5">
           <p className="font-display text-lg font-semibold">🎄 Kit Natal e Ano Novo</p>
-          <p className="text-[13px] font-semibold text-cacau/60">Toque numa arte para salvar na galeria ou mandar no WhatsApp e no Instagram.</p>
+          <p className="text-[13px] font-semibold text-cacau/60">
+            {ios ? 'Toque numa arte e escolha "Salvar Imagem": ela vai para as suas Fotos. Dali é só postar ou mandar no WhatsApp.' : 'Toque numa arte para salvar no celular: ela vai para a galeria (pasta Downloads). Dali é só postar ou mandar no WhatsApp.'}
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {arts.map((f, i) => (
-              <button key={f.url} type="button" onClick={() => shareFile(f.url, `${f.name.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-jpg$/, '') || `arte-${i + 1}`}.jpg`)} className="block overflow-hidden rounded-xl bg-areia/60 active:scale-[.98]" aria-label={`Salvar ou compartilhar: ${f.name}`}>
+              <button key={f.url} type="button" onClick={() => {
+                  const n = f.name.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-jpg$/, '') || `arte-${i + 1}`;
+                  return ios ? shareFile(f.url, n) : baixar(f.url, n);
+                }} className="block overflow-hidden rounded-xl bg-areia/60 active:scale-[.98]" aria-label={`Salvar ou compartilhar: ${f.name}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={f.name} loading="lazy" className="aspect-[4/5] w-full object-contain" />
               </button>
@@ -527,22 +538,22 @@ export function Personal({
           </div>
           <div className="mt-3 space-y-2">
             {natalPdf && (
-              <a href={natalPdf.url} target="_blank" rel="noreferrer" className={row}>
+              <button type="button" onClick={() => baixar(natalPdf.url, 'Cartoes-e-etiquetas-para-imprimir')} className={`${row} w-full text-left`}>
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
                   <FileText size={20} />
                 </span>
-                <span className="flex-1">Cartões e etiquetas para imprimir (PDF)</span>
+                <span className="flex-1">{busy === natalPdf.url ? 'Baixando…' : 'Baixar cartões e etiquetas para imprimir (PDF)'}</span>
                 <Download size={18} className="text-cacau/50" />
-              </a>
+              </button>
             )}
             {natalZip && (
-              <a href={natalZip.url} download className={row}>
+              <button type="button" onClick={() => baixar(natalZip.url, 'Artes-de-Natal-e-Ano-Novo')} className={`${row} w-full text-left`}>
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
                   <ImagePlus size={20} />
                 </span>
-                <span className="flex-1">Todas as artes (.zip)</span>
+                <span className="flex-1">{busy === natalZip.url ? 'Baixando…' : 'Baixar todas as artes (.zip)'}</span>
                 <Download size={18} className="text-cacau/50" />
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -550,24 +561,18 @@ export function Personal({
       {figs.length > 0 && (
         <div className="mt-5">
           <p className="font-display text-lg font-semibold">💬 Figurinhas para o WhatsApp</p>
-          <p className="text-[13px] font-semibold leading-snug text-cacau/65">
-            {ios
-              ? '1. Toque na figurinha e escolha "Salvar imagem". 2. No WhatsApp, abra uma conversa, toque no ícone de figurinha e em "Criar figurinha". 3. Escolha a imagem salva (ela já vem sem fundo) e envie. 4. Toque na figurinha enviada e escolha "Adicionar aos favoritos".'
-              : '1. Toque nas figurinhas que quiser: elas são salvas no seu celular. 2. No WhatsApp, abra uma conversa, toque no ícone de figurinha e em "Criar" (o lápis ou o +). 3. Escolha a imagem salva (ela já vem sem fundo) e envie. 4. Toque na figurinha enviada e escolha "Adicionar aos favoritos".'}
-          </p>
-          {!ios && (
-            <p className="mt-1 text-[12px] font-semibold leading-snug text-cacau/55">
-              Não apareceu "Criar"? Atualize o WhatsApp ou use o app gratuito Sticker.ly: lá, crie um pacote, importe as figurinhas salvas e toque em "Adicionar ao WhatsApp".
-            </p>
-          )}
+          <p className="text-[13px] font-semibold leading-snug text-cacau/65">Elas já vêm sem fundo, no formato de figurinha. Siga o passo a passo do seu celular:</p>
+          <GuiaFigurinhas ios={ios} />
+          <p className="mt-4 text-sm font-extrabold text-cacau/80">{ios ? 'Toque numa figurinha para salvar:' : 'Toque nas figurinhas para salvar no celular:'}</p>
           <div className="mt-3 grid grid-cols-4 gap-2">
             {figs.map((f, i) => (
               <button
                 key={f.url}
                 type="button"
-                onClick={() => (ios ? shareFile(f.url, `figurinha-${i + 1}`) : saveFile(f.url, `figurinha-${i + 1}`))}
+                onClick={() => (ios ? shareFile(f.url, `figurinha-${i + 1}`) : baixar(f.url, `figurinha-${i + 1}`))}
                 className="aspect-square rounded-xl bg-[repeating-conic-gradient(#f1e7da_0_25%,#fbf6ef_0_50%)] bg-[length:16px_16px] p-1 active:scale-95"
                 aria-label={`Salvar a figurinha ${f.name}`}
+                disabled={busy === f.url}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={f.name} loading="lazy" className="h-full w-full object-contain" />
@@ -575,17 +580,92 @@ export function Personal({
             ))}
           </div>
           {figZip && (
-            <a href={figZip.url} download className={`${row} mt-3`}>
+            <button type="button" onClick={() => baixar(figZip.url, 'Figurinhas')} className={`${row} mt-3 w-full text-left`}>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-roxo">
                 <ImagePlus size={20} />
               </span>
-              <span className="flex-1">Todas as figurinhas (.zip, com instruções)</span>
+              <span className="flex-1">{busy === figZip.url ? 'Baixando…' : 'Baixar todas as figurinhas (.zip, com instruções)'}</span>
               <Download size={18} className="text-cacau/50" />
-            </a>
+            </button>
           )}
         </div>
       )}
     </>
+  );
+}
+
+function Passos({ itens }: { itens: React.ReactNode[] }) {
+  return (
+    <ol className="mt-3 space-y-2.5">
+      {itens.map((t, i) => (
+        <li key={i} className="flex gap-3 text-[14.5px] font-semibold leading-snug">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-roxo text-[13px] font-extrabold text-white">{i + 1}</span>
+          <span className="pt-0.5">{t}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Passo a passo bem mastigado para colocar as figurinhas no WhatsApp (Android e iPhone). */
+function GuiaFigurinhas({ ios }: { ios: boolean }) {
+  const [tab, setTab] = useState<'android' | 'iphone'>(ios ? 'iphone' : 'android');
+  useEffect(() => setTab(ios ? 'iphone' : 'android'), [ios]);
+  const [plano, setPlano] = useState(false);
+  return (
+    <div className="mt-3 rounded-2xl border-2 border-linha bg-white p-4">
+      <div className="flex gap-1 rounded-full bg-areia/70 p-1">
+        {(
+          [
+            ['android', 'Android'],
+            ['iphone', 'iPhone'],
+          ] as const
+        ).map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setTab(id)} className={`flex-1 rounded-full py-2 text-sm font-extrabold ${tab === id ? 'bg-roxo text-white' : 'text-cacau/70'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === 'android' ? (
+        <Passos
+          itens={[
+            <>Aqui embaixo, <b>toque nas figurinhas que você quer</b>. Cada toque salva uma no celular (aparece o aviso de download).</>,
+            <>Abra o <b>WhatsApp</b> e entre em qualquer conversa (pode ser a sua própria, &quot;Você&quot;).</>,
+            <>Toque na <b>carinha 😊</b> ao lado de onde você digita e depois na aba de <b>figurinhas</b> (o quadradinho com a pontinha dobrada).</>,
+            <>Toque em <b>Criar</b> (o botão com <b>+</b> ou lápis) e escolha a figurinha que você salvou. Ela fica na pasta <b>Downloads</b>.</>,
+            <>Toque em <b>Enviar</b>. Ela vai como figurinha, sem fundo. 🎉</>,
+            <>Toque na figurinha que você enviou e escolha <b>Adicionar aos favoritos ⭐</b>. Pronto: ela fica na estrelinha das suas figurinhas para usar sempre.</>,
+          ]}
+        />
+      ) : (
+        <Passos
+          itens={[
+            <>Aqui embaixo, <b>toque numa figurinha</b> e escolha <b>Salvar Imagem</b>. Ela vai para o app <b>Fotos</b>. Repita com as que você quiser.</>,
+            <>Abra o <b>WhatsApp</b> e entre em qualquer conversa (pode ser a sua própria, &quot;Você&quot;).</>,
+            <>Toque no ícone de <b>figurinha</b> (o quadradinho ao lado de onde você digita).</>,
+            <>Toque em <b>Criar figurinha</b> (o botão com <b>+</b>) e escolha a figurinha que você salvou.</>,
+            <>Toque em <b>Enviar</b> (a setinha). Ela vai como figurinha, sem fundo. 🎉</>,
+            <>Toque na figurinha que você enviou e escolha <b>Favoritar ⭐</b>. Pronto: ela fica na estrelinha das suas figurinhas para usar sempre.</>,
+          ]}
+        />
+      )}
+      <button type="button" onClick={() => setPlano((v) => !v)} className="mt-4 text-sm font-extrabold text-roxo underline">
+        {plano ? 'Fechar' : `Não achou o botão "Criar"? Veja o plano B`}
+      </button>
+      {plano && (
+        <div className="mt-2 rounded-xl bg-areia/60 p-3">
+          <p className="text-[13.5px] font-semibold leading-snug">Primeiro, atualize o WhatsApp na {tab === 'iphone' ? 'App Store' : 'Play Store'} e tente de novo. Se ainda não aparecer, use um app gratuito que coloca todas de uma vez:</p>
+          <Passos
+            itens={[
+              <>Baixe o app <b>Sticker.ly</b> na {tab === 'iphone' ? 'App Store' : 'Play Store'} (é grátis).</>,
+              <>Abra o app, toque no <b>+</b> e escolha criar um <b>pacote de figurinhas</b>.</>,
+              <>Escolha as figurinhas que você salvou (pelo menos 3).</>,
+              <>Toque em <b>Adicionar ao WhatsApp</b> e confirme. Elas aparecem juntas na aba de figurinhas do WhatsApp.</>,
+            ]}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
