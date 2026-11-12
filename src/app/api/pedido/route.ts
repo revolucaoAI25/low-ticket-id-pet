@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     const { data: pet } = await sb.from('pets').select('id, slug, submitted_at').eq('id', body.petId).eq('customer_id', cust.id).maybeSingle();
     if (!pet) return json({ error: 'pet_not_found' }, 404);
     if (pet.submitted_at) return json({ error: 'locked' }, 409);
-    const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 40) : [];
+    const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 80) : [];
     const out: Record<string, { signedUrl: string; path: string }> = {};
     for (const n of names) {
       const safe = String(n).replace(/[^a-zA-Z0-9._-]/g, '');
@@ -142,7 +142,7 @@ export async function POST(req: Request) {
       return json({ pet: petOut(saved as PetRow) });
     }
     if (body.action === 'extra-upload-urls') {
-      const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 40) : [];
+      const names: string[] = Array.isArray(body.files) ? body.files.slice(0, 80) : [];
       const out: Record<string, { signedUrl: string; path: string }> = {};
       for (const n of names) {
         const safe = String(n).replace(/[^a-zA-Z0-9._-]/g, '');

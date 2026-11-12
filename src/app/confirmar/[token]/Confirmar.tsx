@@ -143,6 +143,7 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
         let sent = 0;
         for (const f of files) {
           const u = urls[f.name];
+          if (!u) throw new Error(`sem link de envio para ${f.name}`);
           const r = await fetch(u.signedUrl, { method: 'PUT', headers: { 'content-type': f.type, 'x-upsert': 'true' }, body: f.blob });
           if (!r.ok) throw new Error(`upload ${f.name} ${r.status}`);
           setPhase({ step: `Enviando os arquivos${label}…`, pct: 78 + Math.round((++sent / files.length) * 17) });
@@ -177,6 +178,7 @@ export function Confirmar({ token, settings }: { token: string; settings: SiteSe
       const { urls } = (await call({ action: 'extra-upload-urls', petId: pet.id, files: files.map((f) => f.name) })) as { urls: Record<string, { signedUrl: string; path: string }> };
       let sent = 0;
       for (const f of files) {
+        if (!urls[f.name]) throw new Error(`sem link de envio para ${f.name}`);
         const r = await fetch(urls[f.name].signedUrl, { method: 'PUT', headers: { 'content-type': f.type, 'x-upsert': 'true' }, body: f.blob });
         if (!r.ok) throw new Error(`upload ${f.name} ${r.status}`);
         setPhase({ step: 'Enviando os arquivos…', pct: 78 + Math.round((++sent / files.length) * 17) });
