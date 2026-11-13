@@ -559,10 +559,11 @@ function Orders() {
   useEffect(() => {
     load();
   }, [load]);
-  const act = async (action: 'resend' | 'unlock', customerId: string) => {
+  const act = async (action: 'resend' | 'unlock' | 'addPet', customerId: string) => {
+    if (action === 'addPet' && !confirm('Adicionar +1 vaga de pet e enviar o e-mail para o cliente cadastrar o novo pet?')) return;
     const r = await fetch('/api/admin/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, customerId }) });
     const d = await r.json().catch(() => ({}));
-    setMsg(r.ok ? (action === 'resend' ? (d.ok ? 'E-mail reenviado.' : 'Não foi possível enviar (confira o Resend).') : 'Edição liberada: o cliente pode corrigir e gerar de novo pelo mesmo link.') : d.error || 'Erro');
+    setMsg(r.ok && action === 'addPet' ? (d.sent ? '+1 vaga adicionada e e-mail enviado.' : '+1 vaga adicionada (e-mail não enviado: confira o Resend).') : r.ok ? (action === 'resend' ? (d.ok ? 'E-mail reenviado.' : 'Não foi possível enviar (confira o Resend).') : 'Edição liberada: o cliente pode corrigir e gerar de novo pelo mesmo link.') : d.error || 'Erro');
     load(q);
   };
   return (
@@ -574,7 +575,7 @@ function Orders() {
           load(q);
         }}
       >
-        <input className="input !min-h-[44px] !text-base" placeholder="E-mail do cliente" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input !min-h-[44px] !text-base" placeholder="E-mail ou nome do cliente" value={q} onChange={(e) => setQ(e.target.value)} />
         <button className="btn-primary !min-h-[44px] !px-4 !text-base" type="submit">
           Buscar
         </button>
@@ -612,6 +613,9 @@ function Orders() {
                   </button>
                   <button type="button" onClick={() => act('unlock', o.id)}>
                     Liberar edição
+                  </button>
+                  <button type="button" onClick={() => act('addPet', o.id)}>
+                    +1 vaga de pet
                   </button>
                   <button type="button" onClick={() => navigator.clipboard.writeText(link).then(() => setMsg('Link copiado.'))}>
                     Copiar link

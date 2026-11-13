@@ -121,7 +121,7 @@ export const defaultSettings: SiteSettings = {
     extraPet: '',
   },
   checkoutParams: { name: 'name', email: 'email', phone: 'phone' },
-  extraPetKeywords: ['pet adicional', '+1 pet', 'mais 1 pet', 'pet extra'],
+  extraPetKeywords: ['pet adicional', '+1 pet', 'mais 1 pet', 'mais um pet', 'pet extra', 'outro pet', 'segundo pet', '2 pets', 'dois pets'],
   tracking: { metaPixelId: '', utmifyUtms: true, utmifyPixelId: '' },
   support: { email: 'contato@clubedofocinho.com.br', whatsapp: '', hours: 'Segunda a sexta, das 9h às 18h' },
   company: { name: 'Clube do Focinho', document: '' },
@@ -209,6 +209,6 @@ export function mergeSettings(saved: Partial<SiteSettings> | null | undefined): 
     extraTeams: s.extraTeams ?? [],
     bumps: currentBumps(s.bumps),
     exitOffer: { ...defaultSettings.exitOffer, ...(s.exitOffer ?? {}), checkout: { ...defaultSettings.exitOffer.checkout, ...(s.exitOffer?.checkout ?? {}) } },
-    extraPetKeywords: s.extraPetKeywords?.length ? s.extraPetKeywords : defaultSettings.extraPetKeywords,
+    extraPetKeywords: [...new Set([...(s.extraPetKeywords ?? []), ...defaultSettings.extraPetKeywords])],
   };
 }

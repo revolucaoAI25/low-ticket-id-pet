@@ -231,11 +231,18 @@ export async function POST(req: Request) {
   const newBumps = bumps.filter((b) => !had.has(b));
   const patch: Obj = {
     name: fullName || undefined,
-    extra_pet_slots: (cust.extra_pet_slots ?? 0) + extraPets,
     bumps: [...had, ...newBumps],
     updated_at: new Date().toISOString(),
   };
   await sb.from('customers').update(patch).eq('id', cust.id);
+  // +1 pet: soma a vaga com trava otimista. Antes a vaga ia no mesmo update do pedido com um valor lido no início,
+  // e se o aviso do kit e o do +1 pet chegassem juntos, o do kit gravava por cima e a vaga se perdia.
+  for (let i = 0; extraPets && i < 5; i++) {
+    const { data: cur } = await sb.from('customers').select('extra_pet_slots').eq('id', cust.id).maybeSingle();
+    const n = cur?.extra_pet_slots ?? 0;
+    const { data: ok } = await sb.from('customers').update({ extra_pet_slots: n + extraPets }).eq('id', cust.id).eq('extra_pet_slots', n).select('id');
+    if (ok?.length) break;
+  }
   // Libera o kit uma vez só (condicional: dois avisos ao mesmo tempo não mandam dois e-mails).
   let kitPaidNow = false;
   if (!addOn && !wasPaid) {
