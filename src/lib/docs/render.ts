@@ -97,7 +97,10 @@ export async function renderPage(doc: DocDef, pageIndex: number, c: DocContext, 
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(page.w * scale);
   canvas.height = Math.round(page.h * scale);
-  const ctx = canvas.getContext('2d')!;
+  // Exportação: canvas na memória comum (willReadFrequently). No celular, o canvas acelerado pela GPU
+  // pode ser descartado quando falta memória e vira uma imagem vazia (que sai PRETA no JPEG do PDF).
+  const ctx = canvas.getContext('2d', c.preview ? undefined : { willReadFrequently: true });
+  if (!ctx) throw new Error(`sem memória para desenhar ${page.id}`);
   ctx.scale(scale, scale);
   ctx.imageSmoothingQuality = 'high';
   // Template pronto + campos mapeados → escreve por cima. Senão, desenho provisório.
@@ -177,9 +180,69 @@ export function isA4(page: DocPage): boolean {
   return (page.mm[0] === 210 && page.mm[1] === 297) || (page.mm[0] === 297 && page.mm[1] === 210);
 }
 
+/**
+ * true se o canvas saiu vazio (falha de memória/contexto perdido no celular ou imagem que não carregou):
+ * quase tudo transparente, quase tudo preto ou uma cor só.
+ */
+export function looksBlank(canvas: HTMLCanvasElement): boolean {
+  if (!canvas.width || !canvas.height) return true;
+  const N = 24;
+  const t = document.createElement('canvas');
+  t.width = N;
+  t.height = N;
+  const x = t.getContext('2d', { willReadFrequently: true });
+  if (!x) return false;
+  try {
+    x.drawImage(canvas, 0, 0, N, N);
+    const d = x.getImageData(0, 0, N, N).data;
+    let visible = 0, dark = 0, min = 765, max = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 16) continue;
+      visible++;
+      const v = d[i] + d[i + 1] + d[i + 2];
+      if (v < 40) dark++;
+      min = Math.min(min, v);
+      max = Math.max(max, v);
+    }
+    const n = N * N;
+    return visible < n * 0.05 || dark > visible * 0.97 || max - min < 12;
+  } catch {
+    return false;
+  } finally {
+    t.width = 0;
+  }
+}
+
+/** Fundo branco por baixo (JPEG não tem transparência: o que fica transparente vira preto). */
+export function whiteUnder(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+}
+
+/** Desenha a página e confere se não saiu vazia; se sair, tenta de novo (com resolução um pouco menor). */
+export async function renderPageChecked(doc: DocDef, pageIndex: number, c: DocContext, scale = 1): Promise<HTMLCanvasElement> {
+  let s = scale;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const canvas = await renderPage(doc, pageIndex, c, s).catch(() => null);
+    if (canvas && !looksBlank(canvas)) return canvas;
+    if (canvas) canvas.width = 0;
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    s = Math.max(1, s * 0.8);
+  }
+  throw new Error(`página saiu vazia: ${doc.pages[pageIndex]?.id}`);
+}
+
 /** Converte um canvas na imagem que vai para o PDF. */
 export function pdfData(canvas: HTMLCanvasElement, page: DocPage): string {
-  return page.shape ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.92);
+  if (page.shape) return canvas.toDataURL('image/png');
+  whiteUnder(canvas);
+  return canvas.toDataURL('image/jpeg', 0.92);
 }
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { DOCS, BONUS_DOC_IDS, KIT_DOC_IDS, exportScale, fileName, isA4, renderPage } from './render';
+import { DOCS, BONUS_DOC_IDS, KIT_DOC_IDS, exportScale, fileName, isA4, renderPageChecked, whiteUnder } from './render';
 import { BONUS_PLAN, KIT_PLAN } from './plan';
 import { composeSheets, plannedPageIds, sheetsToPdf, type RenderedPage } from './print';
 import type { DocContext, DocDef } from './types';
@@ -17,6 +17,14 @@ export interface PackageFile {
 
 const toBlob = (canvas: HTMLCanvasElement, type: string, q?: number) =>
   new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('blob'))), type, q));
+
+const loadImg = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => (im.decode ? im.decode().catch(() => undefined).then(() => resolve(im)) : resolve(im));
+    im.onerror = () => reject(new Error('imagem da peça'));
+    im.src = src;
+  });
 
 const slug = (s: string) =>
   s
@@ -57,7 +65,8 @@ export async function buildPackage(c: DocContext, onProgress?: (done: number, to
       for (let i = 0; i < doc.pages.length; i++) {
         const page = doc.pages[i];
         const a4 = isA4(page);
-        const canvas = await renderPage(doc, i, ctx, a4 ? 2 : exportScale(page));
+        const canvas = await renderPageChecked(doc, i, ctx, a4 ? 2 : exportScale(page));
+        if (!page.shape) whiteUnder(canvas);
         if (group) {
           // Imagem para o ZIP: PNG nos formatos recortados (fundo transparente), JPEG no resto.
           const png = !!page.shape;
@@ -69,8 +78,12 @@ export async function buildPackage(c: DocContext, onProgress?: (done: number, to
         if (!planned.has(page.id)) console.warn('página fora do plano de impressão:', page.id);
         if (a4) {
           rendered.set(page.id, { page, data: canvas.toDataURL('image/jpeg', 0.92) });
-          canvas.width = 0;
-        } else rendered.set(page.id, { page, canvas });
+        } else {
+          // Peça pequena: vira imagem agora e o canvas é liberado (não depende de memória de vídeo até montar a folha).
+          const blob = await toBlob(canvas, page.shape ? 'image/png' : 'image/jpeg', page.shape ? undefined : 0.95);
+          rendered.set(page.id, { page, img: await loadImg(URL.createObjectURL(blob)) });
+        }
+        canvas.width = 0;
         tick();
       }
     }
@@ -80,7 +93,7 @@ export async function buildPackage(c: DocContext, onProgress?: (done: number, to
   const pdf = await sheetsToPdf(composeSheets(KIT_PLAN, rendered, tick));
   const bonusPdf = await sheetsToPdf(composeSheets(BONUS_PLAN, rendered, tick));
   rendered.forEach((r) => {
-    if (r.canvas) r.canvas.width = 0;
+    if (r.img?.src.startsWith('blob:')) URL.revokeObjectURL(r.img.src);
   });
   tick();
   const zip = zipSync(zipFiles);

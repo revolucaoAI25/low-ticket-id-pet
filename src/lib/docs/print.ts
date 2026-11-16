@@ -4,6 +4,7 @@ import { FONT_BODY, FONT_DISPLAY, rr } from './draw';
 import type { Ctx } from './draw';
 import { BONUS_PLAN, KIT_PLAN, pageOf, type Sheet } from './plan';
 import type { DocPage } from './types';
+import { looksBlank } from './render';
 
 /** Resolução das folhas montadas: 300 dpi (1 mm = 11,81 px). */
 const PX = 300 / 25.4;
@@ -16,7 +17,8 @@ const CUT = 'rgba(120,100,90,.75)';
 
 export interface RenderedPage {
   page: DocPage;
-  /** Peças pequenas: o canvas fica guardado para montar a folha. */
+  /** Peças pequenas: guardadas como imagem já decodificada (um canvas guardado pode ser descartado pelo celular). */
+  img?: HTMLImageElement;
   canvas?: HTMLCanvasElement;
   /** Páginas A4 inteiras: já viram JPEG (libera memória no celular). */
   data?: string;
@@ -86,7 +88,8 @@ function composePieces(sheet: Extract<Sheet, { kind: 'pieces' }>, pages: Map<str
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(A4W * PX);
   canvas.height = Math.round(A4H * PX);
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error('sem memória para montar a folha');
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.scale(PX, PX);
@@ -103,10 +106,11 @@ function composePieces(sheet: Extract<Sheet, { kind: 'pieces' }>, pages: Map<str
 
   for (const pl of sheet.places) {
     const r = pages.get(pl.page);
-    if (!r?.canvas) continue;
+    const src = r?.img ?? r?.canvas;
+    if (!r || !src) throw new Error(`peça faltando na folha: ${pl.page}`);
     const [w, h] = (pl.copy != null ? r.page.printCopies?.[pl.copy] : undefined) ?? r.page.mm;
     label(ctx, pl.caption.toUpperCase(), pl.x, pl.y - 2.6, 2.4, 800, MUTED);
-    ctx.drawImage(r.canvas, pl.x, pl.y, w, h);
+    ctx.drawImage(src, pl.x, pl.y, w, h);
     if (r.page.shape !== 'bone') cutLine(ctx, pl.x, pl.y, w, h, r.page.shape === 'round');
   }
 
@@ -152,11 +156,12 @@ export function composeSheets(plan: Sheet[], pages: Map<string, RenderedPage>, o
   for (const sheet of plan) {
     if (sheet.kind === 'page') {
       const r = pages.get(sheet.page);
-      const data = r?.data ?? r?.canvas?.toDataURL('image/jpeg', 0.92);
-      if (!r || !data) continue;
+      const data = r?.data;
+      if (!r || !data) throw new Error(`página faltando no PDF: ${sheet.page}`);
       out.push({ data, landscape: r.page.mm[0] > r.page.mm[1] });
     } else {
       const canvas = composePieces(sheet, pages);
+      if (looksBlank(canvas)) throw new Error(`folha saiu vazia: ${sheet.key}`);
       out.push({ data: canvas.toDataURL('image/jpeg', 0.92), landscape: false });
       canvas.width = 0;
     }
