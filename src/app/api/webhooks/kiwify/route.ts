@@ -98,11 +98,8 @@ export async function POST(req: Request) {
   /** Pedido que não é o kit em si (só "+1 pet" ou só um bump): não libera o kit sozinho. */
   const addOn = productIsExtraPet || onlyBump;
   const cents = Math.round(kiwifyValue(amount) * 100);
-  // Na Utmify o pedido é identificado pelo orderId. O bump pode vir com o MESMO id do pedido do kit
-  // (mesmo checkout): aí ele sobrescrevia a venda do kit ou era ignorado. Bump/+1 pet vai com id próprio.
-  const pid = pickStr(product, 'product_id', 'id');
   const utmifyBase = {
-    orderId: addOn ? `${orderId}-${pid || 'bump'}` : orderId,
+    orderId,
     paymentMethod: pickStr(o, 'payment_method'),
     createdAt: pickStr(o, 'created_at') || null,
     approvedAt: pickStr(o, 'approved_date') || null,

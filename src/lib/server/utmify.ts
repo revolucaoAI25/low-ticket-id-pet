@@ -12,7 +12,11 @@ type Obj = Record<string, unknown>;
 /** UTC no formato que a Utmify pede: YYYY-MM-DD HH:MM:SS */
 function utc(d?: string | null): string | null {
   if (!d) return null;
-  const t = new Date(d.includes('T') || d.includes('Z') ? d : d.replace(' ', 'T') + 'Z');
+  // A Kiwify manda as datas no horário de Brasília e sem fuso ("2026-11-18 01:40:12").
+  // Antes isso era lido como UTC e a venda aparecia 3 h mais cedo na Utmify (bump das 23h caía no dia anterior).
+  const iso = d.trim().replace(' ', 'T');
+  const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(iso);
+  const t = new Date(hasTz ? iso : `${iso}-03:00`);
   if (isNaN(t.getTime())) return null;
   return t.toISOString().replace('T', ' ').slice(0, 19);
 }
