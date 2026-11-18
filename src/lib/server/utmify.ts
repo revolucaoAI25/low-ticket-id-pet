@@ -32,9 +32,11 @@ export interface UtmifyOrder {
   utms?: Obj | null;
 }
 
-export async function sendUtmifyOrder(o: UtmifyOrder): Promise<boolean> {
+/** Retorna true quando a Utmify aceitou, ou o motivo da falha (texto curto, vai para o log do painel). */
+export async function sendUtmifyOrder(o: UtmifyOrder): Promise<true | string> {
   const token = process.env.UTMIFY_API_TOKEN;
-  if (!token || !o.product.priceInCents) return false;
+  if (!token) return 'sem UTMIFY_API_TOKEN';
+  if (!o.product.priceInCents) return 'pedido sem valor';
   const u = (o.utms ?? {}) as Record<string, string | undefined>;
   const pm = (o.paymentMethod ?? '').toLowerCase();
   const created = utc(o.createdAt) ?? utc(new Date().toISOString())!;
@@ -78,10 +80,12 @@ export async function sendUtmifyOrder(o: UtmifyOrder): Promise<boolean> {
       headers: { 'content-type': 'application/json', 'x-api-token': token },
       body: JSON.stringify(body),
     });
-    if (!r.ok) console.error('utmify', r.status, await r.text());
-    return r.ok;
+    if (r.ok) return true;
+    const txt = (await r.text()).slice(0, 160);
+    console.error('utmify', r.status, txt);
+    return `HTTP ${r.status} ${txt}`;
   } catch (e) {
     console.error('utmify', e);
-    return false;
+    return `erro de rede: ${String(e).slice(0, 80)}`;
   }
 }

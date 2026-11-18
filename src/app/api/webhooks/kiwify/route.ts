@@ -98,8 +98,11 @@ export async function POST(req: Request) {
   /** Pedido que não é o kit em si (só "+1 pet" ou só um bump): não libera o kit sozinho. */
   const addOn = productIsExtraPet || onlyBump;
   const cents = Math.round(kiwifyValue(amount) * 100);
+  // Na Utmify o pedido é identificado pelo orderId. O bump pode vir com o MESMO id do pedido do kit
+  // (mesmo checkout): aí ele sobrescrevia a venda do kit ou era ignorado. Bump/+1 pet vai com id próprio.
+  const pid = pickStr(product, 'product_id', 'id');
   const utmifyBase = {
-    orderId,
+    orderId: addOn ? `${orderId}-${pid || 'bump'}` : orderId,
     paymentMethod: pickStr(o, 'payment_method'),
     createdAt: pickStr(o, 'created_at') || null,
     approvedAt: pickStr(o, 'approved_date') || null,
@@ -273,7 +276,7 @@ export async function POST(req: Request) {
   // então a compra vai para a Meta daqui, pela API de Conversões, atribuída ao clique do anúncio.
   // A compra principal continua sendo enviada pela Utmify (não duplica).
   let capi = false;
-  let utmify = false;
+  let utmify: true | string = 'não se aplica';
   if (addOn) {
     utmify = await sendUtmifyOrder({ ...utmifyBase, status: 'paid', utms: utmsFor(cust.utms), customer: { ...utmifyBase.customer, ip: ((cust.utms?._meta as Obj | undefined)?.ip as string) || utmifyBase.customer.ip } });
     capi = await sendCapiPurchase({
@@ -289,8 +292,8 @@ export async function POST(req: Request) {
   }
   // No log do painel fica visível se o bump chegou na Utmify e na Meta (sem token da Utmify, não vai).
   const sent = addOn
-    ? ` · Utmify: ${utmify ? 'enviado' : process.env.UTMIFY_API_TOKEN ? 'falhou' : 'NÃO enviado (falta UTMIFY_API_TOKEN na Vercel)'} · Meta: ${capi ? 'enviado' : 'não enviado'}`
+    ? ` · Utmify: ${utmify === true ? 'enviado' : `NÃO enviado (${utmify})`} · Meta: ${capi ? 'enviado' : 'não enviado'}`
     : '';
   await note(`${addOn ? (productIsExtraPet ? '+1 pet' : 'order bump') : 'kit'} pago · achou por: ${matchedBy}${kitPaidNow ? ' · e-mail de confirmação enviado' : ''}${sent}`);
-  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify });
+  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify: utmify === true });
 }
