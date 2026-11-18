@@ -24,9 +24,15 @@ export interface CapiPurchase {
  * Precisa de META_CAPI_TOKEN na Vercel; sem ele, não faz nada.
  */
 export async function sendCapiPurchase(p: CapiPurchase): Promise<boolean> {
+  return (await capiPurchase(p)) === true;
+}
+
+/** Igual ao sendCapiPurchase, mas devolve o motivo quando a Meta não aceita (para o painel mostrar). */
+export async function capiPurchase(p: CapiPurchase): Promise<true | string> {
   const token = process.env.META_CAPI_TOKEN;
   const pixel = p.pixelId.replace(/\D/g, '');
-  if (!token || !pixel) return false;
+  if (!token) return 'falta META_CAPI_TOKEN na Vercel';
+  if (!pixel) return 'falta o ID do Pixel da Meta no painel (Rastreamento)';
   const digits = (p.phone ?? '').replace(/\D/g, '');
   const user_data: Record<string, unknown> = {};
   if (p.email) user_data.em = [sha(p.email)];
@@ -56,11 +62,20 @@ export async function sendCapiPurchase(p: CapiPurchase): Promise<boolean> {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!r.ok) console.error('capi', r.status, await r.text());
-    return r.ok;
+    if (r.ok) return true;
+    const txt = await r.text();
+    console.error('capi', r.status, txt);
+    let msg = txt.slice(0, 200);
+    try {
+      const e = JSON.parse(txt).error;
+      msg = [e?.error_user_title, e?.error_user_msg || e?.message].filter(Boolean).join(': ').slice(0, 220);
+    } catch {
+      /* texto puro */
+    }
+    return `Meta HTTP ${r.status}: ${msg}`;
   } catch (e) {
     console.error('capi', e);
-    return false;
+    return `erro de rede: ${String(e).slice(0, 80)}`;
   }
 }
 

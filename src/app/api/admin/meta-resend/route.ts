@@ -1,5 +1,5 @@
 import { isAdmin } from '@/lib/server/admin';
-import { kiwifyValue, sendCapiPurchase } from '@/lib/server/meta-capi';
+import { capiPurchase, kiwifyValue } from '@/lib/server/meta-capi';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
 import { json } from '@/lib/server/util';
@@ -57,9 +57,9 @@ export async function POST(req: Request) {
       meta = ((c?.utms as Obj | null)?._meta as never) ?? null;
       externalId = c?.id;
     }
-    const row = { orderId, at: new Date(t * 1000).toISOString(), email: o.email, value: kiwifyValue(Number(o.amount)), withClick: !!(meta as Obj | null)?.fbc, sent: false };
+    const row = { orderId, at: new Date(t * 1000).toISOString(), email: o.email, value: kiwifyValue(Number(o.amount)), withClick: !!(meta as Obj | null)?.fbc, sent: false, reason: '' };
     if (!dryRun) {
-      row.sent = await sendCapiPurchase({
+      const r = await capiPurchase({
         pixelId: settings.tracking.metaPixelId,
         orderId,
         value: row.value,
@@ -70,6 +70,8 @@ export async function POST(req: Request) {
         meta,
         eventTime: t,
       });
+      row.sent = r === true;
+      row.reason = r === true ? '' : r;
     }
     rows.push(row);
   }
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
     await sb.from('webhook_logs').insert({
       provider: 'meta-resend',
       payload: { from: new Date(fromTs * 1000).toISOString(), rows },
-      note: `reenvio para a Meta: ${sent} de ${rows.length} compra(s) do kit aceitas${rows.length - sent ? ` · ${rows.length - sent} recusada(s)` : ''}`,
+      note: `reenvio para a Meta: ${sent} de ${rows.length} compra(s) do kit aceitas${rows.length - sent ? ` · ${rows.length - sent} recusada(s) · motivo: ${rows.find((r) => !r.sent)?.reason}` : ''}`,
     });
   }
   return json({ ok: true, from: new Date(fromTs * 1000).toISOString(), total: rows.length, sent, rows });

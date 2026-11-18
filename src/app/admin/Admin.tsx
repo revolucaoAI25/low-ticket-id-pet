@@ -845,7 +845,7 @@ function Upload({ label, value, onChange, folder, pdf }: { label: string; value:
 /** Reenvia para a Meta as compras do kit principal que não chegaram (ex.: produto desmarcado na Utmify). */
 function MetaResend() {
   const [from, setFrom] = useState(() => new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10));
-  const [res, setRes] = useState<{ total: number; sent: number; rows: { orderId: string; at: string; email: string; value: number; withClick: boolean; sent: boolean }[]; error?: string } | null>(null);
+  const [res, setRes] = useState<{ total: number; sent: number; rows: { orderId: string; at: string; email: string; value: number; withClick: boolean; sent: boolean; reason?: string }[]; error?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const go = async (dryRun: boolean) => {
     if (!dryRun && !confirm('Reenviar para a Meta todas as compras do kit listadas?')) return;
@@ -873,11 +873,12 @@ function MetaResend() {
           <p className="font-bold">
             {res.total} compra(s) do kit{res.sent ? ` · ${res.sent} enviada(s) para a Meta` : ''}
           </p>
+          {res.rows.some((r) => r.reason) && <p className="mt-1 rounded-xl bg-red-50 p-2 font-bold text-red-700">Motivo da recusa: {res.rows.find((r) => r.reason)?.reason}</p>}
           <ul className="mt-2 max-h-64 overflow-auto divide-y divide-linha">
             {res.rows.map((r) => (
               <li key={r.orderId} className="py-1">
                 {new Date(r.at).toLocaleString('pt-BR')} · {r.email} · R$ {r.value.toFixed(2).replace('.', ',')} · {r.withClick ? 'com clique do anúncio' : 'sem clique salvo'}
-                {res.sent ? (r.sent ? ' · ✅' : ' · ❌') : ''}
+                {r.sent ? ' · ✅' : r.reason ? ` · ❌ ${r.reason}` : ''}
               </li>
             ))}
           </ul>
