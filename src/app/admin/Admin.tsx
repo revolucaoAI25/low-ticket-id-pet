@@ -560,10 +560,20 @@ function Orders() {
   useEffect(() => {
     load();
   }, [load]);
-  const act = async (action: 'resend' | 'unlock' | 'addPet', customerId: string) => {
+  const act = async (action: 'resend' | 'unlock' | 'addPet' | 'email', customerId: string, current?: string | null) => {
     if (action === 'addPet' && !confirm('Adicionar +1 vaga de pet e enviar o e-mail para o cliente cadastrar o novo pet?')) return;
-    const r = await fetch('/api/admin/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, customerId }) });
+    let email: string | undefined;
+    if (action === 'email') {
+      email = prompt('Novo e-mail do cliente (o acesso é reenviado para ele na hora):', current ?? '')?.trim();
+      if (!email) return;
+    }
+    const r = await fetch('/api/admin/pedidos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, customerId, email }) });
     const d = await r.json().catch(() => ({}));
+    if (action === 'email') {
+      setMsg(r.ok ? (d.ok ? `E-mail trocado para ${d.email} e acesso reenviado.` : `E-mail trocado para ${d.email}, mas o envio falhou (confira o Resend).`) : d.error || 'Erro');
+      load(email);
+      return;
+    }
     setMsg(r.ok && action === 'addPet' ? (d.sent ? '+1 vaga adicionada e e-mail enviado.' : '+1 vaga adicionada (e-mail não enviado: confira o Resend).') : r.ok ? (action === 'resend' ? (d.ok ? 'E-mail reenviado.' : 'Não foi possível enviar (confira o Resend).') : 'Edição liberada: o cliente pode corrigir e gerar de novo pelo mesmo link.') : d.error || 'Erro');
     load(q);
   };
@@ -614,6 +624,9 @@ function Orders() {
                   </button>
                   <button type="button" onClick={() => act('unlock', o.id)}>
                     Liberar edição
+                  </button>
+                  <button type="button" onClick={() => act('email', o.id, o.email)}>
+                    Trocar e-mail e reenviar
                   </button>
                   <button type="button" onClick={() => act('addPet', o.id)}>
                     +1 vaga de pet

@@ -2,7 +2,7 @@ import { isAdmin } from '@/lib/server/admin';
 import { sendExtraPetEmail } from '@/lib/server/email';
 import { resendCustomer } from '@/lib/server/notify';
 import { db } from '@/lib/server/supabase';
-import { json } from '@/lib/server/util';
+import { json, normEmail } from '@/lib/server/util';
 
 export const runtime = 'nodejs';
 
@@ -29,10 +29,17 @@ export async function POST(req: Request) {
   if (!(await isAdmin())) return json({ error: 'unauthorized' }, 401);
   const sb = db();
   if (!sb) return json({ error: 'Supabase não configurado' }, 503);
-  const { action, customerId } = await req.json().catch(() => ({}));
+  const { action, customerId, email: newEmail } = await req.json().catch(() => ({}));
   const { data: c } = await sb.from('customers').select('email, access_token, bumps, pets(id, data, files, submitted_at)').eq('id', customerId).maybeSingle();
   if (!c) return json({ error: 'not_found' }, 404);
   if (action === 'resend') return json({ ok: await resendCustomer(c as never) });
+  if (action === 'email') {
+    // Cliente digitou o e-mail errado: troca e já reenvia (kit pronto ou link para preencher).
+    const em = normEmail(String(newEmail ?? ''));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return json({ error: 'E-mail inválido' }, 400);
+    await sb.from('customers').update({ email: em, updated_at: new Date().toISOString() }).eq('id', customerId);
+    return json({ ok: await resendCustomer({ ...(c as object), email: em } as never), email: em });
+  }
   if (action === 'addPet') {
     // +1 vaga manual (ex.: order bump de +1 pet que não foi registrado) e e-mail para cadastrar o novo pet.
     const { data: cur } = await sb.from('customers').select('extra_pet_slots').eq('id', customerId).maybeSingle();
