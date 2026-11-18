@@ -287,6 +287,10 @@ export async function POST(req: Request) {
       meta: (cust.utms?._meta as never) ?? null,
     });
   }
-  await note(`${addOn ? (productIsExtraPet ? '+1 pet' : 'order bump') : 'kit'} pago · achou por: ${matchedBy}${kitPaidNow ? ' · e-mail de confirmação enviado' : ''}`);
+  // No log do painel fica visível se o bump chegou na Utmify e na Meta (sem token da Utmify, não vai).
+  const sent = addOn
+    ? ` · Utmify: ${utmify ? 'enviado' : process.env.UTMIFY_API_TOKEN ? 'falhou' : 'NÃO enviado (falta UTMIFY_API_TOKEN na Vercel)'} · Meta: ${capi ? 'enviado' : 'não enviado'}`
+    : '';
+  await note(`${addOn ? (productIsExtraPet ? '+1 pet' : 'order bump') : 'kit'} pago · achou por: ${matchedBy}${kitPaidNow ? ' · e-mail de confirmação enviado' : ''}${sent}`);
   return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify });
 }
