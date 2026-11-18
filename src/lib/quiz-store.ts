@@ -48,6 +48,14 @@ function load() {
   if (loaded || typeof window === 'undefined') return;
   loaded = true;
   try {
+    // Link de recomeço para o suporte: ?novo=1 apaga o quiz salvo neste aparelho e começa do zero.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('novo')) {
+      localStorage.removeItem(KEY);
+      url.searchParams.delete('novo');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+      return;
+    }
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as QuizState;
