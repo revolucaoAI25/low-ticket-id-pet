@@ -14,6 +14,8 @@ export interface CapiPurchase {
   externalId?: string;
   /** Guardado com o lead: cookies do pixel, IP e navegador de quem clicou no anúncio. */
   meta?: { fbp?: string; fbc?: string; ip?: string; ua?: string } | null;
+  /** Hora da compra (segundos Unix). Padrão: agora. A Meta só aceita até 7 dias atrás. */
+  eventTime?: number;
 }
 
 /**
@@ -38,7 +40,7 @@ export async function sendCapiPurchase(p: CapiPurchase): Promise<boolean> {
     data: [
       {
         event_name: 'Purchase',
-        event_time: Math.floor(Date.now() / 1000),
+        event_time: p.eventTime ?? Math.floor(Date.now() / 1000),
         event_id: `kiwify-${p.orderId}`,
         action_source: 'website',
         event_source_url: `${siteUrl()}/obrigado`,

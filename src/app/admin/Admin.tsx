@@ -193,6 +193,7 @@ export function Admin() {
             )}
           </Card>
         )}
+        {tab === 'rastreamento' && <MetaResend />}
 
         {tab === 'prova' && <ProofTab s={s} set={set} />}
 
@@ -837,5 +838,51 @@ function Upload({ label, value, onChange, folder, pdf }: { label: string; value:
       </div>
       {err && <p className="mt-1 text-xs font-bold text-red-600">{err}</p>}
     </div>
+  );
+}
+
+
+/** Reenvia para a Meta as compras do kit principal que não chegaram (ex.: produto desmarcado na Utmify). */
+function MetaResend() {
+  const [from, setFrom] = useState(() => new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10));
+  const [res, setRes] = useState<{ total: number; sent: number; rows: { orderId: string; at: string; email: string; value: number; withClick: boolean; sent: boolean }[]; error?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const go = async (dryRun: boolean) => {
+    if (!dryRun && !confirm('Reenviar para a Meta todas as compras do kit listadas?')) return;
+    setBusy(true);
+    const r = await fetch('/api/admin/meta-resend', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from, dryRun }) });
+    setRes(await r.json().catch(() => ({ error: 'erro' })));
+    setBusy(false);
+  };
+  return (
+    <Card title="Reenviar compras do kit para a Meta" hint="Para quando a compra do kit não chegou na Meta (ex.: produto desmarcado no pixel da Utmify). A Meta só aceita compras dos últimos 7 dias. Cada compra vai com o número do pedido, então reenviar de novo não duplica o que o site mandou.">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="text-sm font-bold">A partir de</label>
+        <input type="date" className="input !min-h-[44px] !w-auto" value={from} onChange={(e) => setFrom(e.target.value)} />
+        <button type="button" className="btn-primary !min-h-[44px] !px-4 !text-base" disabled={busy} onClick={() => go(true)}>
+          Ver compras
+        </button>
+        <button type="button" className="btn-primary !min-h-[44px] !px-4 !text-base" disabled={busy || !res?.total} onClick={() => go(false)}>
+          Reenviar para a Meta
+        </button>
+      </div>
+      {busy && <p className="text-sm">Processando…</p>}
+      {res?.error && <p className="text-sm font-bold text-red-700">{res.error}</p>}
+      {res && !res.error && (
+        <div className="text-sm">
+          <p className="font-bold">
+            {res.total} compra(s) do kit{res.sent ? ` · ${res.sent} enviada(s) para a Meta` : ''}
+          </p>
+          <ul className="mt-2 max-h-64 overflow-auto divide-y divide-linha">
+            {res.rows.map((r) => (
+              <li key={r.orderId} className="py-1">
+                {new Date(r.at).toLocaleString('pt-BR')} · {r.email} · R$ {r.value.toFixed(2).replace('.', ',')} · {r.withClick ? 'com clique do anúncio' : 'sem clique salvo'}
+                {res.sent ? (r.sent ? ' · ✅' : ' · ❌') : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
   );
 }
