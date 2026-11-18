@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { doPet } from '@/lib/pet';
 import { bumpFiles, bumpsInPayload, personalBumps, productIsBump } from '@/lib/server/bumps';
 import { sendBumpEmail, sendConfirmEmail, sendExtraPetEmail, sendPersonalBumpEmail } from '@/lib/server/email';
-import { kiwifyValue, sendCapiPurchase } from '@/lib/server/meta-capi';
+import { kiwifyValue } from '@/lib/server/meta-capi';
 import { sendUtmifyOrder } from '@/lib/server/utmify';
 import { getSettingsFresh } from '@/lib/server/settings';
 import { db } from '@/lib/server/supabase';
@@ -269,28 +269,14 @@ export async function POST(req: Request) {
     //    Se o kit ainda não foi gerado, ele sai junto com o kit, sem precisar de nada.
     if (cust.pets?.some((p) => p.submitted_at)) for (const b of personalBumps(newBumps, settings)) await sendPersonalBumpEmail(email, cust.access_token, b.name, doNome);
   }
-  // Pedidos à parte (order bump ou +1 pet): a Utmify só recebe o webhook da oferta principal,
-  // então a compra vai para a Meta daqui, pela API de Conversões, atribuída ao clique do anúncio.
-  // A compra principal continua sendo enviada pela Utmify (não duplica).
-  let capi = false;
+  // Pedidos à parte (order bump ou +1 pet): a Kiwify não manda para a Utmify, então o site repassa
+  // pela API dela. Quem envia a compra para a Meta é a Utmify (bumps marcados no pixel dela) — o site
+  // NÃO manda compra para a Meta, para não contar em dobro.
   let utmify: true | string = 'não se aplica';
   if (addOn) {
     utmify = await sendUtmifyOrder({ ...utmifyBase, status: 'paid', utms: utmsFor(cust.utms), customer: { ...utmifyBase.customer, ip: ((cust.utms?._meta as Obj | undefined)?.ip as string) || utmifyBase.customer.ip } });
-    capi = await sendCapiPurchase({
-      pixelId: settings.tracking.metaPixelId,
-      orderId,
-      value: kiwifyValue(amount),
-      contentName: productName || 'Order bump',
-      email,
-      phone,
-      externalId: cust.id,
-      meta: (cust.utms?._meta as never) ?? null,
-    });
   }
-  // No log do painel fica visível se o bump chegou na Utmify e na Meta (sem token da Utmify, não vai).
-  const sent = addOn
-    ? ` · Utmify: ${utmify === true ? 'enviado' : `NÃO enviado (${utmify})`} · Meta: ${capi ? 'enviado' : 'não enviado'}`
-    : '';
+  const sent = addOn ? ` · Utmify: ${utmify === true ? 'enviado' : `NÃO enviado (${utmify})`} (a Meta recebe pela Utmify)` : '';
   await note(`${addOn ? (productIsExtraPet ? '+1 pet' : 'order bump') : 'kit'} pago · achou por: ${matchedBy}${kitPaidNow ? ' · e-mail de confirmação enviado' : ''}${sent}`);
-  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, capi, utmify: utmify === true });
+  return json({ ok: true, customer: cust.id, extraPets, bumps: newBumps, utmify: utmify === true });
 }
