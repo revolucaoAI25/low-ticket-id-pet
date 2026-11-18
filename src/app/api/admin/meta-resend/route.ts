@@ -73,5 +73,14 @@ export async function POST(req: Request) {
     }
     rows.push(row);
   }
-  return json({ ok: true, from: new Date(fromTs * 1000).toISOString(), total: rows.length, sent: rows.filter((r) => r.sent).length, rows });
+  const sent = rows.filter((r) => r.sent).length;
+  // Fica registrado no log de webhooks do painel (dá para conferir depois que o reenvio foi feito).
+  if (!dryRun) {
+    await sb.from('webhook_logs').insert({
+      provider: 'meta-resend',
+      payload: { from: new Date(fromTs * 1000).toISOString(), rows },
+      note: `reenvio para a Meta: ${sent} de ${rows.length} compra(s) do kit aceitas${rows.length - sent ? ` · ${rows.length - sent} recusada(s)` : ''}`,
+    });
+  }
+  return json({ ok: true, from: new Date(fromTs * 1000).toISOString(), total: rows.length, sent, rows });
 }
