@@ -61,6 +61,8 @@ export interface PetData {
   personality?: Personality;
   origin?: Origin;
   date?: string; // AAAA-MM-DD
+  /** Só para adotados: data de nascimento, se o tutor souber (opcional, preenchida na confirmação). */
+  birthDate?: string; // AAAA-MM-DD
   team?: TeamChoice;
   tutors?: Tutor[];
   address?: Address;
@@ -183,6 +185,21 @@ export function fill(text: string, p: PetData): string {
     .replaceAll('{nome}', hasName(p) ? petName(p) : 'seu pet')
     .replaceAll('{do}', doPet(p))
     .replaceAll('{certidao}', certidao);
+}
+
+/** Data que vai nos documentos de identidade (RG, CNH, passaporte, vacinação): nascimento quando houver. */
+export function idDate(p: PetData): string | undefined {
+  return p.origin === 'adocao' && p.birthDate ? p.birthDate : p.date;
+}
+
+/** true se a data dos documentos de identidade é de nascimento (e não de adoção). */
+export function idIsBirth(p: PetData): boolean {
+  return p.origin !== 'adocao' || !!p.birthDate;
+}
+
+/** Adotado com as duas datas: o kit ganha também a certidão de nascimento. */
+export function hasBothDates(p: PetData): boolean {
+  return p.origin === 'adocao' && !!p.birthDate && !!p.date;
 }
 
 export function formatDateBR(iso?: string): string {

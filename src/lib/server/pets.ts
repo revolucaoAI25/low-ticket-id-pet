@@ -54,6 +54,10 @@ export function sanitizePet(input: unknown): PetData {
     personality: oneOf(p.personality, Object.keys(PERSONALITIES) as (keyof typeof PERSONALITIES)[]),
     origin: oneOf(p.origin, ['nascimento', 'adocao'] as const),
     date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined,
+    birthDate: (() => {
+      const b = str(p.birthDate, 10);
+      return p.origin === 'adocao' && b && /^\d{4}-\d{2}-\d{2}$/.test(b) ? b : undefined;
+    })(),
     team: team && typeof team === 'object' ? { id: str(team.id, 40) ?? null, name: str(team.name, 60) ?? '', none: team.none === true || undefined } : undefined,
     tutors,
     address: { street: str(address.street, 120), district: str(address.district, 60), city: str(address.city, 60) },

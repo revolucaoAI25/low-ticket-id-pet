@@ -1,6 +1,6 @@
 'use client';
 
-import { clubNumber, cityOf, formatDateBR, petName, sexLabel, tutorNames } from '@/lib/pet';
+import { clubNumber, cityOf, formatDateBR, idDate, idIsBirth, petName, sexLabel, tutorNames } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { maskNumber, photoBox } from '../common';
 import { dashedRect, line, paw, rr, text } from '../draw';
@@ -168,8 +168,8 @@ export const rgDoc: DocDef = {
         // naturalidade + nascimento
         label(ctx, 'NATURALIDADE', x1, 378, half, ink);
         value(ctx, cityOf(p), x1, 414, half);
-        label(ctx, p.origin === 'adocao' ? 'DATA DE ADOÇÃO' : 'DATA DE NASCIMENTO', x2, 378, half, ink);
-        value(ctx, formatDateBR(p.date), x2, 414, half);
+        label(ctx, idIsBirth(p) ? 'DATA DE NASCIMENTO' : 'DATA DE ADOÇÃO', x2, 378, half, ink);
+        value(ctx, formatDateBR(idDate(p)), x2, 414, half);
         line(ctx, x1, 428, x1 + full, 428, RG_GREEN.line, 2);
         // raça e sexo
         label(ctx, 'RAÇA', x1, 468, half, ink);

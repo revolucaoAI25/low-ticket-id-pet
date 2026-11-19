@@ -798,6 +798,14 @@ function PetForm({
             <input className={inputCls} type="date" max={new Date().toISOString().slice(0, 10)} value={d.date ?? ''} onChange={(e) => set({ date: e.target.value })} />
           </Field>
         </div>
+        {d.origin === 'adocao' && (
+          <div className="mt-3">
+            <Field label="Data de nascimento (opcional, se souber)">
+              <input className={inputCls} type="date" max={new Date().toISOString().slice(0, 10)} value={d.birthDate ?? ''} onChange={(e) => set({ birthDate: e.target.value || undefined })} />
+            </Field>
+            <p className="mt-1 text-xs text-cacau/60">Se preencher, o RG, a CNH, o passaporte e a carteira de vacinação mostram a data de nascimento, e o kit ganha também a certidão de nascimento.</p>
+          </div>
+        )}
       </Card>
 
       <Card icon={Trophy} title="Time do coração" hint="Para a carteirinha de torcedor.">

@@ -4,6 +4,7 @@ import { DOCS, BONUS_DOC_IDS, KIT_DOC_IDS, exportScale, fileName, isA4, renderPa
 import { BONUS_PLAN, KIT_PLAN } from './plan';
 import { composeSheets, plannedPageIds, sheetsToPdf, type RenderedPage } from './print';
 import type { DocContext, DocDef } from './types';
+import { hasBothDates } from '@/lib/pet';
 
 export interface PackageFile {
   /** Nome do arquivo no Storage (sem pasta). */
@@ -87,6 +88,18 @@ export async function buildPackage(c: DocContext, onProgress?: (done: number, to
         tick();
       }
     }
+  }
+
+  // Adotado com data de nascimento: também a certidão de nascimento (mesma arte, com a data de nascimento).
+  if (hasBothDates(ctx.pet)) {
+    const page = DOCS.certidao.pages[0];
+    const nasc = { ...ctx, pet: { ...ctx.pet, origin: 'nascimento' as const, date: ctx.pet.birthDate } };
+    const canvas = await renderPageChecked(DOCS.certidao, 0, nasc, 2);
+    whiteUnder(canvas);
+    const img = await toBlob(canvas, 'image/jpeg', 0.93);
+    zipFiles[`Documentos/${fileName({ ...DOCS.certidao, file: 'Certidao-de-Nascimento-do-{nome}' }, ctx)}.jpg`] = [new Uint8Array(await img.arrayBuffer()), { level: 0 }];
+    rendered.set('certidao-nascimento-extra', { page, data: canvas.toDataURL('image/jpeg', 0.92) });
+    canvas.width = 0;
   }
 
   const name = fileName({ ...DOCS.rg, file: '{nome}' }, ctx);

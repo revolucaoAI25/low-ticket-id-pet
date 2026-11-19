@@ -12,7 +12,7 @@
  *    Recorta as 2 lâminas, dobra ao meio, encaixa a [6|3] dentro da [8|1], põe dentro da capa e grampeia.
  */
 
-import { cityOf, clubNumber, formatDateBR, g, personalityLabel, petName, sexLabel, tutorNames, addressLine } from '@/lib/pet';
+import { cityOf, clubNumber, formatDateBR, g, idDate, idIsBirth, personalityLabel, petName, sexLabel, tutorNames, addressLine } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { formatPhone, maskNumber, photoBox } from '../common';
 import { dashedRect, line, paw, rr, star, text, wrap } from '../draw';
@@ -157,7 +157,8 @@ function mrzName(c: DocContext): string {
 
 function mrzLine2(c: DocContext): string {
   const no = passNo(c).replace(/•/g, '<');
-  const d = c.pet.date ? c.pet.date.replace(/-/g, '').slice(2) : '<<<<<<';
+  const bd = idDate(c.pet);
+  const d = bd ? bd.replace(/-/g, '').slice(2) : '<<<<<<';
   const sx = c.pet.sex === 'femea' ? 'F' : c.pet.sex === 'macho' ? 'M' : '<';
   return `${no}<0CDF${d}0${sx}<<<<<<<AMOR<INFINITO<<<<<`.padEnd(44, '<').slice(0, 44);
 }
@@ -210,7 +211,7 @@ const pages: Record<number, PageFn> = {
     f(ctx, 'Sexo', 'Sex', sexLabel(p), x, 260, fw / 2 - 6);
     f(ctx, 'Personalidade', 'Personality', personalityLabel(p) ?? '', x + fw / 2 + 6, 260, fw / 2 - 6);
     const half = (w - 60 - 12) / 2;
-    f(ctx, p.origin === 'adocao' ? 'Data de adoção' : 'Data de nascimento', p.origin === 'adocao' ? 'Adoption date' : 'Date of birth', formatDateBR(p.date), 30, 340, half);
+    f(ctx, idIsBirth(p) ? 'Data de nascimento' : 'Data de adoção', idIsBirth(p) ? 'Date of birth' : 'Adoption date', formatDateBR(idDate(p)), 30, 340, half);
     f(ctx, 'Naturalidade', 'Place of birth', cityOf(p), 42 + half, 340, half);
     f(ctx, 'Data de emissão', 'Date of issue', formatDateBR(new Date().toISOString().slice(0, 10)), 30, 386, half);
     f(ctx, 'Válido até', 'Date of expiry', 'Para sempre', 42 + half, 386, half);

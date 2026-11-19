@@ -22,7 +22,7 @@ export interface Note {
 }
 
 export type Sheet =
-  | { kind: 'page'; key: string; page: string }
+  | { kind: 'page'; key: string; page: string; /** Só entra se a página existir (ex.: certidão extra). */ optional?: boolean }
   | {
       kind: 'pieces';
       key: string;
@@ -112,6 +112,8 @@ export const KIT_PLAN: Sheet[] = [
   { kind: 'page', key: 'passaporte-miolo-2', page: 'passaporte-miolo-2' },
   { kind: 'page', key: 'vacina-fora', page: 'vacina-fora' },
   { kind: 'page', key: 'vacina-dentro', page: 'vacina-dentro' },
+  // Adotado que informou também a data de nascimento: ganha a certidão de nascimento no fim (não muda a numeração das outras).
+  { kind: 'page', key: 'certidao-nascimento-extra', page: 'certidao-nascimento-extra', optional: true },
 ];
 
 /** Folhas do PDF de bônus personalizados (Kit Aniversário e Kit Quem Cuida). */

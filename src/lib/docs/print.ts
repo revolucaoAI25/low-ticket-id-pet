@@ -157,6 +157,7 @@ export function composeSheets(plan: Sheet[], pages: Map<string, RenderedPage>, o
     if (sheet.kind === 'page') {
       const r = pages.get(sheet.page);
       const data = r?.data;
+      if ((!r || !data) && sheet.optional) continue;
       if (!r || !data) throw new Error(`página faltando no PDF: ${sheet.page}`);
       out.push({ data, landscape: r.page.mm[0] > r.page.mm[1] });
     } else {

@@ -11,7 +11,7 @@
  * Rosa para fêmea, azul para macho (ou quando não informado).
  */
 
-import { addressLine, cityOf, formatDateBR, isFemale, petName, sexLabel, tutorNames, ageLabel } from '@/lib/pet';
+import { addressLine, cityOf, formatDateBR, idDate, idIsBirth, isFemale, petName, sexLabel, tutorNames, ageLabel } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { formatPhone, photoBox, photoCircle } from '../common';
 import { line, paw, rr, text, wrap } from '../draw';
@@ -287,7 +287,7 @@ export const vacinaDoc: DocDef = {
           const half = (iw - 24) / 2;
           row(ctx, 'Raça', p.breed ?? '', ix, y, iw, t);
           y += 80;
-          row(ctx, p.origin === 'adocao' ? 'Adoção' : 'Nascimento', formatDateBR(p.date), ix, y, half, t);
+          row(ctx, idIsBirth(p) ? 'Nascimento' : 'Adoção', formatDateBR(idDate(p)), ix, y, half, t);
           row(ctx, 'Idade', ageLabel(p), ix + half + 24, y, half, t);
           y += 80;
           row(ctx, 'Pelagem / sinais', ex.coat ?? '', ix, y, iw, t);

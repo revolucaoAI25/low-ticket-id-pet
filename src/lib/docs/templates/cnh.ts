@@ -1,6 +1,6 @@
 'use client';
 
-import { clubNumber, cityOf, formatDateBR, isFemale, petName, tutorNames, type Personality } from '@/lib/pet';
+import { clubNumber, cityOf, formatDateBR, idDate, idIsBirth, isFemale, petName, tutorNames, type Personality } from '@/lib/pet';
 import { maskNumber, photoBox } from '../common';
 import { line, paw, rr, text } from '../draw';
 import type { Ctx } from '../draw';
@@ -83,8 +83,8 @@ export const cnhDoc: DocDef = {
         line(ctx, x, 196, x + full, 196, CNH.line, 2);
         label(ctx, 'DOC. IDENTIDADE (RG DO PET)', x, 230, half);
         value(ctx, maskNumber(clubNumber(c.seed), c.preview), x, 262, half);
-        label(ctx, p.origin === 'adocao' ? 'DATA DE ADOÇÃO' : 'DATA DE NASCIMENTO', x2, 230, half);
-        value(ctx, formatDateBR(p.date), x2, 262, half);
+        label(ctx, idIsBirth(p) ? 'DATA DE NASCIMENTO' : 'DATA DE ADOÇÃO', x2, 230, half);
+        value(ctx, formatDateBR(idDate(p)), x2, 262, half);
         line(ctx, x, 274, x + full, 274, CNH.line, 2);
         label(ctx, 'FILIAÇÃO (TUTORES)', x, 308, full);
         value(ctx, tutorNames(p), x, 340, full, 23);

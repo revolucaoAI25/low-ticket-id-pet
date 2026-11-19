@@ -13,6 +13,8 @@ import {
   petName,
   sexLabel,
   tutorNames,
+  idDate,
+  idIsBirth,
 } from '@/lib/pet';
 import { getSpecies } from '@/lib/species';
 import { formatPhone } from '@/lib/format';
@@ -33,10 +35,10 @@ export const FIELDS: Record<string, { label: string; get: (c: DocContext) => str
   especie: { label: 'Espécie', get: (c) => getSpecies(c.pet.species)?.label ?? '' },
   raca: { label: 'Raça', get: (c) => c.pet.breed ?? '' },
   sexo: { label: 'Sexo', get: (c) => sexLabel(c.pet) },
-  data: { label: 'Data de nascimento ou adoção', get: (c) => formatDateBR(c.pet.date) },
-  nascimento: { label: 'Data de nascimento (vazio se adotado)', get: (c) => (c.pet.origin === 'adocao' ? '' : formatDateBR(c.pet.date)) },
+  data: { label: 'Data de nascimento ou adoção (nascimento quando houver)', get: (c) => formatDateBR(idDate(c.pet)) },
+  nascimento: { label: 'Data de nascimento (vazio se adotado sem data de nascimento)', get: (c) => (idIsBirth(c.pet) ? formatDateBR(idDate(c.pet)) : '') },
   adocao: { label: 'Data de adoção (vazio se nasceu em casa)', get: (c) => (c.pet.origin === 'adocao' ? formatDateBR(c.pet.date) : '') },
-  rotuloData: { label: '"Nascimento" ou "Adoção"', get: (c) => (c.pet.origin === 'adocao' ? 'Adoção' : 'Nascimento') },
+  rotuloData: { label: '"Nascimento" ou "Adoção"', get: (c) => (idIsBirth(c.pet) ? 'Nascimento' : 'Adoção') },
   idade: { label: 'Idade / na família desde', get: (c) => ageLabel(c.pet) },
   ano: { label: 'Ano (nascimento/adoção)', get: (c) => c.pet.date?.slice(0, 4) ?? '' },
   personalidade: { label: 'Personalidade', get: (c) => personalityLabel(c.pet) ?? '' },
